@@ -9,23 +9,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y python3-pip build-essential git zip unzip openjdk-17-jdk
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip build-essential git zip unzip openjdk-17-jdk
 
-    - name: Install buildozer
-      run: |
-        pip install buildozer cython
+      - name: Install buildozer
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install buildozer cython
 
-    - name: Build APK
-      run: |
-        buildozer android debug
+      - name: Build APK
+        run: |
+          yes | buildozer android debug
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: autobot-apk
-        path: bin/*.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: autobot-apk
+          path: bin/*.apk
