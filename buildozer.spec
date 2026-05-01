@@ -456,5 +456,4 @@ warn_on_root = 1
 android.accept_sdk_license = True
 icon.filename = icon.png
 android.permissions = INTERNET, USE_BIOMETRIC, USE_FINGERPRINT
-icon.filename = icon.png
 android.numeric_version = 21
