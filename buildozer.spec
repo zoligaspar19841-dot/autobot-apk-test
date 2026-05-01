@@ -455,8 +455,5 @@ warn_on_root = 1
 #buildozer --profile demo android debug
 android.accept_sdk_license = True
 icon.filename = icon.png
-android.release_artifact = apk
-android.keystore = keystore/autobot-release.keystore
-android.keyalias = autobotkey
-android.keystore_passwd = autobot123
-android.keyalias_passwd = autobot123
+android.permissions = INTERNET, USE_BIOMETRIC, USE_FINGERPRINT
+icon.filename = icon.png

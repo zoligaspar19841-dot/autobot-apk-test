@@ -21,11 +21,7 @@ jobs:
 
     - name: Build APK with full log
       run: |
-        set -o pipefail
         buildozer -v android debug 2>&1 | tee buildozer_full.log
-        echo "=== APK keresés ==="
-        find . -name "*.apk" -print
-        test -n "$(find . -name '*.apk' -print -quit)"
 
     - name: Upload full log
       if: always()
@@ -35,10 +31,8 @@ jobs:
         path: buildozer_full.log
 
     - name: Upload APK
-      if: success()
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: autobot-apk
-        path: |
-          bin/*.apk
-          .buildozer/**/*.apk
+        path: bin/*.apk
