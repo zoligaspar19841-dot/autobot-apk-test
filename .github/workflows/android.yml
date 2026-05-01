@@ -16,51 +16,16 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y python3-pip build-essential git zip unzip wget openjdk-17-jdk autoconf automake libtool libtool-bin m4 gettext autopoint pkg-config libltdl-dev
-        python3 -m pip install --upgrade pip
-        pip install --upgrade cython setuptools wheel
-        pip install --upgrade git+https://github.com/kivy/buildozer.git
-        pip install --upgrade git+https://github.com/kivy/python-for-android.git
-
-    - name: Patch buildozer spec
-      run: |
-        python3 - <<'PY'
-        from pathlib import Path
-        p = Path("buildozer.spec")
-        txt = p.read_text()
-        def set_key(txt, key, val):
-            lines = txt.splitlines()
-            out = []
-            found = False
-            for line in lines:
-                if line.strip().startswith(key + " ="):
-                    out.append(f"{key} = {val}")
-                    found = True
-                else:
-                    out.append(line)
-            if not found:
-                out.append(f"{key} = {val}")
-            return "\n".join(out) + "\n"
-        for k, v in [
-            ("android.accept_sdk_license", "True"),
-            ("android.api", "35"),
-            ("android.minapi", "23"),
-            ("android.ndk", "25b"),
-            ("p4a.branch", "master"),
-        ]:
-            txt = set_key(txt, k, v)
-        p.write_text(txt)
-        PY
+        python3 -m pip install --upgrade pip setuptools wheel
+        pip install buildozer cython
 
     - name: Build APK with full log
       run: |
-        buildozer -v android clean || true
         set -o pipefail
-buildozer -v android release 2>&1 | tee buildozer_full.log
-echo "=== BIN MAPPA ==="
-ls -lah bin || true
-echo "=== APK KERESÉS ==="
-find . -name "*.apk" -o -name "*.aab"
-test -n "$(find . -name '*.apk' -print -quit)" 
+        buildozer -v android debug 2>&1 | tee buildozer_full.log
+        echo "=== APK keresés ==="
+        find . -name "*.apk" -print
+        test -n "$(find . -name '*.apk' -print -quit)"
 
     - name: Upload full log
       if: always()
@@ -70,11 +35,10 @@ test -n "$(find . -name '*.apk' -print -quit)"
         path: buildozer_full.log
 
     - name: Upload APK
-      if: always()
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: autobot-apk
         path: |
           bin/*.apk
           .buildozer/**/*.apk
-          .buildozer/**/*.aab
