@@ -3,32 +3,41 @@ name: Build APK
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y python3-pip build-essential git zip unzip openjdk-17-jdk
-        pip install buildozer cython
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip build-essential git zip unzip openjdk-17-jdk
+          pip install buildozer cython
 
-    - name: Pre-accept Android licenses
-      run: |
-        mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
-        printf "8933bad161af4178b1185d1a37fbf41ea5269c55\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+      - name: Install Android SDK
+        run: |
+          mkdir -p $HOME/android-sdk
+          cd $HOME/android-sdk
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O sdk.zip
+          unzip sdk.zip
+          mkdir -p cmdline-tools/latest
+          mv cmdline-tools/* cmdline-tools/latest/
 
-    - name: Build APK
-      run: |
-        buildozer -v android debug
+          yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/android-sdk "platform-tools" "platforms;android-33" "build-tools;33.0.0"
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: autobot-apk
-        path: bin/*.apk
+      - name: Set environment
+        run: |
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$HOME/android-sdk/platform-tools:$HOME/android-sdk/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Build APK
+        run: buildozer android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: autobot-apk
+          path: bin/*.apk
