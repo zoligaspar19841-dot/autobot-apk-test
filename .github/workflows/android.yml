@@ -3,41 +3,77 @@ name: Build APK
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y python3-pip build-essential git zip unzip openjdk-17-jdk
-          pip install buildozer cython
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y python3-pip build-essential git zip unzip wget openjdk-17-jdk
+        python3 -m pip install --upgrade pip
+        pip install buildozer cython setuptools==69.5.1
 
-      - name: Install Android SDK
-        run: |
-          mkdir -p $HOME/android-sdk
-          cd $HOME/android-sdk
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O sdk.zip
-          unzip sdk.zip
-          mkdir -p cmdline-tools/latest
-          mv cmdline-tools/* cmdline-tools/latest/
+    - name: Patch buildozer spec
+      run: |
+        python3 - <<'PY'
+        from pathlib import Path
+        p = Path("buildozer.spec")
+        txt = p.read_text()
+        def set_key(txt, key, val):
+            lines = txt.splitlines()
+            out = []
+            found = False
+            for line in lines:
+                if line.strip().startswith(key + " ="):
+                    out.append(f"{key} = {val}")
+                    found = True
+                else:
+                    out.append(line)
+            if not found:
+                out.append(f"{key} = {val}")
+            return "\n".join(out) + "\n"
+        for k, v in [
+            ("android.accept_sdk_license", "True"),
+            ("android.api", "35"),
+            ("android.minapi", "23"),
+            ("android.ndk", "25b"),
+        ]:
+            txt = set_key(txt, k, v)
+        p.write_text(txt)
+        print("buildozer.spec OK")
+        PY
 
-          yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/android-sdk "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+    - name: Install Android SDK command line tools
+      run: |
+        set -eux
+        SDK="$HOME/.buildozer/android/platform/android-sdk"
+        mkdir -p "$SDK/cmdline-tools"
+        cd "$SDK/cmdline-tools"
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+        rm -rf latest cmdline-tools
+        unzip -q cmdline-tools.zip
+        mv cmdline-tools latest
+        mkdir -p "$SDK/tools/bin" "$SDK/licenses"
+        ln -sf "$SDK/cmdline-tools/latest/bin/sdkmanager" "$SDK/tools/bin/sdkmanager"
+        yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" --licenses || true
+        "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Set environment
-        run: |
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "PATH=$HOME/android-sdk/platform-tools:$HOME/android-sdk/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
+    - name: Build APK
+      env:
+        ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+        ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
+      run: |
+        export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/tools/bin:$PATH"
+        buildozer -v android debug
 
-      - name: Build APK
-        run: buildozer android debug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: autobot-apk
-          path: bin/*.apk
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: autobot-apk
+        path: bin/*.apk
