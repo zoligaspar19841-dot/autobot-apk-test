@@ -10,7 +10,7 @@ title = Autobot APK Test
 package.name = autobottest
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = org.autobot
+package.domain = org.zoligaspar
 
 # (str) Source code where the main.py live
 source.dir = .
@@ -32,7 +32,7 @@ source.include_exts = py,png,jpg,kv,atlas
 #source.exclude_patterns = license,images/*/*.jpg
 
 # (str) Application versioning (method 1)
-version = 0.1
+version = 0.2.1
 
 # (str) Application versioning (method 2)
 # version.regex = __version__ = ['"](.*)['"]
@@ -457,3 +457,4 @@ android.accept_sdk_license = True
 icon.filename = icon.png
 android.permissions = INTERNET, USE_BIOMETRIC, USE_FINGERPRINT
 icon.filename = icon.png
+android.numeric_version = 21
