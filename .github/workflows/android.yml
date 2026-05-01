@@ -54,7 +54,13 @@ jobs:
     - name: Build APK with full log
       run: |
         buildozer -v android clean || true
-        buildozer -v android release 2>&1 | tee buildozer_full.log
+        set -o pipefail
+buildozer -v android release 2>&1 | tee buildozer_full.log
+echo "=== BIN MAPPA ==="
+ls -lah bin || true
+echo "=== APK KERESÉS ==="
+find . -name "*.apk" -o -name "*.aab"
+test -n "$(find . -name '*.apk' -print -quit)" 
 
     - name: Upload full log
       if: always()
@@ -68,4 +74,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: autobot-apk
-        path: bin/*.apk
+        path: |
+          bin/*.apk
+          .buildozer/**/*.apk
+          .buildozer/**/*.aab
