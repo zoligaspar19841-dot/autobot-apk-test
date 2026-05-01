@@ -10,19 +10,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Build with Buildozer Action
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          workdir: .
-          buildozer_version: stable
-          command: buildozer android debug
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y python3-pip build-essential git zip unzip openjdk-17-jdk
+        pip install buildozer cython
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: autobot-apk
-          path: ${{ steps.buildozer.outputs.filename }}
+    - name: Pre-accept Android licenses
+      run: |
+        mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+        printf "8933bad161af4178b1185d1a37fbf41ea5269c55\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+
+    - name: Build APK
+      run: |
+        buildozer -v android debug
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: autobot-apk
+        path: bin/*.apk
