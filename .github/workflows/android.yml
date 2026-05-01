@@ -54,7 +54,7 @@ jobs:
     - name: Build APK with full log
       run: |
         buildozer -v android clean || true
-        buildozer -v android debug 2>&1 | tee buildozer_full.log
+        buildozer -v android release 2>&1 | tee buildozer_full.log
 
     - name: Upload full log
       if: always()
