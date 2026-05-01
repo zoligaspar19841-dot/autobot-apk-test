@@ -15,12 +15,45 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install -y python3-pip build-essential git zip unzip wget openjdk-17-jdk autoconf automake libtool pkg-config
+        sudo apt install -y python3-pip build-essential git zip unzip wget openjdk-17-jdk autoconf automake libtool libtool-bin m4 gettext autopoint pkg-config libltdl-dev
         python3 -m pip install --upgrade pip
-        pip install buildozer cython setuptools==69.5.1
+        pip install --upgrade cython setuptools wheel
+        pip install --upgrade git+https://github.com/kivy/buildozer.git
+        pip install --upgrade git+https://github.com/kivy/python-for-android.git
+
+    - name: Patch buildozer spec
+      run: |
+        python3 - <<'PY'
+        from pathlib import Path
+        p = Path("buildozer.spec")
+        txt = p.read_text()
+        def set_key(txt, key, val):
+            lines = txt.splitlines()
+            out = []
+            found = False
+            for line in lines:
+                if line.strip().startswith(key + " ="):
+                    out.append(f"{key} = {val}")
+                    found = True
+                else:
+                    out.append(line)
+            if not found:
+                out.append(f"{key} = {val}")
+            return "\n".join(out) + "\n"
+        for k, v in [
+            ("android.accept_sdk_license", "True"),
+            ("android.api", "35"),
+            ("android.minapi", "23"),
+            ("android.ndk", "25b"),
+            ("p4a.branch", "master"),
+        ]:
+            txt = set_key(txt, k, v)
+        p.write_text(txt)
+        PY
 
     - name: Build APK with full log
       run: |
+        buildozer -v android clean || true
         buildozer -v android debug 2>&1 | tee buildozer_full.log
 
     - name: Upload full log
