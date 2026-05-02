@@ -154,6 +154,7 @@ class Main(Screen):
             ("COIN SCANNER", "scanner", CARD),
             ("NAPLÓ / EXPORT", "logs", CARD),
             ("HALADÓ", "advanced", CARD),
+            ("MASTER LISTA", "master", CARD),
         ]
         for txt, scr, col in items:
             b = button(txt, col, 24)
@@ -274,6 +275,72 @@ class Scanner(Screen):
             lines.append(f"{sym}  {price:.5g}  {chg:+.2f}%")
         self.list.text = "\n".join(lines[:12])
 
+
+class MasterMenu(Screen):
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        root = BoxLayout(orientation="vertical", padding=10, spacing=8)
+        root.add_widget(Label(text="MASTER LISTA", font_size=34, bold=True, color=(1,.75,0,1), size_hint_y=.12))
+
+        grid = GridLayout(cols=1, spacing=7, size_hint_y=None)
+        grid.bind(minimum_height=grid.setter("height"))
+
+        items = [
+            ("1. Általános működés", "main"),
+            ("2. Dashboard", "demo"),
+            ("3. Trade Simple", "trade_simple"),
+            ("4. Strategy Advanced", "strategy_advanced"),
+            ("5. Schedules", "schedules"),
+            ("6. Launchpool / Airdrop", "launchpool"),
+            ("7. Patch / Snapshot", "patch_snapshot"),
+            ("8. Trades / Export", "logs"),
+            ("9. Settings / Security", "settings"),
+            ("10. PC + Google Drive Sync", "pc_drive_sync"),
+            ("11. Diagnostics / Tests", "diagnostics"),
+            ("12. Patch Manager UI", "patch_manager_ui"),
+            ("13. Demo Reset", "demo_reset"),
+            ("14. Fájlszerkezet", "file_structure"),
+            ("15. Extra fejlesztések", "extra_features"),
+            ("16. AI / MI kereskedés", "strategy"),
+            ("17. Multi-symbol Scanner", "scanner"),
+            ("18. Safety Guards", "safety_guards"),
+            ("19. Healthcheck", "healthcheck"),
+            ("20. Backtest / Replay", "backtest"),
+            ("21. Audit log", "audit_log"),
+            ("22. UI Mockup / Megjelenés", "ui_mockup"),
+            ("23. Fee / Adózás", "fee_tax"),
+            ("24. Profit-Hold AI", "profit_hold_ai"),
+        ]
+
+        for txt, scr in items:
+            b = button(txt, CARD, 20)
+            b.size_hint_y = None
+            b.height = 58
+            b.bind(on_press=lambda x, sc=scr: setattr(self.manager, "current", sc))
+            grid.add_widget(b)
+
+        sv = ScrollView()
+        sv.add_widget(grid)
+        root.add_widget(sv)
+
+        back = button("VISSZA", (.35,.35,.35,1), 24)
+        back.size_hint_y = .11
+        back.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
+        root.add_widget(back)
+        self.add_widget(root)
+
+class SkeletonScreen(Screen):
+    def __init__(self, title, body, **kw):
+        super().__init__(**kw)
+        root = BoxLayout(orientation="vertical", padding=18, spacing=12)
+        root.add_widget(Label(text=title, font_size=32, bold=True, color=(1,.75,0,1), size_hint_y=.15))
+        root.add_widget(Label(text=body, font_size=21))
+        b = button("VISSZA A MASTER LISTÁHOZ", (.35,.35,.35,1), 23)
+        b.bind(on_press=lambda x: setattr(self.manager, "current", "master"))
+        root.add_widget(b)
+        self.add_widget(root)
+
+
 class TextScreen(Screen):
     def __init__(self, title, body, **kw):
         super().__init__(**kw)
@@ -299,6 +366,27 @@ class AppMain(App):
         sm.add_widget(TextScreen("AI / STRATÉGIA", "Következő patch: AI coin választás, edge score, Normal/Hybrid/Sniper.", name="strategy"))
         sm.add_widget(TextScreen("NAPLÓ / EXPORT", "Trades lista, CSV export, profit report, audit napló.", name="logs"))
         sm.add_widget(TextScreen("HALADÓ", "Schedules, Launchpool/Airdrop, Patch Manager, Diagnostics.", name="advanced"))
+
+        sm.add_widget(MasterMenu(name="master"))
+        sm.add_widget(SkeletonScreen("TRADE SIMPLE", "Symbol, Risk/trade %, minimum nettó profit %, SL/TP ATR szorzók.\nBekötés később.", name="trade_simple"))
+        sm.add_widget(SkeletonScreen("STRATEGY ADVANCED", "SMA fast/slow, RSI buy/sell, breakout, maker/taker fee, BUY/SELL szabályok.\nBekötés később.", name="strategy_advanced"))
+        sm.add_widget(SkeletonScreen("SCHEDULES", "Snapshot 08:00, ár-trigger, automata state mentés, bővíthető szabályok.\nBekötés később.", name="schedules"))
+        sm.add_widget(SkeletonScreen("LAUNCHPOOL / AIRDROP", "Enabled, Min APR, Watchlist, Scan now, Status.\nBekötés később.", name="launchpool"))
+        sm.add_widget(SkeletonScreen("PATCH / SNAPSHOT", "Import ZIP, Export package.zip, Snapshot.zip, path-traversal védelem.\nBekötés később.", name="patch_snapshot"))
+        sm.add_widget(SkeletonScreen("PC + GOOGLE DRIVE SYNC", "Primary/Secondary, Push to PC, Drive backup/import/export.\nBekötés később.", name="pc_drive_sync"))
+        sm.add_widget(SkeletonScreen("DIAGNOSTICS / TESTS", "Routes, state, build/version, OpenAPI, toast visszajelzés.\nBekötés később.", name="diagnostics"))
+        sm.add_widget(SkeletonScreen("PATCH MANAGER UI", "Beépített UI, JSON validáció, piros/zöld jelzés, real-time mentés.\nBekötés később.", name="patch_manager_ui"))
+        sm.add_widget(SkeletonScreen("DEMO RESET", "Csak Demo: 100 USDC, P/L nullázás, pozíciók zárása, grafikon ürítés.\nBekötés később.", name="demo_reset"))
+        sm.add_widget(SkeletonScreen("FÁJLSZERKEZET", "main.py, autobot_core.py, settings, state, trades, logs, patch.sh.\nStruktúra később részletezve.", name="file_structure"))
+        sm.add_widget(SkeletonScreen("EXTRA FEJLESZTÉSEK", "Smart cooldown, volatility filter, max drawdown, auto parameter tuning.\nBekötés később.", name="extra_features"))
+        sm.add_widget(SkeletonScreen("SAFETY GUARDS", "Spread guard, slippage guard, API rate-limit, Panic Stop-All, Safe Mode.\nBekötés később.", name="safety_guards"))
+        sm.add_widget(SkeletonScreen("HEALTHCHECK", "Binance / Drive / E-mail / PC agent állapotjelzők, heartbeat, hibariasztás.\nBekötés később.", name="healthcheck"))
+        sm.add_widget(SkeletonScreen("BACKTEST / REPLAY", "CSV/JSON betöltés, winrate, profit factor, maxDD, replay gyertyánként.\nBekötés később.", name="backtest"))
+        sm.add_widget(SkeletonScreen("AUDIT LOG", "Manuális jóváhagyások, AI automata akciók indoklása, audit_log.csv.\nBekötés később.", name="audit_log"))
+        sm.add_widget(SkeletonScreen("UI MOCKUP / MEGJELENÉS", "Demo narancs, Live kék sci-fi, KPI kártyák, trend, top coin mini-kártyák.\nFinomítás később.", name="ui_mockup"))
+        sm.add_widget(SkeletonScreen("FEE / ADÓZÁS", "Maker/taker díjak nettó PnL-ben, opcionális HU 15% adózott profit nézet.\nNem adótanácsadás.", name="fee_tax"))
+        sm.add_widget(SkeletonScreen("PROFIT-HOLD AI", "Profit tartás: hold idő, trailing take profit, edge keep, cooldown.\nBekötés később.", name="profit_hold_ai"))
+
         return sm
 
 if __name__ == "__main__":
