@@ -568,6 +568,117 @@ class SectionScreen(Screen):
 
 
 
+class DemoCoreSettingsScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(text='[b]DEMO CORE SETTINGS[/b]\\n[size=14]Demo motor paraméterek[/size]', markup=True, size_hint_y=None, height=72)
+        root.add_widget(title)
+
+        grid = GridLayout(cols=2, spacing=8, size_hint_y=None, height=360)
+        self.inputs = {}
+
+        fields = [
+            ('risk_pct', 'Risk / trade %'),
+            ('max_positions', 'Max coin / pozíció'),
+            ('min_profit_pct', 'Min profit %'),
+            ('stop_loss_pct', 'Stop loss %'),
+            ('trailing_drop_pct', 'Trailing drop %'),
+            ('watchlist', 'Watchlist vesszővel'),
+        ]
+
+        for key, label in fields:
+            grid.add_widget(Label(text=label))
+            ti = TextInput(text='', multiline=False)
+            self.inputs[key] = ti
+            grid.add_widget(ti)
+
+        root.add_widget(grid)
+
+        self.info = Label(text='Beállítások betöltése...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+        root.add_widget(self.info)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=180, spacing=8)
+        b_load = Button(text='BETÖLTÉS')
+        b_save = Button(text='MENTÉS')
+        b_reset = Button(text='ALAPÉRTÉK')
+        b_back = Button(text='VISSZA')
+
+        b_load.bind(on_press=lambda x: self.load_values())
+        b_save.bind(on_press=lambda x: self.save_values())
+        b_reset.bind(on_press=lambda x: self.reset_defaults())
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_load, b_save, b_reset, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.load_values()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def load_values(self):
+        try:
+            st = demo_core.load_state()
+            cfg = st.get('settings', {})
+            for key, ti in self.inputs.items():
+                val = cfg.get(key, '')
+                if isinstance(val, list):
+                    ti.text = ','.join(val)
+                else:
+                    ti.text = str(val)
+            self.info.text = '[b]OK:[/b] Beállítások betöltve.'
+        except Exception as e:
+            self.info.text = '[b]HIBA:[/b] Betöltés sikertelen: ' + str(e)
+
+    def save_values(self):
+        try:
+            st = demo_core.load_state()
+            cfg = st.setdefault('settings', {})
+
+            cfg['risk_pct'] = float(self.inputs['risk_pct'].text.replace(',', '.'))
+            cfg['max_positions'] = int(float(self.inputs['max_positions'].text.replace(',', '.')))
+            cfg['min_profit_pct'] = float(self.inputs['min_profit_pct'].text.replace(',', '.'))
+            cfg['stop_loss_pct'] = float(self.inputs['stop_loss_pct'].text.replace(',', '.'))
+            cfg['trailing_drop_pct'] = float(self.inputs['trailing_drop_pct'].text.replace(',', '.'))
+
+            raw_watch = self.inputs['watchlist'].text.strip()
+            watch = []
+            for item in raw_watch.split(','):
+                sym = item.strip().upper()
+                if sym:
+                    if not sym.endswith('USDT'):
+                        sym = sym + 'USDT'
+                    watch.append(sym)
+            cfg['watchlist'] = watch or ['BTCUSDT', 'ETHUSDT', 'DOGEUSDT']
+
+            st['last_action'] = 'Demo settings mentve'
+            demo_core.save_state(st)
+            self.info.text = '[b]OK:[/b] Mentve. Új beállítások aktívak a következő ticknél.'
+        except Exception as e:
+            self.info.text = '[b]HIBA:[/b] Mentés sikertelen: ' + str(e)
+
+    def reset_defaults(self):
+        try:
+            st = demo_core.load_state()
+            st['settings'] = dict(demo_core.DEFAULT_STATE['settings'])
+            st['last_action'] = 'Demo settings alapértékre állítva'
+            demo_core.save_state(st)
+            self.load_values()
+            self.info.text = '[b]OK:[/b] Alapértékek visszaállítva.'
+        except Exception as e:
+            self.info.text = '[b]HIBA:[/b] Reset sikertelen: ' + str(e)
+
+
 class DemoCoreScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -795,7 +906,7 @@ class AppMain(App):
 
         sm.add_widget(TradeSimpleScreen(name="trade_simple"))
         sm.add_widget(SkeletonScreen("ALAP BEÁLLÍTÁSOK", "Alap pénznem, nyelv, téma, értesítések, rendszer működés.\nBekötés később.", name="settings_base"))
-        sm.add_widget(SkeletonScreen("DEMO BEÁLLÍTÁSOK", "Demo kezdő tőke, max coin, risk %, min profit %, reset szabályok.\nBekötés később.", name="demo_settings"))
+        sm.add_widget(DemoCoreSettingsScreen(name="demo_settings"))
         sm.add_widget(SkeletonScreen("LIVE BEÁLLÍTÁSOK", "Live API mód, max kitettség, safety guard, slippage, stop-all.\nBekötés később.", name="live_settings"))
         sm.add_widget(SkeletonScreen("APP JELSZÓ / PIN", "Belépési PIN, admin mód, később biometria.\nBekötés később.", name="security_pin"))
         sm.add_widget(SkeletonScreen("BINANCE API KULCS", "API key / secret mentés, read-only ellenőrzés, live engedély később.\nBekötés később.", name="security_api"))
