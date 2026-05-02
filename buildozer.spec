@@ -2,27 +2,24 @@
 
 title = Binance Autobot
 package.name = binanceautobot
-package.domain = org.gasparzoli
+package.domain = org.test
 
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,json,txt
+source.include_exts = py,png,jpg,kv,atlas
 
-version = 0.2.5
+version = 0.2
 
 requirements = python3,kivy
 
 orientation = portrait
+
 fullscreen = 0
 
-android.permissions = INTERNET
-android.api = 35
-android.minapi = 23
-android.ndk = 25b
-android.accept_sdk_license = True
-android.numeric_version = 24
+android.api = 31
+android.minapi = 21
+android.ndk = 23b
 
-# Ha van icon.png a projekt gyökérben, ezt használja
-icon.filename = icon.png
+android.permissions = INTERNET
 
 [buildozer]
 
