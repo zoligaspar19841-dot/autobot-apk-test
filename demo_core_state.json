@@ -1,0 +1,46 @@
+{
+  "base": "USDC",
+  "balance": 81.0,
+  "positions": {
+    "BTCUSDT": {
+      "qty": 0.0001267180989088671,
+      "avg": 78836.41,
+      "peak": 78836.41,
+      "opened_ts": 1777758378
+    },
+    "ETHUSDT": {
+      "qty": 0.0038604882824240655,
+      "avg": 2328.98,
+      "peak": 2328.98,
+      "opened_ts": 1777758380
+    }
+  },
+  "realized_pnl": 0.0,
+  "running": false,
+  "settings": {
+    "risk_pct": 10.0,
+    "max_positions": 3,
+    "min_profit_pct": 10.0,
+    "new_coin_min_profit_pct": 5.0,
+    "trailing_drop_pct": 1.2,
+    "stop_loss_pct": 2.0,
+    "fee_pct": 0.1,
+    "sma_fast": 9,
+    "sma_slow": 21,
+    "watchlist": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "DOGEUSDT"
+    ],
+    "execution_mode": "AUTO",
+    "hold_profit_minutes": 30,
+    "time_in_trend_minutes_max": 240,
+    "cooldown_after_exit_min": 10,
+    "profit_erosion_guard_pct": 1.5
+  },
+  "last_action": "HOLD BTCUSDT PnL=-0.10% age=26.3m | HOLD ETHUSDT PnL=-0.15% age=26.3m",
+  "safe_mode": false,
+  "last_tick_ts": 1777759959,
+  "last_heartbeat_ts": 1777759959,
+  "cooldowns": {}
+}

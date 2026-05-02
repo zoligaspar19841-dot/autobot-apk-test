@@ -740,6 +740,10 @@ class DemoCoreSettingsScreen(Screen):
             ('trailing_drop_pct', 'Trailing drop %'),
             ('watchlist', 'Watchlist vesszővel'),
             ('execution_mode', 'Execution mode AUTO/MANUAL/OFF'),
+            ('hold_profit_minutes', 'Hold profit minutes'),
+            ('time_in_trend_minutes_max', 'Max time in trend min'),
+            ('cooldown_after_exit_min', 'Cooldown after exit min'),
+            ('profit_erosion_guard_pct', 'Profit erosion guard %'),
         ]
 
         for key, label in fields:
@@ -818,6 +822,10 @@ class DemoCoreSettingsScreen(Screen):
             if mode not in ['AUTO', 'MANUAL', 'OFF']:
                 mode = 'MANUAL'
             cfg['execution_mode'] = mode
+            cfg['hold_profit_minutes'] = float(self.inputs['hold_profit_minutes'].text.replace(',', '.'))
+            cfg['time_in_trend_minutes_max'] = float(self.inputs['time_in_trend_minutes_max'].text.replace(',', '.'))
+            cfg['cooldown_after_exit_min'] = float(self.inputs['cooldown_after_exit_min'].text.replace(',', '.'))
+            cfg['profit_erosion_guard_pct'] = float(self.inputs['profit_erosion_guard_pct'].text.replace(',', '.'))
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -928,6 +936,10 @@ class DemoCoreScreen(Screen):
         lines.append(f'Max positions: {settings.get("max_positions")}')
         lines.append(f'Min profit: {settings.get("min_profit_pct")}%')
         lines.append(f'Watchlist: {", ".join(settings.get("watchlist", []))}')
+        lines.append(f'Hold profit: {settings.get("hold_profit_minutes")} min')
+        lines.append(f'Max trend time: {settings.get("time_in_trend_minutes_max")} min')
+        lines.append(f'Exit cooldown: {settings.get("cooldown_after_exit_min")} min')
+        lines.append(f'Profit erosion guard: {settings.get("profit_erosion_guard_pct")}%')
         if extra:
             lines.append('')
             lines.append('[b]Most futott:[/b]')

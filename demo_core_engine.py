@@ -13,10 +13,20 @@ TRADE_LOG = os.path.join(LOG_DIR, "demo_core_trades.csv")
 AUDIT_LOG = os.path.join(LOG_DIR, "demo_core_audit.csv")
 os.makedirs(LOG_DIR, exist_ok=True)
 
+
+PROFIT_HOLD_DEFAULTS = {
+    "hold_profit_minutes": 30,
+    "time_in_trend_minutes_max": 240,
+    "cooldown_after_exit_min": 10,
+    "profit_erosion_guard_pct": 1.5,
+    "execution_mode": "AUTO",
+}
+
 DEFAULT_STATE = {
     "base": "USDC",
     "balance": 100.0,
     "positions": {},
+    "cooldowns": {},
     "realized_pnl": 0.0,
     "running": False,
     "safe_mode": False,
@@ -31,12 +41,43 @@ DEFAULT_STATE = {
         "sma_fast": 9,
         "sma_slow": 21,
         "watchlist": ["BTCUSDT", "ETHUSDT", "DOGEUSDT"],
-        "execution_mode": "AUTO"
+        "execution_mode": "AUTO",
+        "hold_profit_minutes": 30,
+        "time_in_trend_minutes_max": 240,
+        "cooldown_after_exit_min": 10,
+        "profit_erosion_guard_pct": 1.5
     },
     "last_action": "Demo core engine ready",
     "last_tick_ts": 0,
     "last_heartbeat_ts": 0
 }
+
+
+
+def merge_defaults(state):
+    changed = False
+
+    for k, v in DEFAULT_STATE.items():
+        if k not in state or state.get(k) is None:
+            state[k] = v
+            changed = True
+
+    state.setdefault("settings", {})
+    state.setdefault("positions", {})
+    state.setdefault("cooldowns", {})
+
+    for k, v in DEFAULT_STATE.get("settings", {}).items():
+        if k not in state["settings"] or state["settings"].get(k) is None:
+            state["settings"][k] = v
+            changed = True
+
+    for k, v in PROFIT_HOLD_DEFAULTS.items():
+        if k not in state["settings"] or state["settings"].get(k) is None:
+            state["settings"][k] = v
+            changed = True
+
+    return state, changed
+
 
 def load_state():
     if not os.path.exists(STATE_FILE):
@@ -167,6 +208,7 @@ def sell(state, symbol, note="SELL"):
 
     state["balance"] += net
     state["realized_pnl"] += pnl
+    state.setdefault("cooldowns", {})[symbol] = int(time.time())
     state["positions"].pop(symbol, None)
 
     log_trade([int(time.time()), symbol, "SELL", qty, p, pnl, note])
@@ -198,6 +240,10 @@ def tick():
     min_profit = float(settings.get("min_profit_pct", 10.0))
     trailing_drop = float(settings.get("trailing_drop_pct", 1.2))
     stop_loss = float(settings.get("stop_loss_pct", 2.0))
+    hold_profit_minutes = float(settings.get("hold_profit_minutes", 30))
+    time_in_trend_minutes_max = float(settings.get("time_in_trend_minutes_max", 240))
+    cooldown_after_exit_min = float(settings.get("cooldown_after_exit_min", 10))
+    profit_erosion_guard_pct = float(settings.get("profit_erosion_guard_pct", 1.5))
 
     actions = []
 
@@ -212,12 +258,18 @@ def tick():
         drop_from_peak = ((float(pos["peak"]) - p) / float(pos["peak"])) * 100 if pos["peak"] else 0
         sig, _ = signal(symbol, settings)
 
+        opened_ts = int(pos.get("opened_ts", int(time.time())) or int(time.time()))
+        age_min = max(0.0, (time.time() - opened_ts) / 60.0)
+        min_hold_ok = age_min >= hold_profit_minutes
+        max_time_reached = age_min >= time_in_trend_minutes_max and pnl_pct > 0
+        erosion_hit = drop_from_peak >= profit_erosion_guard_pct and pnl_pct > 0
+
         if pnl_pct <= -stop_loss:
             actions.append(sell(state, symbol, f"STOP LOSS {pnl_pct:.2f}%"))
-        elif pnl_pct >= min_profit and (drop_from_peak >= trailing_drop or sig == "SELL"):
-            actions.append(sell(state, symbol, f"PROFIT HOLD EXIT {pnl_pct:.2f}%"))
+        elif pnl_pct >= min_profit and ((min_hold_ok and (drop_from_peak >= trailing_drop or sig == "SELL")) or max_time_reached or erosion_hit):
+            actions.append(sell(state, symbol, f"PROFIT HOLD EXIT {pnl_pct:.2f}% age={age_min:.1f}m peak_drop={drop_from_peak:.2f}%"))
         else:
-            actions.append(f"HOLD {symbol} PnL={pnl_pct:.2f}%")
+            actions.append(f"HOLD {symbol} PnL={pnl_pct:.2f}% age={age_min:.1f}m")
 
     # 2) Új belépés, ha van hely és nincs safe mode
     open_count = len(state["positions"])
@@ -229,6 +281,14 @@ def tick():
         for symbol in settings.get("watchlist", []):
             if symbol in state["positions"]:
                 continue
+
+            last_exit = int(state.get("cooldowns", {}).get(symbol, 0) or 0)
+            if cooldown_after_exit_min > 0 and last_exit:
+                cooldown_left = cooldown_after_exit_min * 60 - (time.time() - last_exit)
+                if cooldown_left > 0:
+                    actions.append(f"COOLDOWN {symbol}: {int(cooldown_left)} sec")
+                    continue
+
             sig, _ = signal(symbol, settings)
             if sig == "BUY" and len(state["positions"]) < max_positions:
                 if execution_mode == "MANUAL":
