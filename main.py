@@ -1,5 +1,6 @@
 from kivy.app import App
 from kivy.core.window import Window
+from kivy.clock import Clock
 from kivy.graphics import Color, RoundedRectangle, Line
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.boxlayout import BoxLayout
@@ -7,205 +8,158 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.widget import Widget
-import json, os, random
+import requests, json, os, random
 
 STATE_FILE = "state.json"
 
 def load_state():
     if os.path.exists(STATE_FILE):
         try:
-            return json.load(open(STATE_FILE, "r", encoding="utf-8"))
-        except Exception:
+            return json.load(open(STATE_FILE))
+        except:
             pass
     return {"mode":"demo","balance":100.0,"profit":0.0,"running":False}
 
-def save_state(s):
-    json.dump(s, open(STATE_FILE, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-
 class Card(BoxLayout):
-    def __init__(self, bg=(0.12,0.12,0.12,1), radius=22, **kw):
+    def __init__(self, bg=(0.1,0.1,0.1,1), **kw):
         super().__init__(**kw)
         self.bg = bg
-        self.radius = radius
-        self.padding = 14
-        self.spacing = 8
-        self.bind(pos=self.redraw, size=self.redraw)
+        self.padding = 12
+        self.bind(pos=self.draw, size=self.draw)
 
-    def redraw(self, *a):
+    def draw(self, *a):
         self.canvas.before.clear()
         with self.canvas.before:
             Color(*self.bg)
-            RoundedRectangle(pos=self.pos, size=self.size, radius=[self.radius])
+            RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
 
-class TrendChart(Widget):
-    def __init__(self, color=(1,0.75,0,1), **kw):
+class Trend(Widget):
+    def __init__(self, color=(1,0.7,0,1), **kw):
         super().__init__(**kw)
         self.color = color
-        self.values = [random.uniform(40,70) for _ in range(45)]
+        self.data = [random.uniform(40,60) for _ in range(40)]
         self.bind(pos=self.draw, size=self.draw)
+
+    def update(self, val):
+        self.data.append(val)
+        if len(self.data) > 40:
+            self.data.pop(0)
+        self.draw()
 
     def draw(self, *a):
         self.canvas.clear()
         with self.canvas:
-            Color(0.04,0.05,0.06,1)
-            RoundedRectangle(pos=self.pos, size=self.size, radius=[18])
-            Color(0.16,0.18,0.20,1)
-            for i in range(1,5):
-                y = self.y + self.height*i/5
-                Line(points=[self.x+12,y,self.x+self.width-12,y], width=1)
-            mn, mx = min(self.values), max(self.values)
-            span = max(mx-mn, 0.001)
-            pts=[]
-            for i,v in enumerate(self.values):
-                x = self.x + 15 + i*(self.width-30)/(len(self.values)-1)
-                y = self.y + 15 + ((v-mn)/span)*(self.height-30)
-                pts += [x,y]
-            Color(*self.color)
-            Line(points=pts, width=2)
-
-def menu_button(text, color=(0.18,0.18,0.18,1)):
-    return Button(text=text, font_size=21, bold=True, background_color=color)
-
-class MainMenu(Screen):
-    def __init__(self, **kw):
-        super().__init__(**kw)
-        root = BoxLayout(orientation="vertical", padding=14, spacing=12)
-
-        header = Card(bg=(0.03,0.03,0.03,1), orientation="vertical", size_hint_y=.20)
-        header.add_widget(Label(text="BINANCE AUTOBOT", font_size=28, bold=True, color=(1,.75,0,1)))
-        header.add_widget(Label(text="Demo / Live külön menü • Binance adat • AI / stratégia • export", font_size=15))
-        root.add_widget(header)
-
-        main = GridLayout(cols=2, spacing=12, size_hint_y=.42)
-        buttons = [
-            ("DEMO\nNarancs / sárga dashboard", "demo_menu", (1,.50,0,1)),
-            ("LIVE\nKék sci-fi dashboard", "live_menu", (0,.28,.85,1)),
-            ("BIZTONSÁG / API", "security", (.16,.16,.16,1)),
-            ("BEÁLLÍTÁSOK", "settings", (.16,.16,.16,1)),
-            ("AI / STRATÉGIA", "strategy", (.16,.16,.16,1)),
-            ("NAPLÓ / EXPORT", "logs", (.16,.16,.16,1)),
-        ]
-        for txt, scr, col in buttons:
-            b = menu_button(txt, col)
-            b.bind(on_press=lambda x, s=scr: setattr(self.manager, "current", s))
-            main.add_widget(b)
-        root.add_widget(main)
-
-        adv = menu_button("HALADÓ / SCHEDULES / DIAGNOSZTIKA", (.12,.12,.12,1))
-        adv.bind(on_press=lambda x: setattr(self.manager, "current", "advanced"))
-        root.add_widget(adv)
-
-        self.add_widget(root)
-
-class ModeMenu(Screen):
-    def __init__(self, title, mode, color, **kw):
-        super().__init__(**kw)
-        self.mode = mode
-        root = BoxLayout(orientation="vertical", padding=16, spacing=12)
-
-        top = Card(bg=color, orientation="vertical", size_hint_y=.18)
-        top.add_widget(Label(text=title, font_size=27, bold=True))
-        top.add_widget(Label(text="Külön menü, külön beállítások, külön működés", font_size=15))
-        root.add_widget(top)
-
-        grid = GridLayout(cols=1, spacing=10, size_hint_y=.72)
-        items = [
-            (f"{mode.upper()} DASHBOARD", f"{mode}_dashboard"),
-            (f"{mode.upper()} TRADING", f"{mode}_trading"),
-            (f"{mode.upper()} BEÁLLÍTÁSOK", f"{mode}_settings"),
-            ("DEMO RESET" if mode=="demo" else "API STÁTUSZ / FIGYELMEZTETÉS", f"{mode}_extra"),
-            ("VISSZA A FŐMENÜBE", "main"),
-        ]
-        for txt, scr in items:
-            b = menu_button(txt, color if txt.startswith(mode.upper()) else (.22,.22,.22,1))
-            b.bind(on_press=lambda x, s=scr: setattr(self.manager, "current", s))
-            grid.add_widget(b)
-        root.add_widget(grid)
-        self.add_widget(root)
+            Color(0.05,0.05,0.05,1)
+            RoundedRectangle(pos=self.pos, size=self.size, radius=[15])
+            if len(self.data) > 1:
+                mn, mx = min(self.data), max(self.data)
+                span = max(mx-mn,0.001)
+                pts=[]
+                for i,v in enumerate(self.data):
+                    x = self.x + i*(self.width/(len(self.data)-1))
+                    y = self.y + ((v-mn)/span)*self.height
+                    pts += [x,y]
+                Color(*self.color)
+                Line(points=pts, width=2)
 
 class Dashboard(Screen):
-    def __init__(self, title, mode, theme, line_color, **kw):
+    def __init__(self, mode, color, **kw):
         super().__init__(**kw)
         self.mode = mode
         self.state = load_state()
+
         root = BoxLayout(orientation="vertical", padding=10, spacing=10)
 
-        top = Card(bg=theme, orientation="vertical", size_hint_y=.15)
-        top.add_widget(Label(text=title, font_size=25, bold=True))
-        top.add_widget(Label(text=f"Mód: {mode.upper()} | Bot: {'FUT' if self.state.get('running') else 'ÁLL'}", font_size=15))
-        root.add_widget(top)
+        # HEADER
+        head = Card(bg=color, size_hint_y=.15)
+        self.title = Label(text=f"{mode.upper()} DASHBOARD", font_size=32, bold=True)
+        head.add_widget(self.title)
+        root.add_widget(head)
 
-        root.add_widget(TrendChart(color=line_color, size_hint_y=.28))
+        # TREND
+        self.trend = Trend(color=(1,0.7,0,1) if mode=="demo" else (0,0.8,1,1), size_hint_y=.25)
+        root.add_widget(self.trend)
 
-        kpis = GridLayout(cols=2, spacing=10, size_hint_y=.30)
-        for name, val in [
-            ("Total Equity", "$100.00"),
-            ("Realized PnL", "$0.00"),
-            ("USDC Free", "100.00"),
-            ("USDT Profit", "0.00"),
-        ]:
-            c = Card(bg=(1,.60,.12,.38) if mode=="demo" else (.12,.38,.85,.38), orientation="vertical")
-            c.add_widget(Label(text=val, font_size=26, bold=True))
-            c.add_widget(Label(text=name, font_size=16))
-            kpis.add_widget(c)
-        root.add_widget(kpis)
+        # KPI
+        kpi = GridLayout(cols=2, spacing=10, size_hint_y=.25)
 
-        controls = GridLayout(cols=2, spacing=10, size_hint_y=.22)
-        for txt, col in [
-            ("START BOT", (.1,.65,.22,1)),
-            ("STOP BOT", (.85,.08,.08,1)),
-            ("RESET / CHECK", (1,.55,0,1)),
-            ("VISSZA", (.25,.25,.25,1)),
-        ]:
-            b = menu_button(txt, col)
-            if txt == "VISSZA":
-                b.bind(on_press=lambda x: setattr(self.manager, "current", f"{self.mode}_menu"))
-            controls.add_widget(b)
-        root.add_widget(controls)
+        self.price = Label(text="BTC: ...", font_size=28)
+        self.pnl = Label(text="PnL: 0", font_size=28)
+        self.usdc = Label(text="USDC: 100", font_size=28)
+        self.profit = Label(text="Profit: 0", font_size=28)
 
+        for w in [self.price,self.pnl,self.usdc,self.profit]:
+            c = Card(bg=(0.2,0.2,0.2,1))
+            c.add_widget(w)
+            kpi.add_widget(c)
+
+        root.add_widget(kpi)
+
+        # COIN LISTA
+        self.coins = Label(text="BTC / ETH / DOGE", font_size=24, size_hint_y=.15)
+        root.add_widget(self.coins)
+
+        # BUTTONS
+        btns = GridLayout(cols=2, size_hint_y=.20, spacing=10)
+
+        start = Button(text="START", font_size=24, background_color=(0,0.7,0,1))
+        stop = Button(text="STOP", font_size=24, background_color=(0.8,0,0,1))
+        back = Button(text="VISSZA", font_size=24)
+
+        start.bind(on_press=lambda x: self.set_run(True))
+        stop.bind(on_press=lambda x: self.set_run(False))
+        back.bind(on_press=lambda x: setattr(self.manager,"current","main"))
+
+        for b in [start,stop,back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
         self.add_widget(root)
 
-class TextScreen(Screen):
-    def __init__(self, title, body, back="main", **kw):
+        Clock.schedule_interval(self.update_data, 3)
+
+    def set_run(self,val):
+        self.state["running"]=val
+
+    def update_data(self,dt):
+        try:
+            r = requests.get("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT", timeout=5).json()
+            price = float(r["price"])
+
+            self.price.text = f"BTC: {price:.0f}"
+            self.trend.update(price)
+
+            self.coins.text = "BTC ETH DOGE"
+        except:
+            pass
+
+class Main(Screen):
+    def __init__(self, **kw):
         super().__init__(**kw)
-        self.back = back
-        root = BoxLayout(orientation="vertical", padding=18, spacing=12)
-        root.add_widget(Label(text=title, font_size=25, bold=True, color=(1,.75,0,1), size_hint_y=.16))
-        root.add_widget(Label(text=body, font_size=18, halign="center"))
-        b = menu_button("VISSZA", (.25,.25,.25,1))
-        b.bind(on_press=lambda x: setattr(self.manager, "current", self.back))
-        root.add_widget(b)
+        root = BoxLayout(orientation="vertical", spacing=12, padding=12)
+
+        title = Label(text="BINANCE AUTOBOT", font_size=36)
+        root.add_widget(title)
+
+        demo = Button(text="DEMO", font_size=30, background_color=(1,0.5,0,1))
+        live = Button(text="LIVE", font_size=30, background_color=(0,0.3,1,1))
+
+        demo.bind(on_press=lambda x: setattr(self.manager,"current","demo"))
+        live.bind(on_press=lambda x: setattr(self.manager,"current","live"))
+
+        root.add_widget(demo)
+        root.add_widget(live)
+
         self.add_widget(root)
 
-class MyApp(App):
-    title = "Binance Autobot"
-
+class AppMain(App):
     def build(self):
-        Window.clearcolor = (0,0,0,1)
+        Window.clearcolor=(0,0,0,1)
         sm = ScreenManager()
-
-        sm.add_widget(MainMenu(name="main"))
-        sm.add_widget(ModeMenu("DEMO MÓD", "demo", (1,.50,0,1), name="demo_menu"))
-        sm.add_widget(ModeMenu("LIVE MÓD", "live", (0,.25,.80,1), name="live_menu"))
-
-        sm.add_widget(Dashboard("DEMO DASHBOARD", "demo", (1,.48,0,1), (1,.75,0,1), name="demo_dashboard"))
-        sm.add_widget(Dashboard("LIVE DASHBOARD", "live", (.04,.18,.48,1), (0,.85,1,1), name="live_dashboard"))
-
-        sm.add_widget(TextScreen("DEMO TRADING", "Itt jön a demo vétel/eladás, élő Binance árakkal, de teszt pénzzel.", "demo_menu", name="demo_trading"))
-        sm.add_widget(TextScreen("DEMO BEÁLLÍTÁSOK", "Risk/trade %, min. profit %, stratégia, max pozíció, demo kezdő tőke.", "demo_menu", name="demo_settings"))
-        sm.add_widget(TextScreen("DEMO RESET", "Demo egyenleg 100 USDC-re, profit és pozíciók nullázása.", "demo_menu", name="demo_extra"))
-
-        sm.add_widget(TextScreen("LIVE TRADING", "Éles kereskedés csak API kulcs után, külön figyelmeztetéssel.", "live_menu", name="live_trading"))
-        sm.add_widget(TextScreen("LIVE BEÁLLÍTÁSOK", "API mód, max kitettség, safety guard, slippage, stop-all.", "live_menu", name="live_settings"))
-        sm.add_widget(TextScreen("API STÁTUSZ", "Binance API kulcs még nincs bekötve. Éles order tiltva.", "live_menu", name="live_extra"))
-
-        sm.add_widget(TextScreen("BIZTONSÁG / API", "App jelszó, PIN, Binance API kulcs, e-mail, titkosítás.", "main", name="security"))
-        sm.add_widget(TextScreen("BEÁLLÍTÁSOK", "Közös beállítások: nyelv, téma, alap pénznem, értesítések.", "main", name="settings"))
-        sm.add_widget(TextScreen("AI / STRATÉGIA", "Normal / Hybrid / Sniper, AI Auto / Manual / Off, RSI/SMA/ATR.", "main", name="strategy"))
-        sm.add_widget(TextScreen("NAPLÓ / EXPORT", "Trades lista, CSV export, profit report, audit napló.", "main", name="logs"))
-        sm.add_widget(TextScreen("HALADÓ", "Schedules, Launchpool/Airdrop, Patch Manager, Diagnostics.", "main", name="advanced"))
-
+        sm.add_widget(Main(name="main"))
+        sm.add_widget(Dashboard("demo",(1,0.4,0,1),name="demo"))
+        sm.add_widget(Dashboard("live",(0,0.2,0.5,1),name="live"))
         return sm
 
 if __name__ == "__main__":
-    MyApp().run()
+    AppMain().run()
