@@ -5,3 +5,14 @@ apk_out/
 __pycache__/
 buildozer_full.log
 apk_files.txt
+
+# Autobot local backups
+*.bak_*
+*.bak_identity_*
+.buildozer/
+bin/
+apk_out/
+*.pyc
+__pycache__/
+buildozer_full.log
+apk_files.txt
