@@ -109,7 +109,11 @@
     "admin_must_change_default": true,
     "patch_manager_enabled": true,
     "patch_require_admin": true,
-    "patch_last_queue_ts": 1777764338
+    "patch_last_queue_ts": 1777764338,
+    "approval_required_for_manual": true,
+    "approval_required_for_live": true,
+    "dry_run_executor_enabled": true,
+    "executor_last_action_ts": 1777764444
   },
   "last_action": "Admin logout",
   "safe_mode": false,

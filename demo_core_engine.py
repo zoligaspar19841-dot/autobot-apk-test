@@ -1,4 +1,4 @@
-APP_VERSION = "0.3.3-demo-core"
+APP_VERSION = "0.3.4-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -55,6 +55,14 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+APPROVAL_EXECUTOR_DEFAULTS = {
+    "approval_required_for_manual": True,
+    "approval_required_for_live": True,
+    "dry_run_executor_enabled": True,
+    "executor_last_action_ts": 0,
+}
 
 ADMIN_SECURITY_DEFAULTS = {
     "admin_username": "admin",
@@ -243,6 +251,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "APPROVAL_EXECUTOR_DEFAULTS" in globals():
+        for k, v in APPROVAL_EXECUTOR_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -2726,6 +2740,206 @@ def read_patch_queue(limit=20):
                 pass
 
     return {"ok": True, "items": items[-int(limit or 20):], "queue_file": qf}
+
+
+
+def _approval_file():
+    ensure_log_dir()
+    return os.path.join(LOG_DIR, "approvals.jsonl")
+
+
+def create_approval_request(action, symbol, side, amount, reason="", data=None):
+    """
+    Manuális / AI / Live előtti approval request.
+    Ez még NEM kereskedik.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    req = {
+        "id": "APR-" + str(int(time.time())) + "-" + str(len(read_approval_queue().get("items", [])) + 1),
+        "ts": int(time.time()),
+        "status": "PENDING",
+        "action": str(action or "TRADE_REQUEST"),
+        "symbol": str(symbol or "").upper(),
+        "side": str(side or "").upper(),
+        "amount": float(amount or 0),
+        "reason": str(reason or ""),
+        "data": data or {},
+        "execution_mode": settings.get("execution_mode", "AUTO"),
+        "live_mode_enabled": settings.get("live_mode_enabled", False),
+        "dry_run": True,
+    }
+
+    with open(_approval_file(), "a", encoding="utf-8") as f:
+        f.write(json.dumps(req, ensure_ascii=False) + "\n")
+
+    audit_event("APPROVAL_CREATED", "Approval request created", req)
+    state["last_action"] = "Approval pending: " + req["id"]
+    save_state(state)
+
+    return {"ok": True, "request": req}
+
+
+def read_approval_queue(limit=50):
+    path = _approval_file()
+    if not os.path.exists(path):
+        return {"ok": True, "items": [], "path": path}
+
+    items = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            try:
+                items.append(json.loads(line))
+            except Exception:
+                pass
+
+    return {"ok": True, "items": items[-int(limit or 50):], "path": path}
+
+
+def _rewrite_approval_queue(items):
+    path = _approval_file()
+    with open(path, "w", encoding="utf-8") as f:
+        for item in items:
+            f.write(json.dumps(item, ensure_ascii=False) + "\n")
+
+
+def update_approval_status(request_id, status, note=""):
+    adm = admin_status()
+    if not adm.get("admin_active"):
+        return {"ok": False, "error": "Admin login szükséges."}
+
+    q = read_approval_queue(500)
+    items = q.get("items", [])
+
+    found = None
+    for item in items:
+        if item.get("id") == request_id:
+            item["status"] = status
+            item["review_ts"] = int(time.time())
+            item["review_note"] = str(note or "")
+            found = item
+            break
+
+    if not found:
+        return {"ok": False, "error": "Approval ID nem található."}
+
+    _rewrite_approval_queue(items)
+    audit_event("APPROVAL_" + str(status).upper(), "Approval státusz módosítva", found)
+
+    return {"ok": True, "request": found}
+
+
+def approve_latest_pending(note=""):
+    q = read_approval_queue(500)
+    pending = [x for x in q.get("items", []) if x.get("status") == "PENDING"]
+    if not pending:
+        return {"ok": False, "error": "Nincs pending approval."}
+    return update_approval_status(pending[-1].get("id"), "APPROVED", note)
+
+
+def reject_latest_pending(note=""):
+    q = read_approval_queue(500)
+    pending = [x for x in q.get("items", []) if x.get("status") == "PENDING"]
+    if not pending:
+        return {"ok": False, "error": "Nincs pending approval."}
+    return update_approval_status(pending[-1].get("id"), "REJECTED", note)
+
+
+def dry_run_execute_request(req):
+    """
+    Dry-run executor:
+    - nem hív Binance API-t
+    - nem küld valódi megbízást
+    - csak naplózza, hogy mit tenne
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if not bool(settings.get("dry_run_executor_enabled", True)):
+        return {"ok": False, "executed": False, "error": "Dry-run executor kikapcsolva."}
+
+    side = str(req.get("side", "")).upper()
+    symbol = str(req.get("symbol", "")).upper()
+    amount = float(req.get("amount", 0) or 0)
+
+    if side not in ["BUY", "SELL"]:
+        return {"ok": False, "executed": False, "error": "Csak BUY/SELL támogatott."}
+
+    if not symbol:
+        return {"ok": False, "executed": False, "error": "Symbol hiányzik."}
+
+    if amount <= 0:
+        return {"ok": False, "executed": False, "error": "Amount <= 0."}
+
+    live = binance_live_status()
+    trade_guard = trade_screen_check(symbol, side, settings) if "trade_screen_check" in globals() else {"ok": True}
+
+    out = {
+        "ok": True,
+        "executed": True,
+        "dry_run": True,
+        "symbol": symbol,
+        "side": side,
+        "amount": amount,
+        "live_ready": live.get("ready_for_live"),
+        "trade_guard_ok": trade_guard.get("ok"),
+        "message": "DRY-RUN: valódi Binance megbízás NEM lett elküldve.",
+        "request_id": req.get("id"),
+    }
+
+    settings["executor_last_action_ts"] = int(time.time())
+    state["last_action"] = "Dry-run executor: " + side + " " + symbol
+    save_state(state)
+
+    audit_event("DRY_RUN_EXECUTOR", "Dry-run executor", out)
+
+    return out
+
+
+def execute_latest_approved_dry_run():
+    adm = admin_status()
+    if not adm.get("admin_active"):
+        return {"ok": False, "executed": False, "error": "Admin login szükséges."}
+
+    q = read_approval_queue(500)
+    approved = [x for x in q.get("items", []) if x.get("status") == "APPROVED"]
+
+    if not approved:
+        return {"ok": False, "executed": False, "error": "Nincs approved request."}
+
+    req = approved[-1]
+    res = dry_run_execute_request(req)
+
+    items = q.get("items", [])
+    for item in items:
+        if item.get("id") == req.get("id"):
+            item["status"] = "DRY_RUN_EXECUTED" if res.get("ok") else "EXECUTION_ERROR"
+            item["execute_ts"] = int(time.time())
+            item["execute_result"] = res
+            break
+
+    _rewrite_approval_queue(items)
+
+    return res
+
+
+def approval_executor_status():
+    state = load_state()
+    settings = state.get("settings", {})
+    q = read_approval_queue(500)
+    items = q.get("items", [])
+
+    return {
+        "ok": True,
+        "approval_required_for_manual": settings.get("approval_required_for_manual", True),
+        "approval_required_for_live": settings.get("approval_required_for_live", True),
+        "dry_run_executor_enabled": settings.get("dry_run_executor_enabled", True),
+        "pending_count": len([x for x in items if x.get("status") == "PENDING"]),
+        "approved_count": len([x for x in items if x.get("status") == "APPROVED"]),
+        "executed_count": len([x for x in items if x.get("status") == "DRY_RUN_EXECUTED"]),
+        "last_items": items[-10:],
+    }
 
 
 if __name__ == "__main__":

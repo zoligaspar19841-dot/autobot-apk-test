@@ -579,6 +579,117 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreApprovalExecutorScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]APPROVAL / DRY-RUN EXECUTOR[/b]\n[size=14]Jóváhagyás + száraz futtatás, NEM live order[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        ))
+
+        self.info = Label(text='Approval státusz...', markup=True, halign='left', valign='top', size_hint_y=None, height=260)
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+        root.add_widget(self.info)
+
+        self.symbol = TextInput(text='BTCUSDT', hint_text='symbol', multiline=False, size_hint_y=None, height=44)
+        self.side = TextInput(text='BUY', hint_text='BUY/SELL', multiline=False, size_hint_y=None, height=44)
+        self.amount = TextInput(text='10', hint_text='amount', multiline=False, size_hint_y=None, height=44)
+
+        root.add_widget(self.symbol)
+        root.add_widget(self.side)
+        root.add_widget(self.amount)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+
+        buttons = [
+            ('STATUS', self.refresh),
+            ('CREATE REQUEST', self.create_request),
+            ('APPROVE LATEST', self.approve_latest),
+            ('REJECT LATEST', self.reject_latest),
+            ('DRY-RUN EXECUTE', self.execute_dry),
+            ('ADMIN', lambda: self.manager.go_to('admin')),
+            ('SETTINGS', lambda: self.manager.go_to('demo_settings')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self):
+        try:
+            st = demo_core.approval_executor_status()
+            lines = []
+            lines.append('[b]Approval / Executor státusz[/b]')
+            lines.append(f"Pending: {st.get('pending_count')}")
+            lines.append(f"Approved: {st.get('approved_count')}")
+            lines.append(f"Dry-run executed: {st.get('executed_count')}")
+            lines.append(f"Dry-run enabled: {st.get('dry_run_executor_enabled')}")
+            lines.append('')
+            lines.append('[b]Utolsó kérések:[/b]')
+            for item in st.get('last_items', [])[-6:]:
+                lines.append(f"- {item.get('id')} | {item.get('side')} {item.get('symbol')} {item.get('amount')} | {item.get('status')}")
+            lines.append('')
+            lines.append('[size=12]Biztonság: ez még nem küld Binance ordert.[/size]')
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Approval hiba: ' + str(e)
+
+    def create_request(self):
+        try:
+            res = demo_core.create_approval_request(
+                'MANUAL_TRADE_REQUEST',
+                self.symbol.text,
+                self.side.text,
+                float(self.amount.text.replace(',', '.')),
+                'UI manual request',
+                {}
+            )
+            self.info.text = str(res)
+        except Exception as e:
+            self.info.text = 'Create request hiba: ' + str(e)
+
+    def approve_latest(self):
+        try:
+            res = demo_core.approve_latest_pending('UI approve')
+            self.info.text = str(res)
+        except Exception as e:
+            self.info.text = 'Approve hiba: ' + str(e)
+
+    def reject_latest(self):
+        try:
+            res = demo_core.reject_latest_pending('UI reject')
+            self.info.text = str(res)
+        except Exception as e:
+            self.info.text = 'Reject hiba: ' + str(e)
+
+    def execute_dry(self):
+        try:
+            res = demo_core.execute_latest_approved_dry_run()
+            self.info.text = str(res)
+        except Exception as e:
+            self.info.text = 'Dry-run hiba: ' + str(e)
+
+
+
 class DemoCoreAdminScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -2106,6 +2217,9 @@ class DemoCoreSettingsScreen(Screen):
             ('admin_timeout_sec', 'Admin timeout sec'),
             ('patch_manager_enabled', 'Patch manager enabled true/false'),
             ('patch_require_admin', 'Patch require admin true/false'),
+            ('approval_required_for_manual', 'Approval required manual true/false'),
+            ('approval_required_for_live', 'Approval required live true/false'),
+            ('dry_run_executor_enabled', 'Dry-run executor enabled true/false'),
         ]
 
         for key, label in fields:
@@ -2248,6 +2362,9 @@ class DemoCoreSettingsScreen(Screen):
             cfg['admin_timeout_sec'] = int(float(self.inputs['admin_timeout_sec'].text.replace(',', '.')))
             cfg['patch_manager_enabled'] = self.inputs['patch_manager_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['patch_require_admin'] = self.inputs['patch_require_admin'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['approval_required_for_manual'] = self.inputs['approval_required_for_manual'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['approval_required_for_live'] = self.inputs['approval_required_for_live'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['dry_run_executor_enabled'] = self.inputs['dry_run_executor_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -2465,6 +2582,12 @@ class DemoCoreScreen(Screen):
         except Exception as e:
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
+
+    def open_approval_executor(self):
+        try:
+            self.manager.go_to("approval_executor")
+        except Exception:
+            self.manager.current = "approval_executor"
 
     def open_admin(self):
         try:
@@ -2695,6 +2818,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreFirstRunScreen(name="first_run"))
         sm.add_widget(DemoCoreAdminScreen(name="admin"))
         sm.add_widget(DemoCorePatchManagerScreen(name="patch_manager"))
+        sm.add_widget(DemoCoreApprovalExecutorScreen(name="approval_executor"))
         return sm
 
 if __name__ == "__main__":
