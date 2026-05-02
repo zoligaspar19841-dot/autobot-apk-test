@@ -1,4 +1,4 @@
-APP_VERSION = "0.4.0-demo-core"
+APP_VERSION = "0.4.1-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -63,6 +63,19 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+SPOT_PORTFOLIO_DEFAULTS = {
+    "spot_sync_enabled": True,
+    "spot_base_asset": "USDC",
+    "spot_quote_assets": "USDC,USDT",
+    "spot_safety_reserve": 10.0,
+    "spot_max_tradeable_pct": 90.0,
+    "spot_min_asset_value_usd": 0.01,
+    "spot_last_sync_ts": 0,
+    "portfolio_total_value_usd": 0.0,
+    "portfolio_tradable_usd": 0.0,
+}
 
 STARTUP_SAFETY_DEFAULTS = {
     "startup_safety_summary_enabled": True,
@@ -302,6 +315,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "SPOT_PORTFOLIO_DEFAULTS" in globals():
+        for k, v in SPOT_PORTFOLIO_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -3877,6 +3896,246 @@ def startup_safety_summary():
         "warnings": warnings,
         "first_run": first,
         "safe_message": "Order endpoint nincs bekötve. APK buildhez nem nyúltunk.",
+    }
+
+
+
+def _normalize_spot_balances(account_result=None):
+    """
+    Binance /api/v3/account balances -> egységes spot balance lista.
+    Ha nincs valódi Binance adat, demo fallbacket ad.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    balances = []
+
+    data = None
+    if isinstance(account_result, dict):
+        data = account_result.get("data") or account_result
+
+    raw_balances = data.get("balances", []) if isinstance(data, dict) else []
+
+    for row in raw_balances:
+        try:
+            asset = str(row.get("asset", "")).upper()
+            free = float(row.get("free", 0) or 0)
+            locked = float(row.get("locked", 0) or 0)
+            total = free + locked
+            if total <= 0:
+                continue
+            balances.append({
+                "asset": asset,
+                "free": free,
+                "locked": locked,
+                "total": total,
+                "source": "binance",
+            })
+        except Exception:
+            pass
+
+    if balances:
+        return balances
+
+    # Demo fallback: jelenlegi demo state alapján.
+    base = str(settings.get("spot_base_asset", state.get("base", "USDC")) or "USDC").upper()
+    balances.append({
+        "asset": base,
+        "free": float(state.get("balance", 0) or 0),
+        "locked": 0.0,
+        "total": float(state.get("balance", 0) or 0),
+        "source": "demo",
+    })
+
+    for sym, pos in (state.get("positions", {}) or {}).items():
+        try:
+            asset = str(sym).replace("USDT", "").replace("USDC", "").upper()
+            qty = float(pos.get("qty", 0) or 0)
+            if qty <= 0:
+                continue
+            balances.append({
+                "asset": asset,
+                "free": qty,
+                "locked": 0.0,
+                "total": qty,
+                "source": "demo_position",
+                "symbol": sym,
+            })
+        except Exception:
+            pass
+
+    return balances
+
+
+def _asset_usd_price(asset):
+    """
+    Egyszerű USD árbecslés.
+    USDC/USDT = 1.
+    Egyéb coinoknál demo get_prices fallback.
+    """
+    asset = str(asset or "").upper()
+
+    if asset in ["USDT", "USDC", "USD"]:
+        return 1.0
+
+    # Próbáljuk USDT párral.
+    symbol = asset + "USDT"
+
+    try:
+        prices = get_prices(symbol, limit=5) if "get_prices" in globals() else []
+        if prices:
+            return float(prices[-1])
+    except Exception:
+        pass
+
+    # Demo fallback ismert pozícióból.
+    state = load_state()
+    for sym, pos in (state.get("positions", {}) or {}).items():
+        if str(sym).upper().startswith(asset):
+            try:
+                return float(pos.get("peak") or pos.get("avg") or 0)
+            except Exception:
+                pass
+
+    return 0.0
+
+
+def portfolio_valuation_from_balances(balances=None):
+    """
+    Spot portfolio értékelés USD/USDC alapon.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    balances = balances if balances is not None else _normalize_spot_balances()
+    min_value = float(settings.get("spot_min_asset_value_usd", 0.01) or 0.01)
+
+    rows = []
+    total_value = 0.0
+    quote_free = 0.0
+    quote_assets = [x.strip().upper() for x in str(settings.get("spot_quote_assets", "USDC,USDT")).split(",") if x.strip()]
+
+    for b in balances:
+        asset = str(b.get("asset", "")).upper()
+        total = float(b.get("total", 0) or 0)
+        free = float(b.get("free", 0) or 0)
+        locked = float(b.get("locked", 0) or 0)
+        price = _asset_usd_price(asset)
+        value = total * price
+
+        if asset in quote_assets:
+            quote_free += free * price
+
+        if value < min_value and asset not in quote_assets:
+            continue
+
+        total_value += value
+
+        rows.append({
+            "asset": asset,
+            "free": free,
+            "locked": locked,
+            "total": total,
+            "price_usd": round(price, 8),
+            "value_usd": round(value, 8),
+            "source": b.get("source", ""),
+        })
+
+    safety_reserve = float(settings.get("spot_safety_reserve", 10.0) or 0)
+    max_pct = float(settings.get("spot_max_tradeable_pct", 90.0) or 90.0)
+
+    tradable_raw = max(0.0, quote_free - safety_reserve)
+    tradable_cap = max(0.0, quote_free * (max_pct / 100.0))
+    tradable = min(tradable_raw, tradable_cap)
+
+    return {
+        "ok": True,
+        "base_asset": settings.get("spot_base_asset", "USDC"),
+        "quote_assets": quote_assets,
+        "total_value_usd": round(total_value, 8),
+        "quote_free_usd": round(quote_free, 8),
+        "safety_reserve_usd": safety_reserve,
+        "tradable_usd": round(tradable, 8),
+        "assets_count": len(rows),
+        "assets": sorted(rows, key=lambda x: x.get("value_usd", 0), reverse=True),
+        "source": "portfolio_valuation",
+    }
+
+
+def sync_spot_portfolio():
+    """
+    Spot sync:
+    - ha read-only Binance account engedélyezett, megpróbálja használni
+    - ha nincs bekapcsolva/API, demo fallback
+    - cache-eli a state settingsbe
+    - order nincs
+    """
+    state = load_state()
+    settings = state.setdefault("settings", {})
+
+    if not bool(settings.get("spot_sync_enabled", True)):
+        return {"ok": False, "synced": False, "reason": "spot_sync_enabled false"}
+
+    account_res = None
+
+    # Csak akkor próbál valódi read-only accountot, ha a kapcsolók engedik.
+    if (
+        bool(settings.get("binance_signed_readonly_enabled", False))
+        and bool(settings.get("binance_account_read_enabled", False))
+        and bool(settings.get("binance_real_account_get_enabled", False))
+    ):
+        try:
+            account_res = binance_account_readonly_real_get()
+        except Exception as e:
+            account_res = {"ok": False, "error": str(e), "called": False}
+
+    balances = _normalize_spot_balances(account_res)
+    portfolio = portfolio_valuation_from_balances(balances)
+
+    settings["spot_last_sync_ts"] = int(time.time())
+    settings["portfolio_total_value_usd"] = portfolio.get("total_value_usd", 0.0)
+    settings["portfolio_tradable_usd"] = portfolio.get("tradable_usd", 0.0)
+
+    state["spot_balances_cache"] = balances
+    state["portfolio_cache"] = portfolio
+    state["last_action"] = "Spot portfolio sync OK"
+    save_state(state)
+
+    audit_event("SPOT_PORTFOLIO_SYNC", "Spot portfolio sync", {
+        "total_value_usd": portfolio.get("total_value_usd"),
+        "tradable_usd": portfolio.get("tradable_usd"),
+        "assets_count": portfolio.get("assets_count"),
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "synced": True,
+        "account_called": bool(account_res.get("called")) if isinstance(account_res, dict) else False,
+        "portfolio": portfolio,
+        "message": "Spot portfolio sync kész. Order endpoint nincs használva.",
+        "order_endpoint_used": False,
+    }
+
+
+def spot_portfolio_status():
+    state = load_state()
+    settings = state.get("settings", {})
+    cache = state.get("portfolio_cache") or {}
+
+    return {
+        "ok": True,
+        "spot_sync_enabled": settings.get("spot_sync_enabled", True),
+        "spot_base_asset": settings.get("spot_base_asset", "USDC"),
+        "spot_quote_assets": settings.get("spot_quote_assets", "USDC,USDT"),
+        "spot_safety_reserve": settings.get("spot_safety_reserve", 10.0),
+        "spot_max_tradeable_pct": settings.get("spot_max_tradeable_pct", 90.0),
+        "spot_last_sync_ts": settings.get("spot_last_sync_ts", 0),
+        "portfolio_total_value_usd": settings.get("portfolio_total_value_usd", cache.get("total_value_usd", 0.0)),
+        "portfolio_tradable_usd": settings.get("portfolio_tradable_usd", cache.get("tradable_usd", 0.0)),
+        "assets_count": cache.get("assets_count", 0),
+        "top_assets": (cache.get("assets") or [])[:8],
+        "order_endpoint_used": False,
     }
 
 

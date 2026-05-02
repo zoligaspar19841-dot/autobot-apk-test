@@ -142,11 +142,88 @@
     "startup_safety_summary_enabled": true,
     "first_run_require_admin_password_change": true,
     "first_run_require_secrets_review": true,
-    "first_run_show_live_warning": true
+    "first_run_show_live_warning": true,
+    "spot_sync_enabled": true,
+    "spot_base_asset": "USDC",
+    "spot_quote_assets": "USDC,USDT",
+    "spot_safety_reserve": 10.0,
+    "spot_max_tradeable_pct": 90.0,
+    "spot_min_asset_value_usd": 0.01,
+    "spot_last_sync_ts": 1777765907,
+    "portfolio_total_value_usd": 100.0321036,
+    "portfolio_tradable_usd": 71.0
   },
-  "last_action": "AI advisor: HOLD BTCUSDT",
+  "last_action": "Spot portfolio sync OK",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
   "last_heartbeat_ts": 1777765531,
-  "cooldowns": {}
+  "cooldowns": {},
+  "spot_balances_cache": [
+    {
+      "asset": "USDC",
+      "free": 81.0,
+      "locked": 0.0,
+      "total": 81.0,
+      "source": "demo"
+    },
+    {
+      "asset": "BTC",
+      "free": 0.0001267180989088671,
+      "locked": 0.0,
+      "total": 0.0001267180989088671,
+      "source": "demo_position",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "asset": "ETH",
+      "free": 0.0038604882824240655,
+      "locked": 0.0,
+      "total": 0.0038604882824240655,
+      "source": "demo_position",
+      "symbol": "ETHUSDT"
+    }
+  ],
+  "portfolio_cache": {
+    "ok": true,
+    "base_asset": "USDC",
+    "quote_assets": [
+      "USDC",
+      "USDT"
+    ],
+    "total_value_usd": 100.0321036,
+    "quote_free_usd": 81.0,
+    "safety_reserve_usd": 10.0,
+    "tradable_usd": 71.0,
+    "assets_count": 3,
+    "assets": [
+      {
+        "asset": "USDC",
+        "free": 81.0,
+        "locked": 0.0,
+        "total": 81.0,
+        "price_usd": 1.0,
+        "value_usd": 81.0,
+        "source": "demo"
+      },
+      {
+        "asset": "BTC",
+        "free": 0.0001267180989088671,
+        "locked": 0.0,
+        "total": 0.0001267180989088671,
+        "price_usd": 79336.35706789,
+        "value_usd": 10.05335234,
+        "source": "demo_position"
+      },
+      {
+        "asset": "ETH",
+        "free": 0.0038604882824240655,
+        "locked": 0.0,
+        "total": 0.0038604882824240655,
+        "price_usd": 2325.80715231,
+        "value_usd": 8.97875126,
+        "source": "demo_position"
+      }
+    ],
+    "source": "portfolio_valuation"
+  }
 }

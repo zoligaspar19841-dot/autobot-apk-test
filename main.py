@@ -586,6 +586,92 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreSpotPortfolioScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]SPOT BALANCE / PORTFOLIO SYNC[/b]\n[size=14]Spot egyenleg, becsült érték, kereskedhető összeg[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        ))
+
+        self.info = Label(text='Spot portfolio...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        buttons = [
+            ('STATUS', self.refresh),
+            ('SYNC NOW', self.sync_now),
+            ('BINANCE READONLY', lambda: self.manager.go_to('binance_readonly_real')),
+            ('INTEGRÁCIÓK', lambda: self.manager.go_to('integrations')),
+            ('SETTINGS', lambda: self.manager.go_to('demo_settings')),
+            ('DASHBOARD', lambda: self.manager.go_to('demo_core')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def render_status(self, st):
+        lines = []
+        lines.append('[b]Spot Portfolio státusz[/b]')
+        lines.append(f"Sync enabled: {st.get('spot_sync_enabled')}")
+        lines.append(f"Base asset: {st.get('spot_base_asset')}")
+        lines.append(f"Quote assets: {st.get('spot_quote_assets')}")
+        lines.append(f"Safety reserve: {st.get('spot_safety_reserve')}")
+        lines.append(f"Max tradeable %: {st.get('spot_max_tradeable_pct')}")
+        lines.append(f"Last sync ts: {st.get('spot_last_sync_ts')}")
+        lines.append('')
+        lines.append(f"[b]Total value USD:[/b] {st.get('portfolio_total_value_usd')}")
+        lines.append(f"[b]Tradable USD:[/b] {st.get('portfolio_tradable_usd')}")
+        lines.append(f"Assets count: {st.get('assets_count')}")
+        lines.append('')
+        lines.append('[b]Top assets:[/b]')
+        for a in st.get('top_assets') or []:
+            lines.append(f"- {a.get('asset')}: value={a.get('value_usd')} free={a.get('free')} locked={a.get('locked')}")
+        lines.append('')
+        lines.append('[size=12]Order endpoint nincs használva.[/size]')
+        self.info.text = '\n'.join(lines)
+
+    def refresh(self):
+        try:
+            self.render_status(demo_core.spot_portfolio_status())
+        except Exception as e:
+            self.info.text = 'Spot portfolio status hiba: ' + str(e)
+
+    def sync_now(self):
+        try:
+            res = demo_core.sync_spot_portfolio()
+            st = demo_core.spot_portfolio_status()
+            self.render_status(st)
+            self.info.text += '\n\n[b]Sync result:[/b]\n' + str(res.get('message') or res.get('reason') or res)
+        except Exception as e:
+            self.info.text = 'Spot sync hiba: ' + str(e)
+
+
+
 class DemoCoreStartupSafetyScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -2775,6 +2861,12 @@ class DemoCoreSettingsScreen(Screen):
             ('binance_real_account_get_enabled', 'Binance real account GET enabled true/false'),
             ('binance_http_timeout_sec', 'Binance HTTP timeout sec'),
             ('binance_balance_preview_assets', 'Binance balance preview assets'),
+            ('spot_sync_enabled', 'Spot sync enabled true/false'),
+            ('spot_base_asset', 'Spot base asset'),
+            ('spot_quote_assets', 'Spot quote assets'),
+            ('spot_safety_reserve', 'Spot safety reserve USD'),
+            ('spot_max_tradeable_pct', 'Spot max tradeable %'),
+            ('spot_min_asset_value_usd', 'Spot min asset value USD'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -2947,6 +3039,12 @@ class DemoCoreSettingsScreen(Screen):
             cfg['binance_real_account_get_enabled'] = self.inputs['binance_real_account_get_enabled'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
             cfg['binance_http_timeout_sec'] = float(self.inputs['binance_http_timeout_sec'].text.replace(',', '.'))
             cfg['binance_balance_preview_assets'] = self.inputs['binance_balance_preview_assets'].text.strip() or 'USDT,USDC,BTC,ETH,BNB,DOGE'
+            cfg['spot_sync_enabled'] = self.inputs['spot_sync_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['spot_base_asset'] = self.inputs['spot_base_asset'].text.strip().upper() or 'USDC'
+            cfg['spot_quote_assets'] = self.inputs['spot_quote_assets'].text.strip().upper() or 'USDC,USDT'
+            cfg['spot_safety_reserve'] = float(self.inputs['spot_safety_reserve'].text.replace(',', '.'))
+            cfg['spot_max_tradeable_pct'] = float(self.inputs['spot_max_tradeable_pct'].text.replace(',', '.'))
+            cfg['spot_min_asset_value_usd'] = float(self.inputs['spot_min_asset_value_usd'].text.replace(',', '.'))
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -3168,6 +3266,12 @@ class DemoCoreScreen(Screen):
         except Exception as e:
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
+
+    def open_spot_portfolio(self):
+        try:
+            self.manager.go_to("spot_portfolio")
+        except Exception:
+            self.manager.current = "spot_portfolio"
 
     def open_startup_safety(self):
         try:
@@ -3447,6 +3551,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreBinanceReadOnlyRealScreen(name="binance_readonly_real"))
         sm.add_widget(DemoCoreIntegrationOverviewScreen(name="integrations"))
         sm.add_widget(DemoCoreStartupSafetyScreen(name="startup_safety"))
+        sm.add_widget(DemoCoreSpotPortfolioScreen(name="spot_portfolio"))
         return sm
 
 if __name__ == "__main__":
