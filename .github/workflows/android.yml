@@ -18,19 +18,26 @@ jobs:
           sudo apt update
           sudo apt install -y zip unzip openjdk-17-jdk python3-pip
 
-      - name: Install buildozer
+      - name: Install pinned Buildozer
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install buildozer cython
+          python3 -m pip install "cython<3" "buildozer==1.5.0"
 
       - name: Build APK
         run: |
-          buildozer android debug
+          set +e
+          yes y | buildozer -v android debug 2>&1 | tee build_full_output.log
+          code=${PIPESTATUS[1]}
+          echo "===== FONTOS HIBÁK ====="
+          grep -nEi "error|failed|traceback|exception|not found|license|aidl|sdkmanager|command failed" build_full_output.log | tail -n 160 || true
+          echo "===== UTOLSÓ 250 SOR ====="
+          tail -n 250 build_full_output.log || true
+          echo "===== EXIT CODE: $code ====="
+          exit $code
 
       - name: Find APK
         if: always()
         run: |
-          echo "=== APK keresés ==="
           find . -name "*.apk" -type f || true
 
       - name: Upload APK
@@ -42,3 +49,11 @@ jobs:
             bin/*.apk
             **/*.apk
           if-no-files-found: error
+
+      - name: Upload build output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: build_full_output.log
+          if-no-files-found: ignore
