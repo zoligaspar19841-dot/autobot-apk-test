@@ -574,6 +574,165 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreBacktestScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(
+            text='[b]BACKTEST / REPLAY[/b]\n[size=14]Demo stratégia teszt, CSV report[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        )
+        root.add_widget(title)
+
+        self.info = Label(text='Backtest betöltés...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=180, spacing=8)
+        b_run = Button(text='RUN BACKTEST')
+        b_report = Button(text='REPORT CSV')
+        b_settings = Button(text='SETTINGS')
+        b_back = Button(text='VISSZA')
+
+        b_run.bind(on_press=lambda x: self.run_backtest())
+        b_report.bind(on_press=lambda x: self.report())
+        b_settings.bind(on_press=lambda x: self.manager.go_to('demo_settings'))
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_run, b_report, b_settings, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.run_backtest()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def run_backtest(self):
+        try:
+            st = demo_core.load_state()
+            cfg = st.get('settings', {})
+            sym = cfg.get('backtest_symbol', 'BTCUSDT')
+            limit = cfg.get('backtest_limit', 240)
+            res = demo_core.backtest_symbol(sym, limit)
+
+            lines = []
+            lines.append('[b]Backtest eredmény[/b]')
+            lines.append('')
+            lines.append(f"Symbol: {res.get('symbol')}")
+            lines.append(f"Start balance: {res.get('start_balance')}")
+            lines.append(f"Final equity: {res.get('final_equity')}")
+            lines.append(f"Total PnL: {res.get('total_pnl')}")
+            lines.append(f"Total %: {res.get('total_pct')}%")
+            lines.append(f"Trades: {res.get('trades_count')}")
+            lines.append(f"Closed trades: {res.get('closed_trades')}")
+            lines.append(f"Winrate: {res.get('winrate')}%")
+            lines.append(f"Profit factor: {res.get('profit_factor')}")
+            lines.append(f"Max DD: {res.get('max_drawdown_pct')}%")
+            lines.append(f"Open position: {res.get('open_position')}")
+            lines.append('')
+            lines.append('[size=12]Report: logs/backtest_report.csv[/size]')
+
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Backtest hiba: ' + str(e)
+
+    def report(self):
+        try:
+            res = demo_core.read_backtest_report()
+            self.info.text = res.get('text') if res.get('ok') else res.get('error')
+        except Exception as e:
+            self.info.text = 'Report hiba: ' + str(e)
+
+
+class DemoCoreDiagnosticsScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(
+            text='[b]DIAGNOSTICS / VERSION[/b]\n[size=14]Állapot, fájlok, modulok[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        )
+        root.add_widget(title)
+
+        self.info = Label(text='Diagnostics betöltés...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=140, spacing=8)
+        b_refresh = Button(text='FRISSÍTÉS')
+        b_health = Button(text='HEALTHCHECK')
+        b_backtest = Button(text='BACKTEST')
+        b_back = Button(text='VISSZA')
+
+        b_refresh.bind(on_press=lambda x: self.refresh())
+        b_health.bind(on_press=lambda x: self.manager.go_to('healthcheck'))
+        b_backtest.bind(on_press=lambda x: self.manager.go_to('backtest'))
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_refresh, b_health, b_backtest, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self):
+        try:
+            res = demo_core.diagnostics_status()
+            lines = []
+            lines.append('[b]Diagnostics[/b]')
+            lines.append('')
+            lines.append(f"Version: {res.get('version')}")
+            lines.append(f"Python: {res.get('python')}")
+            lines.append(f"Running: {res.get('running')}")
+            lines.append(f"Safe mode: {res.get('safe_mode')}")
+            lines.append(f"Positions: {res.get('positions_count')}")
+            lines.append(f"Settings count: {res.get('settings_count')}")
+            lines.append(f"Live ready: {res.get('live_ready')}")
+            lines.append(f"Last action: {res.get('last_action')}")
+            lines.append('')
+            lines.append('[b]Secrets ready:[/b]')
+            sr = res.get('secrets_ready') or {}
+            for k, v in sr.items():
+                lines.append(f"- {k}: {v}")
+            lines.append('')
+            lines.append('[b]Files:[/b]')
+            for k, v in (res.get('files') or {}).items():
+                lines.append(f"- {k}: {'OK' if v else 'NINCS'}")
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Diagnostics hiba: ' + str(e)
+
+
+
 class DemoCoreBinanceLiveScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1365,6 +1524,11 @@ class DemoCoreSettingsScreen(Screen):
             ('live_allow_sell', 'Live allow SELL true/false'),
             ('live_max_order_usdt', 'Live max order USDT'),
             ('live_warning_ack', 'Live warning ACK true/false'),
+            ('backtest_symbol', 'Backtest symbol'),
+            ('backtest_limit', 'Backtest limit'),
+            ('backtest_start_balance', 'Backtest start balance'),
+            ('backtest_risk_pct', 'Backtest risk %'),
+            ('backtest_fee_pct', 'Backtest fee %'),
         ]
 
         for key, label in fields:
@@ -1482,6 +1646,11 @@ class DemoCoreSettingsScreen(Screen):
             cfg['live_allow_sell'] = self.inputs['live_allow_sell'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
             cfg['live_max_order_usdt'] = float(self.inputs['live_max_order_usdt'].text.replace(',', '.'))
             cfg['live_warning_ack'] = self.inputs['live_warning_ack'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['backtest_symbol'] = self.inputs['backtest_symbol'].text.strip().upper() or 'BTCUSDT'
+            cfg['backtest_limit'] = int(float(self.inputs['backtest_limit'].text.replace(',', '.')))
+            cfg['backtest_start_balance'] = float(self.inputs['backtest_start_balance'].text.replace(',', '.'))
+            cfg['backtest_risk_pct'] = float(self.inputs['backtest_risk_pct'].text.replace(',', '.'))
+            cfg['backtest_fee_pct'] = float(self.inputs['backtest_fee_pct'].text.replace(',', '.'))
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -1700,6 +1869,18 @@ class DemoCoreScreen(Screen):
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
 
+    def open_backtest(self):
+        try:
+            self.manager.go_to("backtest")
+        except Exception:
+            self.manager.current = "backtest"
+
+    def open_diagnostics(self):
+        try:
+            self.manager.go_to("diagnostics")
+        except Exception:
+            self.manager.current = "diagnostics"
+
     def open_binance_live(self):
         try:
             self.manager.go_to("binance_live")
@@ -1866,6 +2047,8 @@ class AppMain(App):
         sm.add_widget(DemoCoreAIScreen(name="ai_advisor"))
         sm.add_widget(DemoCoreSecretsScreen(name="secrets"))
         sm.add_widget(DemoCoreBinanceLiveScreen(name="binance_live"))
+        sm.add_widget(DemoCoreBacktestScreen(name="backtest"))
+        sm.add_widget(DemoCoreDiagnosticsScreen(name="diagnostics"))
         return sm
 
 if __name__ == "__main__":

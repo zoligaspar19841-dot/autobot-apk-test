@@ -71,11 +71,16 @@
     "live_allow_buy": false,
     "live_allow_sell": false,
     "live_max_order_usdt": 10.0,
-    "live_warning_ack": false
+    "live_warning_ack": false,
+    "backtest_symbol": "BTCUSDT",
+    "backtest_limit": 240,
+    "backtest_start_balance": 100.0,
+    "backtest_risk_pct": 10.0,
+    "backtest_fee_pct": 0.1
   },
-  "last_action": "AI advisor: HOLD BTCUSDT",
+  "last_action": "Backtest kész: BTCUSDT PnL=0.0169%",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
-  "last_heartbeat_ts": 1777759959,
+  "last_heartbeat_ts": 1777761546,
   "cooldowns": {}
 }

@@ -1,5 +1,7 @@
+APP_VERSION = "0.3.0-demo-core"
 # -*- coding: utf-8 -*-
 import json
+import platform
 import urllib.error
 from email.message import EmailMessage
 import smtplib
@@ -44,6 +46,15 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+BACKTEST_DEFAULTS = {
+    "backtest_symbol": "BTCUSDT",
+    "backtest_limit": 240,
+    "backtest_start_balance": 100.0,
+    "backtest_risk_pct": 10.0,
+    "backtest_fee_pct": 0.10,
+}
 
 BINANCE_LIVE_DEFAULTS = {
     "live_mode_enabled": False,
@@ -173,6 +184,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "BACKTEST_DEFAULTS" in globals():
+        for k, v in BACKTEST_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -1643,6 +1660,206 @@ def enable_live_check_only():
     save_state(state)
     audit_event("LIVE_CHECK_ONLY", "Live check only bekapcsolva", {})
     return binance_live_status()
+
+
+
+def ensure_log_dir():
+    try:
+        os.makedirs(LOG_DIR, exist_ok=True)
+    except Exception:
+        pass
+
+
+def sma_values(values, length):
+    length = int(length or 1)
+    out = []
+    for i in range(len(values)):
+        if i + 1 < length:
+            out.append(None)
+        else:
+            out.append(sum(values[i + 1 - length:i + 1]) / length)
+    return out
+
+
+def backtest_symbol(symbol=None, limit=None):
+    """
+    Egyszerű demo backtest:
+    SMA fast/slow keresztezés + fee számítás.
+    Nem live kereskedés.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    symbol = str(symbol or settings.get("backtest_symbol", "BTCUSDT")).upper()
+    limit = int(limit or settings.get("backtest_limit", 240) or 240)
+
+    start_balance = float(settings.get("backtest_start_balance", 100.0) or 100.0)
+    risk_pct = float(settings.get("backtest_risk_pct", settings.get("risk_pct", 10.0)) or 10.0)
+    fee_pct = float(settings.get("backtest_fee_pct", settings.get("taker_fee_pct", 0.10)) or 0.10)
+
+    sma_fast_len = int(settings.get("sma_fast", 9) or 9)
+    sma_slow_len = int(settings.get("sma_slow", 21) or 21)
+
+    prices = get_prices(symbol, limit)
+    fast = sma_values(prices, sma_fast_len)
+    slow = sma_values(prices, sma_slow_len)
+
+    balance = start_balance
+    qty = 0.0
+    entry = 0.0
+    equity_curve = []
+    trades = []
+    peak_equity = start_balance
+    max_dd = 0.0
+
+    for i, price in enumerate(prices):
+        price = float(price)
+        f = fast[i]
+        sl = slow[i]
+
+        equity_now = balance + qty * price
+        peak_equity = max(peak_equity, equity_now)
+        dd = ((peak_equity - equity_now) / peak_equity) * 100 if peak_equity else 0.0
+        max_dd = max(max_dd, dd)
+        equity_curve.append(equity_now)
+
+        if f is None or sl is None:
+            continue
+
+        if qty <= 0 and f > sl:
+            spend = balance * (risk_pct / 100.0)
+            fee = spend * (fee_pct / 100.0)
+            net_spend = max(0.0, spend - fee)
+
+            if net_spend > 0 and balance >= spend:
+                qty = net_spend / price
+                balance -= spend
+                entry = price
+                trades.append({
+                    "i": i,
+                    "type": "BUY",
+                    "price": round(price, 8),
+                    "qty": qty,
+                    "fee": fee,
+                    "balance": balance,
+                })
+
+        elif qty > 0 and f < sl:
+            gross = qty * price
+            fee = gross * (fee_pct / 100.0)
+            net = gross - fee
+            pnl = net - (qty * entry)
+            pnl_pct = ((price - entry) / entry) * 100 if entry else 0.0
+
+            balance += net
+            trades.append({
+                "i": i,
+                "type": "SELL",
+                "price": round(price, 8),
+                "qty": qty,
+                "fee": fee,
+                "pnl": pnl,
+                "pnl_pct": pnl_pct,
+                "balance": balance,
+            })
+
+            qty = 0.0
+            entry = 0.0
+
+    # záró equity
+    final_equity = balance + qty * float(prices[-1])
+    total_pnl = final_equity - start_balance
+    total_pct = (total_pnl / start_balance) * 100 if start_balance else 0.0
+
+    sell_trades = [t for t in trades if t.get("type") == "SELL"]
+    wins = [t for t in sell_trades if float(t.get("pnl", 0)) > 0]
+    losses = [t for t in sell_trades if float(t.get("pnl", 0)) <= 0]
+
+    gross_win = sum(float(t.get("pnl", 0)) for t in wins)
+    gross_loss = abs(sum(float(t.get("pnl", 0)) for t in losses))
+    profit_factor = gross_win / gross_loss if gross_loss else (gross_win if gross_win else 0.0)
+    winrate = (len(wins) / len(sell_trades) * 100.0) if sell_trades else 0.0
+
+    result = {
+        "ok": True,
+        "symbol": symbol,
+        "limit": limit,
+        "start_balance": round(start_balance, 4),
+        "final_equity": round(final_equity, 4),
+        "total_pnl": round(total_pnl, 4),
+        "total_pct": round(total_pct, 4),
+        "trades_count": len(trades),
+        "closed_trades": len(sell_trades),
+        "winrate": round(winrate, 4),
+        "profit_factor": round(profit_factor, 4),
+        "max_drawdown_pct": round(max_dd, 4),
+        "open_position": qty > 0,
+        "trades": trades[-50:],
+    }
+
+    ensure_log_dir()
+    report_path = os.path.join(LOG_DIR, "backtest_report.csv")
+
+    with open(report_path, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["symbol", "metric", "value"])
+        for k in ["start_balance", "final_equity", "total_pnl", "total_pct", "trades_count", "closed_trades", "winrate", "profit_factor", "max_drawdown_pct", "open_position"]:
+            w.writerow([symbol, k, result.get(k)])
+
+    audit_event("BACKTEST", "Backtest futtatva", result)
+    state["last_action"] = "Backtest kész: " + symbol + " PnL=" + str(result["total_pct"]) + "%"
+    save_state(state)
+
+    return result
+
+
+def read_backtest_report():
+    path = os.path.join(LOG_DIR, "backtest_report.csv")
+    if not os.path.exists(path):
+        return {"ok": False, "error": "backtest_report.csv nincs még"}
+    with open(path, "r", encoding="utf-8") as f:
+        return {"ok": True, "path": path, "text": f.read()}
+
+
+def diagnostics_status():
+    state = load_state()
+    sec_status = secrets_status() if "secrets_status" in globals() else {"ok": False}
+    live_status = binance_live_status() if "binance_live_status" in globals() else {"ok": False}
+    health = healthcheck() if "healthcheck" in globals() else {"ok": False}
+
+    files = {}
+    for fn in [
+        "main.py",
+        "demo_core_engine.py",
+        "demo_core_state.json",
+        "secrets.enc",
+        "demo_core_secret.key",
+        os.path.join(LOG_DIR, "demo_core_trades.csv"),
+        os.path.join(LOG_DIR, "demo_core_audit.csv"),
+        os.path.join(LOG_DIR, "backtest_report.csv"),
+    ]:
+        files[fn] = os.path.exists(fn)
+
+    return {
+        "ok": True,
+        "version": APP_VERSION,
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "state_keys": sorted(list(state.keys())),
+        "settings_count": len(state.get("settings", {})),
+        "positions_count": len(state.get("positions", {})),
+        "running": state.get("running"),
+        "safe_mode": state.get("safe_mode"),
+        "last_action": state.get("last_action"),
+        "files": files,
+        "health": health,
+        "secrets_ready": {
+            "binance_api": sec_status.get("binance_api"),
+            "openai_api": sec_status.get("openai_api"),
+            "email": sec_status.get("email"),
+        },
+        "live_ready": live_status.get("ready_for_live"),
+    }
 
 
 if __name__ == "__main__":

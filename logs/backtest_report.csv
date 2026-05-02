@@ -1,0 +1,11 @@
+symbol,metric,value
+BTCUSDT,start_balance,100.0
+BTCUSDT,final_equity,100.0169
+BTCUSDT,total_pnl,0.0169
+BTCUSDT,total_pct,0.0169
+BTCUSDT,trades_count,4
+BTCUSDT,closed_trades,2
+BTCUSDT,winrate,50.0
+BTCUSDT,profit_factor,6.6035
+BTCUSDT,max_drawdown_pct,0.0749
+BTCUSDT,open_position,False
