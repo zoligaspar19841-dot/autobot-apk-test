@@ -569,6 +569,83 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreFeeTaxScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(
+            text='[b]FEE + ADÓZÁS MODUL[/b]\n[size=14]Bruttó / nettó / adózás utáni PnL[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=72
+        )
+        root.add_widget(title)
+
+        self.info = Label(text='Betöltés...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+        root.add_widget(self.info)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=160, spacing=8)
+        b_refresh = Button(text='FRISSÍTÉS')
+        b_settings = Button(text='SETTINGS')
+        b_back = Button(text='VISSZA')
+        b_health = Button(text='HEALTHCHECK')
+
+        b_refresh.bind(on_press=lambda x: self.refresh())
+        b_settings.bind(on_press=lambda x: self.manager.go_to('demo_settings'))
+        b_health.bind(on_press=lambda x: self.health())
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_refresh, b_settings, b_health, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self):
+        try:
+            st = demo_core.load_state()
+            cfg = st.get('settings', {})
+            pb = demo_core.portfolio_pnl_breakdown()
+            lines = []
+            lines.append('[b]Fee / adózás státusz[/b]')
+            lines.append('')
+            lines.append(f"Maker fee: {cfg.get('maker_fee_pct')}%")
+            lines.append(f"Taker fee: {cfg.get('taker_fee_pct')}%")
+            lines.append(f"Tax enabled: {cfg.get('tax_enabled')}")
+            lines.append(f"Tax pct: {cfg.get('tax_pct')}%")
+            lines.append('')
+            lines.append(f"Gross realized PnL: {pb.get('gross_pnl')}")
+            lines.append(f"Fee estimate: {pb.get('fee')}")
+            lines.append(f"Net PnL: {pb.get('net_pnl')}")
+            lines.append(f"Tax estimate: {pb.get('tax')}")
+            lines.append(f"After tax PnL: {pb.get('after_tax_pnl')}")
+            lines.append('')
+            lines.append('[size=12]Megjegyzés: az adózás utáni profit csak tájékoztató becslés, nem adótanácsadás.[/size]')
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Fee/tax hiba: ' + str(e)
+
+    def health(self):
+        try:
+            demo_core.healthcheck()
+            self.refresh()
+        except Exception as e:
+            self.info.text = 'Health hiba: ' + str(e)
+
+
+
 class DemoCoreScannerScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -830,6 +907,10 @@ class DemoCoreSettingsScreen(Screen):
             ('min_edge_score_open', 'Min edge open'),
             ('min_edge_score_keep', 'Min edge keep'),
             ('max_scan_symbols', 'Max scan symbols'),
+            ('maker_fee_pct', 'Maker fee %'),
+            ('taker_fee_pct', 'Taker fee %'),
+            ('tax_enabled', 'Tax enabled true/false'),
+            ('tax_pct', 'HU tax %'),
         ]
 
         for key, label in fields:
@@ -917,6 +998,10 @@ class DemoCoreSettingsScreen(Screen):
             cfg['min_edge_score_open'] = float(self.inputs['min_edge_score_open'].text.replace(',', '.'))
             cfg['min_edge_score_keep'] = float(self.inputs['min_edge_score_keep'].text.replace(',', '.'))
             cfg['max_scan_symbols'] = int(float(self.inputs['max_scan_symbols'].text.replace(',', '.')))
+            cfg['maker_fee_pct'] = float(self.inputs['maker_fee_pct'].text.replace(',', '.'))
+            cfg['taker_fee_pct'] = float(self.inputs['taker_fee_pct'].text.replace(',', '.'))
+            cfg['tax_enabled'] = self.inputs['tax_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['tax_pct'] = float(self.inputs['tax_pct'].text.replace(',', '.'))
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -1135,6 +1220,12 @@ class DemoCoreScreen(Screen):
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
 
+    def open_fee_tax(self):
+        try:
+            self.manager.go_to("fee_tax")
+        except Exception:
+            self.manager.current = "fee_tax"
+
     def open_scanner(self):
         try:
             self.manager.go_to("scanner")
@@ -1266,6 +1357,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreLogsScreen(name="demo_logs"))
         sm.add_widget(DemoCoreAuditScreen(name="audit_log"))
         sm.add_widget(DemoCoreScannerScreen(name="scanner"))
+        sm.add_widget(DemoCoreFeeTaxScreen(name="fee_tax"))
         return sm
 
 if __name__ == "__main__":

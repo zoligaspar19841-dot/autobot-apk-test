@@ -41,7 +41,11 @@
     "scanner_top_n": 5,
     "min_edge_score_open": 0.55,
     "min_edge_score_keep": 0.5,
-    "max_scan_symbols": 20
+    "max_scan_symbols": 20,
+    "maker_fee_pct": 0.1,
+    "taker_fee_pct": 0.1,
+    "tax_enabled": true,
+    "tax_pct": 15.0
   },
   "last_action": "Scanner futott: top BTCUSDT, ETHUSDT, DOGEUSDT",
   "safe_mode": false,

@@ -15,6 +15,14 @@ os.makedirs(LOG_DIR, exist_ok=True)
 
 
 
+
+FEE_TAX_DEFAULTS = {
+    "maker_fee_pct": 0.10,
+    "taker_fee_pct": 0.10,
+    "tax_enabled": True,
+    "tax_pct": 15.0,
+}
+
 SCANNER_DEFAULTS = {
     "scanner_enabled": True,
     "scanner_top_n": 5,
@@ -95,6 +103,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "FEE_TAX_DEFAULTS" in globals():
+        for k, v in FEE_TAX_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -248,7 +262,8 @@ def sell(state, symbol, note="SELL"):
     state["positions"].pop(symbol, None)
 
     log_trade([int(time.time()), symbol, "SELL", qty, p, pnl, note])
-    audit_event("SELL", note, {"symbol": symbol, "qty": qty, "price": p, "pnl": pnl})
+    pnl_info = pnl_breakdown(pnl, state.get("settings", {}))
+    audit_event("SELL", note, {"symbol": symbol, "qty": qty, "price": p, "pnl": pnl, "pnl_breakdown": pnl_info})
     return f"SELL {symbol} PnL={pnl:.4f} USDC | {note}"
 
 def signal(symbol, settings):
@@ -586,6 +601,53 @@ def scan_symbols():
     save_state(state)
 
     return result
+
+
+def fee_amount(amount, fee_pct):
+    try:
+        return float(amount) * (float(fee_pct) / 100.0)
+    except Exception:
+        return 0.0
+
+
+def pnl_breakdown(gross_pnl, settings=None):
+    settings = settings or load_state().get("settings", {})
+    gross = float(gross_pnl or 0.0)
+    taker_fee_pct = float(settings.get("taker_fee_pct", 0.10) or 0.10)
+    tax_pct = float(settings.get("tax_pct", 15.0) or 15.0)
+    tax_enabled = bool(settings.get("tax_enabled", True))
+
+    fee = abs(gross) * (taker_fee_pct / 100.0)
+    net = gross - fee
+
+    tax = 0.0
+    after_tax = net
+
+    if tax_enabled and net > 0:
+        tax = net * (tax_pct / 100.0)
+        after_tax = net - tax
+
+    return {
+        "gross_pnl": round(gross, 8),
+        "fee": round(fee, 8),
+        "net_pnl": round(net, 8),
+        "tax": round(tax, 8),
+        "after_tax_pnl": round(after_tax, 8),
+        "tax_pct": tax_pct,
+        "taker_fee_pct": taker_fee_pct,
+    }
+
+
+def portfolio_pnl_breakdown():
+    st = load_state()
+    settings = st.get("settings", {})
+    gross = float(st.get("realized_pnl", 0.0) or 0.0)
+    out = pnl_breakdown(gross, settings)
+    out["ok"] = True
+    out["realized_pnl"] = gross
+    out["equity"] = equity(st)
+    out["balance"] = st.get("balance", 0)
+    return out
 
 if __name__ == "__main__":
     print(json.dumps(tick(), ensure_ascii=False, indent=2))
