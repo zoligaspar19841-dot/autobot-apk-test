@@ -584,6 +584,84 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreIntegrationOverviewScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]INTEGRÁCIÓK / SECRETS ÁLLAPOT[/b]\n[size=14]Binance, OpenAI, E-mail, Read-only, Live státusz[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        ))
+
+        self.info = Label(text='Integráció státusz...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        buttons = [
+            ('STATUS', self.refresh),
+            ('SECRETS', lambda: self.manager.go_to('secrets')),
+            ('BINANCE READONLY', lambda: self.manager.go_to('binance_readonly_real')),
+            ('BINANCE SIGNED', lambda: self.manager.go_to('binance_signed')),
+            ('EMAIL TEST', self.email_test),
+            ('OPENAI/AI', lambda: self.manager.go_to('ai_advisor')),
+            ('SETTINGS', lambda: self.manager.go_to('demo_settings')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self):
+        try:
+            res = demo_core.integration_overview_status()
+            lines = ['[b]Integrációk állapota[/b]', '']
+            for item in res.get('items', []):
+                mark = '✅' if item.get('ok') else '⚠️'
+                lines.append(f"{mark} [b]{item.get('name')}[/b]: {item.get('status')}")
+                if item.get('detail'):
+                    lines.append(f"   {item.get('detail')}")
+            lines.append('')
+            if res.get('warnings'):
+                lines.append('[b]Figyelmeztetések:[/b]')
+                for w in res.get('warnings', []):
+                    lines.append('- ' + str(w))
+                lines.append('')
+            lines.append('[size=12]' + str(res.get('safe_summary')) + '[/size]')
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Integráció státusz hiba: ' + str(e)
+
+    def email_test(self):
+        try:
+            res = demo_core.send_test_email()
+            self.info.text = '[b]Email test eredmény[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Email test hiba: ' + str(e)
+
+
+
 class DemoCoreBinanceReadOnlyRealScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -606,6 +684,7 @@ class DemoCoreBinanceReadOnlyRealScreen(Screen):
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
         buttons = [
             ('STATUS', self.refresh),
+            ('READONLY HELP', self.help),
             ('REAL ACCOUNT GET', self.real_get),
             ('SECRETS', lambda: self.manager.go_to('secrets')),
             ('BINANCE SIGNED', lambda: self.manager.go_to('binance_signed')),
@@ -642,6 +721,24 @@ class DemoCoreBinanceReadOnlyRealScreen(Screen):
             self.info.text = '\n'.join(lines)
         except Exception as e:
             self.info.text = 'Status hiba: ' + str(e)
+
+    def help(self):
+        try:
+            res = demo_core.readonly_activation_help()
+            lines = ['[b]' + str(res.get('title')) + '[/b]', '']
+            for step in res.get('steps', []):
+                lines.append(step)
+            lines.append('')
+            lines.append('[b]Jelenlegi állapot:[/b]')
+            cur = res.get('current') or {}
+            for k, v in cur.items():
+                if k != 'ok':
+                    lines.append(f"{k}: {v}")
+            lines.append('')
+            lines.append('[b]Biztonság:[/b] ' + str(res.get('danger_note')))
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Help hiba: ' + str(e)
 
     def real_get(self):
         try:
@@ -2973,6 +3070,12 @@ class DemoCoreScreen(Screen):
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
 
+    def open_integrations(self):
+        try:
+            self.manager.go_to("integrations")
+        except Exception:
+            self.manager.current = "integrations"
+
     def open_binance_readonly_real(self):
         try:
             self.manager.go_to("binance_readonly_real")
@@ -3237,6 +3340,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreBinanceAccountScreen(name="binance_account"))
         sm.add_widget(DemoCoreBinanceSignedScreen(name="binance_signed"))
         sm.add_widget(DemoCoreBinanceReadOnlyRealScreen(name="binance_readonly_real"))
+        sm.add_widget(DemoCoreIntegrationOverviewScreen(name="integrations"))
         return sm
 
 if __name__ == "__main__":

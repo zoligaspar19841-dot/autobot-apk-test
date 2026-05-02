@@ -1,4 +1,4 @@
-APP_VERSION = "0.3.8-demo-core"
+APP_VERSION = "0.3.9-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -3651,6 +3651,108 @@ def binance_readonly_real_status():
         "last_check_ts": settings.get("binance_account_last_check_ts", 0),
         "last_ok": settings.get("binance_account_last_ok", False),
         "order_endpoint_used": False,
+    }
+
+
+
+def integration_overview_status():
+    """
+    Secrets + integrációk összesített, UI-barát státusz.
+    Nem mutat secret értéket.
+    Nem hív hálózatot.
+    """
+    sec = secrets_status() if "secrets_status" in globals() else {"ok": False}
+    email = email_config_status() if "email_config_status" in globals() else {"ok": False}
+    openai = openai_config_status() if "openai_config_status" in globals() else {"ok": False}
+    live = binance_live_status() if "binance_live_status" in globals() else {"ok": False}
+    signed = binance_signed_readonly_status() if "binance_signed_readonly_status" in globals() else {"ok": False}
+    readonly = binance_readonly_real_status() if "binance_readonly_real_status" in globals() else {"ok": False}
+
+    items = []
+
+    items.append({
+        "name": "Encrypted secrets",
+        "ok": bool(sec.get("encrypted_file")),
+        "status": "OK" if sec.get("encrypted_file") else "HIÁNYZIK",
+        "detail": "secrets.enc helyi titkosított fájl",
+    })
+
+    items.append({
+        "name": "Binance API",
+        "ok": bool(sec.get("binance_api")),
+        "status": "OK" if sec.get("binance_api") else "HIÁNYZIK",
+        "detail": "API key + secret szükséges live/read-only funkcióhoz",
+    })
+
+    items.append({
+        "name": "OpenAI API",
+        "ok": bool(openai.get("has_key")),
+        "status": "OK" if openai.get("has_key") else "OPCIONÁLIS / HIÁNYZIK",
+        "detail": "AI advisor API módhoz kell, offline AI enélkül is működik",
+    })
+
+    items.append({
+        "name": "E-mail értesítő",
+        "ok": bool(email.get("ok")),
+        "status": "OK" if email.get("ok") else "NINCS BEÁLLÍTVA",
+        "detail": "SMTP user/app password/to cím szükséges",
+    })
+
+    items.append({
+        "name": "Binance Live Safety",
+        "ok": bool(live.get("ready_for_live")),
+        "status": "READY" if live.get("ready_for_live") else "NEM READY",
+        "detail": "; ".join(live.get("warnings", [])) if isinstance(live.get("warnings"), list) else "",
+    })
+
+    items.append({
+        "name": "Signed Read-only",
+        "ok": bool(signed.get("signed_readonly_enabled")),
+        "status": "ON" if signed.get("signed_readonly_enabled") else "OFF",
+        "detail": "Csak olvasási előkészítés, order nincs",
+    })
+
+    items.append({
+        "name": "Real Account GET",
+        "ok": bool(readonly.get("real_account_get_enabled")),
+        "status": "ON" if readonly.get("real_account_get_enabled") else "OFF",
+        "detail": "Valódi /api/v3/account csak 3 kapcsolóval fut",
+    })
+
+    warnings = []
+    if readonly.get("real_account_get_enabled") and not readonly.get("has_api_key"):
+        warnings.append("Real account GET ON, de Binance API key hiányzik.")
+    if readonly.get("real_account_get_enabled") and not readonly.get("has_api_secret"):
+        warnings.append("Real account GET ON, de Binance API secret hiányzik.")
+    if live.get("live_mode_enabled") and not live.get("ready_for_live"):
+        warnings.append("Live mód nincs kész, order tiltva.")
+
+    return {
+        "ok": True,
+        "items": items,
+        "warnings": warnings,
+        "safe_summary": "Order endpoint nincs bekötve. Secrets nincs GitHubon.",
+    }
+
+
+def readonly_activation_help():
+    """
+    Magyarázat: milyen kapcsolók kellenek a read-only account olvasáshoz.
+    """
+    st = binance_readonly_real_status() if "binance_readonly_real_status" in globals() else {}
+    return {
+        "ok": True,
+        "title": "Read-only Binance account bekapcsolási feltételek",
+        "steps": [
+            "1. Secrets menüben Binance API key + API secret megadása.",
+            "2. API kulcsnál csak olvasási jogosultság javasolt első teszthez.",
+            "3. Settings: binance_signed_readonly_enabled = true.",
+            "4. Settings: binance_account_read_enabled = true.",
+            "5. Settings: binance_real_account_get_enabled = true.",
+            "6. BINANCE READONLY menüben REAL ACCOUNT GET gomb.",
+        ],
+        "current": st,
+        "danger_note": "Ez csak /api/v3/account olvasás. Order endpoint továbbra sincs bekötve.",
     }
 
 
