@@ -18,6 +18,7 @@ DEFAULT_STATE = {
     "positions": {},
     "realized_pnl": 0.0,
     "running": False,
+    "safe_mode": False,
     "settings": {
         "risk_pct": 10.0,
         "max_positions": 3,
@@ -165,6 +166,7 @@ def signal(symbol, settings):
 def tick():
     state = load_state()
     settings = state["settings"]
+    safe_mode = bool(state.get("safe_mode", False))
     max_positions = int(settings.get("max_positions", 3))
     risk_pct = float(settings.get("risk_pct", 10.0)) / 100.0
     min_profit = float(settings.get("min_profit_pct", 10.0))
@@ -191,9 +193,11 @@ def tick():
         else:
             actions.append(f"HOLD {symbol} PnL={pnl_pct:.2f}%")
 
-    # 2) Új belépés, ha van hely
+    # 2) Új belépés, ha van hely és nincs safe mode
     open_count = len(state["positions"])
-    if open_count < max_positions:
+    if safe_mode:
+        actions.append("SAFE MODE: új vétel tiltva")
+    elif open_count < max_positions:
         for symbol in settings.get("watchlist", []):
             if symbol in state["positions"]:
                 continue
@@ -213,6 +217,37 @@ def tick():
         "positions": state["positions"],
         "realized_pnl": state["realized_pnl"],
         "equity": equity(state)
+    }
+
+
+def panic_stop():
+    state = load_state()
+    state["running"] = False
+    state["safe_mode"] = True
+    state["last_action"] = "PANIC STOP: safe mode aktív, új vétel tiltva"
+    save_state(state)
+    return {
+        "ok": True,
+        "safe_mode": True,
+        "running": False,
+        "action": state["last_action"],
+        "balance": state.get("balance", 0),
+        "positions": state.get("positions", {}),
+        "realized_pnl": state.get("realized_pnl", 0),
+        "equity": equity(state)
+    }
+
+def safe_mode_off():
+    state = load_state()
+    state["safe_mode"] = False
+    state["last_action"] = "Safe mode kikapcsolva"
+    save_state(state)
+    return {
+        "ok": True,
+        "safe_mode": False,
+        "running": state.get("running", False),
+        "action": state["last_action"],
+        "state": state
     }
 
 if __name__ == "__main__":
