@@ -739,6 +739,7 @@ class DemoCoreSettingsScreen(Screen):
             ('stop_loss_pct', 'Stop loss %'),
             ('trailing_drop_pct', 'Trailing drop %'),
             ('watchlist', 'Watchlist vesszővel'),
+            ('execution_mode', 'Execution mode AUTO/MANUAL/OFF'),
         ]
 
         for key, label in fields:
@@ -813,6 +814,10 @@ class DemoCoreSettingsScreen(Screen):
                         sym = sym + 'USDT'
                     watch.append(sym)
             cfg['watchlist'] = watch or ['BTCUSDT', 'ETHUSDT', 'DOGEUSDT']
+            mode = self.inputs['execution_mode'].text.strip().upper() or 'AUTO'
+            if mode not in ['AUTO', 'MANUAL', 'OFF']:
+                mode = 'MANUAL'
+            cfg['execution_mode'] = mode
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -856,7 +861,7 @@ class DemoCoreScreen(Screen):
         scroll.add_widget(self.info)
         root.add_widget(scroll)
 
-        btns = GridLayout(cols=2, size_hint_y=None, height=420, spacing=8)
+        btns = GridLayout(cols=2, size_hint_y=None, height=520, spacing=8)
         buttons = [
             ('FRISSÍTÉS', self.refresh),
             ('TICK / KÉZI FUTTATÁS', self.do_tick),
@@ -898,6 +903,7 @@ class DemoCoreScreen(Screen):
         lines = []
         lines.append(f'[b]Állapot:[/b] {"FUT" if st.get("running") else "ÁLL"}')
         lines.append(f'[b]Safe mode:[/b] {"AKTÍV" if st.get("safe_mode") else "KI"}')
+        lines.append(f'[b]Execution mode:[/b] {st.get("settings", {}).get("execution_mode", "AUTO")}')
         lines.append(f'[b]Utolsó művelet:[/b] {st.get("last_action", "-")}')
         lines.append('')
         lines.append('[b]Nyitott pozíciók:[/b]')
@@ -1058,6 +1064,25 @@ class DemoCoreScreen(Screen):
             self.info.text = "\n".join(lines)
         except Exception as e:
             self.info.text = "Healthcheck hiba: " + str(e)
+
+
+    def set_mode_ui(self, mode):
+        try:
+            res = demo_core.set_execution_mode(mode)
+            st = demo_core.load_state()
+            self.update_kpi(st)
+            self.info.text = self.fmt_state(st, "Execution mode: " + res.get("mode", mode))
+        except Exception as e:
+            self.info.text = "Mode hiba: " + str(e)
+
+    def mode_auto(self):
+        self.set_mode_ui("AUTO")
+
+    def mode_manual(self):
+        self.set_mode_ui("MANUAL")
+
+    def mode_off(self):
+        self.set_mode_ui("OFF")
 
     def do_reset(self):
         try:

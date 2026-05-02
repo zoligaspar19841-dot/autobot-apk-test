@@ -30,7 +30,8 @@ DEFAULT_STATE = {
         "fee_pct": 0.10,
         "sma_fast": 9,
         "sma_slow": 21,
-        "watchlist": ["BTCUSDT", "ETHUSDT", "DOGEUSDT"]
+        "watchlist": ["BTCUSDT", "ETHUSDT", "DOGEUSDT"],
+        "execution_mode": "AUTO"
     },
     "last_action": "Demo core engine ready",
     "last_tick_ts": 0,
@@ -191,6 +192,7 @@ def tick():
     state = load_state()
     settings = state["settings"]
     safe_mode = bool(state.get("safe_mode", False))
+    execution_mode = str(settings.get("execution_mode", "AUTO")).upper()
     max_positions = int(settings.get("max_positions", 3))
     risk_pct = float(settings.get("risk_pct", 10.0)) / 100.0
     min_profit = float(settings.get("min_profit_pct", 10.0))
@@ -221,12 +223,19 @@ def tick():
     open_count = len(state["positions"])
     if safe_mode:
         actions.append("SAFE MODE: új vétel tiltva")
+    elif execution_mode == "OFF":
+        actions.append("EXECUTION OFF: új vétel tiltva")
     elif open_count < max_positions:
         for symbol in settings.get("watchlist", []):
             if symbol in state["positions"]:
                 continue
             sig, _ = signal(symbol, settings)
             if sig == "BUY" and len(state["positions"]) < max_positions:
+                if execution_mode == "MANUAL":
+                    msg = f"MANUAL JELZÉS: BUY lehetőség {symbol}"
+                    actions.append(msg)
+                    audit_event("MANUAL_SIGNAL", msg, {"symbol": symbol})
+                    break
                 spend = max(0.0, float(state["balance"]) * risk_pct)
                 if spend >= 5:
                     actions.append(buy(state, symbol, spend))
@@ -339,6 +348,19 @@ def read_audit_log(limit=50):
         return rows[-int(limit):]
     except Exception:
         return []
+
+
+def set_execution_mode(mode):
+    mode = str(mode).upper().strip()
+    if mode not in ["AUTO", "MANUAL", "OFF"]:
+        mode = "MANUAL"
+    state = load_state()
+    state.setdefault("settings", {})
+    state["settings"]["execution_mode"] = mode
+    state["last_action"] = "Execution mode: " + mode
+    save_state(state)
+    audit_event("EXECUTION_MODE", mode, {})
+    return {"ok": True, "mode": mode, "state": state}
 
 if __name__ == "__main__":
     print(json.dumps(tick(), ensure_ascii=False, indent=2))
