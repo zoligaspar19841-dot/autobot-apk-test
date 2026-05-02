@@ -13,30 +13,47 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show project files
+      - name: Show config
         run: |
           pwd
           ls -la
           echo "=== buildozer.spec ==="
-          sed -n '1,220p' buildozer.spec || true
+          sed -n '1,220p' buildozer.spec
 
-      - name: Build APK with Buildozer Docker
+      - name: Build APK with Docker arm64 only
         run: |
           set +e
 
+          chmod -R a+rwX "$PWD"
+
           docker run --rm \
             --entrypoint /bin/bash \
+            -e HOME=/home/user \
             -v "$PWD":/home/user/hostcwd \
             -w /home/user/hostcwd \
             kivy/buildozer:latest \
-            -lc 'yes y | buildozer -v android debug' 2>&1 | tee build_full_output.log
+            -lc '
+              set +e
+              echo "=== inside docker ==="
+              whoami
+              pwd
+              python --version || true
+              buildozer --version || true
+              echo "=== buildozer clean ==="
+              buildozer android clean || true
+              echo "=== buildozer debug ==="
+              buildozer -v android debug
+            ' 2>&1 | tee build_full_output.log
 
           code=${PIPESTATUS[0]}
 
-          echo "===== LAST 250 LINES ====="
-          tail -n 250 build_full_output.log || true
-          echo "===== EXIT CODE: $code ====="
+          echo "===== IMPORTANT ERRORS ====="
+          grep -nEi "error:|failed|traceback|exception|not found|no such file|command failed" build_full_output.log | tail -n 120 || true
 
+          echo "===== LAST 350 LINES ====="
+          tail -n 350 build_full_output.log || true
+
+          echo "===== EXIT CODE: $code ====="
           exit $code
 
       - name: Find APK
