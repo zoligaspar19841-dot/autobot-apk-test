@@ -46,9 +46,16 @@
     "taker_fee_pct": 0.1,
     "tax_enabled": true,
     "tax_pct": 15.0,
-    "min_after_tax_profit_pct": 0.1
+    "min_after_tax_profit_pct": 0.1,
+    "order_type": "LIMIT_BBO",
+    "use_bbo": true,
+    "max_spread_pct": 0.25,
+    "slippage_buffer_pct": 0.1,
+    "min_orderbook_imbalance": 0.48,
+    "tp_sl_enabled": true,
+    "take_profit_pct": 3.0
   },
-  "last_action": "Scanner futott: top BTCUSDT, ETHUSDT, DOGEUSDT",
+  "last_action": "Scanner futott: top DOGEUSDT, BTCUSDT, ETHUSDT",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
   "last_heartbeat_ts": 1777759959,

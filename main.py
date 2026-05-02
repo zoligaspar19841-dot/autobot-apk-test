@@ -570,6 +570,83 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreTradeScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(
+            text='[b]BINANCE TRADE LOGIKA[/b]\n[size=14]BBO / Spread / Slippage / Orderbook demo[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=72
+        )
+        root.add_widget(title)
+
+        self.info = Label(text='Trade logika betöltés...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=170, spacing=8)
+        b_check = Button(text='BBO CHECK')
+        b_scan = Button(text='SCANNER')
+        b_settings = Button(text='SETTINGS')
+        b_back = Button(text='VISSZA')
+
+        b_check.bind(on_press=lambda x: self.check())
+        b_scan.bind(on_press=lambda x: self.manager.go_to('scanner'))
+        b_settings.bind(on_press=lambda x: self.manager.go_to('demo_settings'))
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_check, b_scan, b_settings, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.check()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def check(self):
+        try:
+            st = demo_core.load_state()
+            cfg = st.get('settings', {})
+            watch = cfg.get('watchlist') or ['BTCUSDT']
+            sym = watch[0]
+            res = demo_core.trade_screen_check(sym, 'BUY', cfg)
+
+            lines = []
+            lines.append('[b]Binance Trade demo check[/b]')
+            lines.append('')
+            lines.append(f"Symbol: {res.get('symbol')}")
+            lines.append(f"Side: {res.get('side')}")
+            lines.append(f"Allowed: {res.get('allowed')}")
+            lines.append(f"BBO price: {res.get('bbo_price')}")
+            lines.append(f"Limit price: {res.get('limit_price')}")
+            lines.append(f"Spread: {res.get('spread_pct')}%")
+            lines.append(f"Bid ratio: {res.get('bid_ratio')}")
+            lines.append(f"Ask ratio: {res.get('ask_ratio')}")
+            lines.append('')
+            lines.append('[b]Indoklás:[/b]')
+            for r in res.get('reasons', []):
+                lines.append('- ' + str(r))
+
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Trade screen hiba: ' + str(e)
+
+
+
 class DemoCoreFeeTaxScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -912,6 +989,13 @@ class DemoCoreSettingsScreen(Screen):
             ('tax_enabled', 'Tax enabled true/false'),
             ('tax_pct', 'HU tax %'),
             ('min_after_tax_profit_pct', 'Min after tax profit %'),
+            ('order_type', 'Order type LIMIT_BBO'),
+            ('use_bbo', 'Use BBO true/false'),
+            ('max_spread_pct', 'Max spread %'),
+            ('slippage_buffer_pct', 'Slippage buffer %'),
+            ('min_orderbook_imbalance', 'Min orderbook imbalance'),
+            ('tp_sl_enabled', 'TP/SL enabled true/false'),
+            ('take_profit_pct', 'Take profit %'),
         ]
 
         for key, label in fields:
@@ -1004,6 +1088,13 @@ class DemoCoreSettingsScreen(Screen):
             cfg['tax_enabled'] = self.inputs['tax_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['tax_pct'] = float(self.inputs['tax_pct'].text.replace(',', '.'))
             cfg['min_after_tax_profit_pct'] = float(self.inputs['min_after_tax_profit_pct'].text.replace(',', '.'))
+            cfg['order_type'] = self.inputs['order_type'].text.strip().upper() or 'LIMIT_BBO'
+            cfg['use_bbo'] = self.inputs['use_bbo'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['max_spread_pct'] = float(self.inputs['max_spread_pct'].text.replace(',', '.'))
+            cfg['slippage_buffer_pct'] = float(self.inputs['slippage_buffer_pct'].text.replace(',', '.'))
+            cfg['min_orderbook_imbalance'] = float(self.inputs['min_orderbook_imbalance'].text.replace(',', '.'))
+            cfg['tp_sl_enabled'] = self.inputs['tp_sl_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['take_profit_pct'] = float(self.inputs['take_profit_pct'].text.replace(',', '.'))
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -1222,6 +1313,12 @@ class DemoCoreScreen(Screen):
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
 
+    def open_trade_logic(self):
+        try:
+            self.manager.go_to("trade_logic")
+        except Exception:
+            self.manager.current = "trade_logic"
+
     def open_fee_tax(self):
         try:
             self.manager.go_to("fee_tax")
@@ -1360,6 +1457,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreAuditScreen(name="audit_log"))
         sm.add_widget(DemoCoreScannerScreen(name="scanner"))
         sm.add_widget(DemoCoreFeeTaxScreen(name="fee_tax"))
+        sm.add_widget(DemoCoreTradeScreen(name="trade_logic"))
         return sm
 
 if __name__ == "__main__":

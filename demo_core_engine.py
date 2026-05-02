@@ -16,6 +16,17 @@ os.makedirs(LOG_DIR, exist_ok=True)
 
 
 
+
+TRADE_SCREEN_DEFAULTS = {
+    "order_type": "LIMIT_BBO",
+    "use_bbo": True,
+    "max_spread_pct": 0.25,
+    "slippage_buffer_pct": 0.10,
+    "min_orderbook_imbalance": 0.48,
+    "tp_sl_enabled": True,
+    "take_profit_pct": 3.0,
+}
+
 FEE_TAX_DEFAULTS = {
     "maker_fee_pct": 0.10,
     "taker_fee_pct": 0.10,
@@ -104,6 +115,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "TRADE_SCREEN_DEFAULTS" in globals():
+        for k, v in TRADE_SCREEN_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -267,6 +284,50 @@ def sell(state, symbol, note="SELL"):
     audit_event("SELL", note, {"symbol": symbol, "qty": qty, "price": p, "pnl": pnl, "pnl_breakdown": pnl_info, "profit_pct_breakdown": profit_pct_breakdown(((p - avg) / avg) * 100 if avg else 0, state.get("settings", {}))})
     return f"SELL {symbol} PnL={pnl:.4f} USDC | {note}"
 
+
+def get_prices(symbol, limit=60):
+    """
+    Demo árlista fallback scannerhez / BBO-hoz.
+    Ha később lesz live Binance klines/ticker adat, ezt lehet kiváltani.
+    Most stabil, determinisztikus, symbol-függő demo ármozgást ad.
+    """
+    try:
+        limit = int(limit or 60)
+    except Exception:
+        limit = 60
+
+    symbol = str(symbol or "BTCUSDT").upper()
+
+    base_map = {
+        "BTCUSDT": 78836.41,
+        "ETHUSDT": 2328.98,
+        "DOGEUSDT": 0.168,
+        "BNBUSDT": 618.54,
+        "BNBBTC": 0.007863,
+    }
+
+    base = base_map.get(symbol, None)
+    if base is None:
+        seed = sum(ord(c) for c in symbol)
+        base = 1.0 + (seed % 5000) / 10.0
+
+    seed = sum(ord(c) for c in symbol)
+    now_bucket = int(time.time() // 60)
+
+    prices = []
+    for i in range(limit):
+        t = now_bucket - (limit - i)
+        wave = math.sin((t + seed) / 7.0) * 0.006
+        wave2 = math.sin((t + seed) / 17.0) * 0.003
+        drift = ((i - limit / 2.0) / max(limit, 1)) * 0.002
+        price = base * (1.0 + wave + wave2 + drift)
+        if price <= 0:
+            price = base
+        prices.append(float(price))
+
+    return prices
+
+
 def signal(symbol, settings):
     closes = get_closes(symbol, 80)
     if len(closes) < 25:
@@ -362,8 +423,16 @@ def tick():
                     break
                 spend = max(0.0, float(state["balance"]) * risk_pct)
                 if spend >= 5:
-                    actions.append(buy(state, symbol, spend))
-                    break
+                    check = trade_screen_check(symbol, "BUY", settings)
+                    if check.get("allowed"):
+                        actions.append("BBO OK " + symbol + " limit=" + str(check.get("limit_price")))
+                        actions.append(buy(state, symbol, spend))
+                        audit_event("BBO_BUY_ALLOWED", symbol, check)
+                        break
+                    else:
+                        actions.append("BBO GUARD TILT " + symbol + ": " + " | ".join(check.get("reasons", [])))
+                        audit_event("BBO_BUY_BLOCKED", symbol, check)
+                        continue
 
     state["last_action"] = " | ".join(actions) if actions else "HOLD"
     state["last_tick_ts"] = int(time.time())
@@ -695,6 +764,101 @@ def portfolio_pnl_breakdown():
     out["equity"] = equity(st)
     out["balance"] = st.get("balance", 0)
     return out
+
+
+def demo_orderbook(symbol, settings=None):
+    """
+    Binance Trade screen demo modell:
+    best bid / best ask / spread / bid-ask imbalance.
+    Live módban ezt majd valós Binance orderbook API váltja ki.
+    """
+    settings = settings or load_state().get("settings", {})
+    prices = get_prices(symbol, limit=30)
+    price = float(prices[-1]) if prices else 1.0
+
+    # Demo spread: volatilitásból becsülünk
+    hi = max(prices[-10:]) if prices else price
+    lo = min(prices[-10:]) if prices else price
+    vol_pct = ((hi - lo) / price) * 100 if price else 0.0
+
+    spread_pct = max(0.02, min(0.50, vol_pct / 10.0))
+    half = spread_pct / 200.0
+
+    best_bid = price * (1.0 - half)
+    best_ask = price * (1.0 + half)
+
+    # Demo imbalance: momentum alapján becsült bid/ask erő
+    prev = float(prices[-5]) if prices and len(prices) >= 5 else price
+    momentum_pct = ((price - prev) / prev) * 100 if prev else 0.0
+
+    bid_ratio = 0.50 + max(-0.20, min(0.20, momentum_pct / 20.0))
+    ask_ratio = 1.0 - bid_ratio
+
+    return {
+        "symbol": symbol,
+        "mid": round(price, 8),
+        "best_bid": round(best_bid, 8),
+        "best_ask": round(best_ask, 8),
+        "spread_pct": round(spread_pct, 6),
+        "bid_ratio": round(bid_ratio, 4),
+        "ask_ratio": round(ask_ratio, 4),
+        "momentum_pct": round(momentum_pct, 4),
+    }
+
+
+def trade_screen_check(symbol, side="BUY", settings=None):
+    """
+    Binance Trade képernyőből átvett guard:
+    - BBO ár
+    - spread tiltás
+    - slippage buffer
+    - orderbook imbalance
+    - fee + after-tax becsléshez használható ár
+    """
+    settings = settings or load_state().get("settings", {})
+    ob = demo_orderbook(symbol, settings)
+
+    max_spread = float(settings.get("max_spread_pct", 0.25) or 0.25)
+    slip = float(settings.get("slippage_buffer_pct", 0.10) or 0.10)
+    min_imb = float(settings.get("min_orderbook_imbalance", 0.48) or 0.48)
+
+    side = str(side).upper()
+
+    if side == "BUY":
+        bbo_price = float(ob["best_ask"])
+        limit_price = bbo_price * (1.0 + slip / 100.0)
+        imbalance_ok = float(ob["bid_ratio"]) >= min_imb
+    else:
+        bbo_price = float(ob["best_bid"])
+        limit_price = bbo_price * (1.0 - slip / 100.0)
+        imbalance_ok = float(ob["ask_ratio"]) >= (1.0 - min_imb)
+
+    spread_ok = float(ob["spread_pct"]) <= max_spread
+
+    allowed = spread_ok and imbalance_ok
+
+    reasons = []
+    if not spread_ok:
+        reasons.append(f"Spread túl nagy: {ob['spread_pct']}% > {max_spread}%")
+    if not imbalance_ok:
+        reasons.append(f"Orderbook imbalance gyenge: bid={ob['bid_ratio']} ask={ob['ask_ratio']}")
+
+    if allowed:
+        reasons.append("BBO/spread/orderbook OK")
+
+    return {
+        "ok": True,
+        "allowed": allowed,
+        "side": side,
+        "symbol": symbol,
+        "bbo_price": round(bbo_price, 8),
+        "limit_price": round(limit_price, 8),
+        "spread_pct": ob["spread_pct"],
+        "bid_ratio": ob["bid_ratio"],
+        "ask_ratio": ob["ask_ratio"],
+        "reasons": reasons,
+        "orderbook": ob,
+    }
 
 if __name__ == "__main__":
     print(json.dumps(tick(), ensure_ascii=False, indent=2))
