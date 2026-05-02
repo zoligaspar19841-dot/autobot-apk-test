@@ -20,6 +20,27 @@ BLUE = (0, 0.25, 0.85, 1)
 DARK = (0.07, 0.07, 0.08, 1)
 CARD = (0.16, 0.16, 0.17, 1)
 
+NAV_STACK = []
+
+def go_to(sm, screen):
+    try:
+        cur = sm.current
+        if cur and cur != screen:
+            NAV_STACK.append(cur)
+        sm.current = screen
+    except Exception:
+        sm.current = screen
+
+def go_back(sm, fallback="main"):
+    try:
+        if NAV_STACK:
+            sm.current = NAV_STACK.pop()
+        else:
+            sm.current = fallback
+    except Exception:
+        sm.current = fallback
+
+
 def load_json(path, default):
     try:
         if os.path.exists(path):
@@ -159,7 +180,7 @@ class Main(Screen):
         ]
         for txt, scr, col in items:
             b = button(txt, col, 24)
-            b.bind(on_press=lambda x, s=scr: setattr(self.manager, "current", s))
+            b.bind(on_press=lambda x, s=scr: go_to(self.manager, s))
             grid.add_widget(b)
 
         root.add_widget(grid)
@@ -246,7 +267,7 @@ class Dashboard(Screen):
         self.msg.text = "Frissítve." if price else "Offline / nincs adat."
 
     def back(self, x):
-        self.manager.current = "main"
+        go_back(self.manager)
 
 class Scanner(Screen):
     def __init__(self, **kw):
@@ -258,7 +279,7 @@ class Scanner(Screen):
         r = button("FRISSÍTÉS", CARD, 24)
         b = button("VISSZA", (.35,.35,.35,1), 24)
         r.bind(on_press=self.refresh)
-        b.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
+        b.bind(on_press=lambda x: go_back(self.manager))
         root.add_widget(r)
         root.add_widget(b)
         self.add_widget(root)
@@ -317,7 +338,7 @@ class MasterMenu(Screen):
             b = button(txt, CARD, 20)
             b.size_hint_y = None
             b.height = 58
-            b.bind(on_press=lambda x, sc=scr: setattr(self.manager, "current", sc))
+            b.bind(on_press=lambda x, sc=scr: go_to(self.manager, sc))
             grid.add_widget(b)
 
         sv = ScrollView()
@@ -326,7 +347,7 @@ class MasterMenu(Screen):
 
         back = button("VISSZA", (.35,.35,.35,1), 24)
         back.size_hint_y = .11
-        back.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
+        back.bind(on_press=lambda x: go_back(self.manager))
         root.add_widget(back)
         self.add_widget(root)
 
@@ -337,7 +358,7 @@ class SkeletonScreen(Screen):
         root.add_widget(Label(text=title, font_size=32, bold=True, color=(1,.75,0,1), size_hint_y=.15))
         root.add_widget(Label(text=body, font_size=21))
         b = button("VISSZA", (.35,.35,.35,1), 23)
-        b.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
+        b.bind(on_press=lambda x: go_back(self.manager))
         root.add_widget(b)
         self.add_widget(root)
 
@@ -370,7 +391,7 @@ class DemoResetScreen(Screen):
         back = button("VISSZA", (.35,.35,.35,1), 23)
 
         reset.bind(on_press=self.do_reset)
-        back.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
+        back.bind(on_press=lambda x: go_back(self.manager))
 
         root.add_widget(reset)
         root.add_widget(back)
@@ -417,7 +438,7 @@ class TradeSimpleScreen(Screen):
         start.bind(on_press=self.start)
         stop.bind(on_press=self.stop)
         tick.bind(on_press=self.tick)
-        back.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
+        back.bind(on_press=lambda x: go_back(self.manager))
 
         root.add_widget(start)
         root.add_widget(stop)
@@ -476,7 +497,7 @@ class StrategyAdvancedScreen(Screen):
         back = button("VISSZA", (.35,.35,.35,1), 22)
 
         save.bind(on_press=self.save)
-        back.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
+        back.bind(on_press=lambda x: go_back(self.manager))
 
         root.add_widget(save)
         root.add_widget(back)
@@ -508,14 +529,14 @@ class SectionScreen(Screen):
 
         for txt, scr in items:
             b = button(txt, CARD, 22)
-            b.bind(on_press=lambda x, sc=scr: setattr(self.manager, "current", sc))
+            b.bind(on_press=lambda x, sc=scr: go_to(self.manager, sc))
             grid.add_widget(b)
 
         root.add_widget(grid)
 
         back = button("VISSZA", (.35,.35,.35,1), 24)
         back.size_hint_y = .13
-        back.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
+        back.bind(on_press=lambda x: go_back(self.manager))
         root.add_widget(back)
 
         self.add_widget(root)
@@ -528,7 +549,7 @@ class TextScreen(Screen):
         root.add_widget(Label(text=title, font_size=34, bold=True, color=(1,.75,0,1), size_hint_y=.16))
         root.add_widget(Label(text=body, font_size=22))
         b = button("VISSZA", (.35,.35,.35,1), 24)
-        b.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
+        b.bind(on_press=lambda x: go_back(self.manager))
         root.add_widget(b)
         self.add_widget(root)
 
@@ -545,7 +566,8 @@ class AppMain(App):
         sm.add_widget(SectionScreen("BIZTONSÁG / API", [("App jelszó / PIN", "security_pin"), ("Binance API kulcs", "security_api"), ("E-mail beállítás", "security_email"), ("Titkosítás", "security_encrypt"), ("Healthcheck", "healthcheck")], name="security"))
         sm.add_widget(SectionScreen("AI / STRATÉGIA", [("Strategy Advanced", "strategy_advanced"), ("AI coin választás", "ai_coin"), ("Profit-Hold AI", "profit_hold_ai"), ("Backtest / Replay", "backtest"), ("Safety Guards", "safety_guards")], name="strategy"))
         sm.add_widget(SectionScreen("NAPLÓ / EXPORT", [("Trades / Export", "trades_export"), ("Audit log", "audit_log"), ("Snapshot export", "patch_snapshot"), ("Profit report", "profit_report")], name="logs"))
-        sm.add_widget(SectionScreen("HALADÓ", [("Schedules", "schedules"), ("Launchpool / Airdrop", "launchpool"), ("Patch Manager UI", "patch_manager_ui"), ("Diagnostics / Tests", "diagnostics"), ("PC + Google Drive Sync", "pc_drive_sync"), ("Fájlszerkezet", "file_structure"), ("Extra fejlesztések", "extra_features")], name="advanced"))
+        sm.add_widget(SectionScreen("HALADÓ", [("Schedules", "schedules"),
+                ("Háttérfutás / értesítések", "background_service"), ("Launchpool / Airdrop", "launchpool"), ("Patch Manager UI", "patch_manager_ui"), ("Diagnostics / Tests", "diagnostics"), ("PC + Google Drive Sync", "pc_drive_sync"), ("Fájlszerkezet", "file_structure"), ("Extra fejlesztések", "extra_features")], name="advanced"))
 
         sm.add_widget(MasterMenu(name="main"))
         sm.add_widget(SkeletonScreen("TRADE SIMPLE", "Symbol, Risk/trade %, minimum nettó profit %, SL/TP ATR szorzók.\nBekötés később.", name="trade_simple"))
@@ -578,6 +600,8 @@ class AppMain(App):
         sm.add_widget(SkeletonScreen("AI COIN VÁLASZTÁS", "Top coin rangsor, edge score, automata kiválasztás később.\nBekötés később.", name="ai_coin"))
         sm.add_widget(SkeletonScreen("TRADES / EXPORT", "Trade lista, CSV export, PnL napló, letöltés.\nBekötés később.", name="trades_export"))
         sm.add_widget(SkeletonScreen("PROFIT REPORT", "Profit trend, napi/heti összesítés, grafikon később.\nBekötés később.", name="profit_report"))
+
+        sm.add_widget(SkeletonScreen("HÁTTÉRFUTÁS / ÉRTESÍTÉSEK", "Később itt lesz:\n- háttérben futó bot\n- állandó értesítés\n- trade riasztások\n- hibaértesítés\n- Android foreground service alap.\nBekötés később.", name="background_service"))
         return sm
 
 if __name__ == "__main__":
