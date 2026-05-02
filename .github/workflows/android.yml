@@ -18,7 +18,7 @@ jobs:
           pwd
           ls -la
           echo "=== buildozer.spec ==="
-          sed -n '1,180p' buildozer.spec || true
+          sed -n '1,220p' buildozer.spec || true
 
       - name: Build APK with Buildozer Docker
         run: |
@@ -29,7 +29,7 @@ jobs:
             -v "$PWD":/home/user/hostcwd \
             -w /home/user/hostcwd \
             kivy/buildozer:latest \
-            -lc 'buildozer -v android debug' 2>&1 | tee build_full_output.log
+            -lc 'yes y | buildozer -v android debug' 2>&1 | tee build_full_output.log
 
           code=${PIPESTATUS[0]}
 
