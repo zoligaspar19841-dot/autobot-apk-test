@@ -195,6 +195,7 @@ class MyApp(App):
         sm.add_widget(DashboardScreen("💎 LIVE DASHBOARD", "live", (.04,.20,.48,1), name="live"))
         sm.add_widget(SimpleScreen("BIZTONSÁG / API", "Itt lesz:\nBinance API kulcs\nE-mail\nJelszó / PIN\nTitkosítás", name="security"))
         sm.add_widget(SimpleScreen("BEÁLLÍTÁSOK", "Itt lesz:\nDemo beállítások\nLive beállítások\nAlap pénznem\nKockázat %\nNyelv / téma", name="settings"))
+        sm.add_widget(SimpleScreen("BEÁLLÍTÁSOK", "Itt lesz:\nDemo beállítások\nLive beállítások\nAlap pénznem\nKockázat %\nNyelv / téma", name="settings"))
         sm.add_widget(SimpleScreen("AI / STRATÉGIA", "Itt lesz:\nNormal / Hybrid / Sniper\nSMA / RSI / ATR\nAI mód: Auto / Manual / Off", name="strategy"))
         sm.add_widget(SimpleScreen("NAPLÓ / EXPORT", "Itt lesz:\nTrades lista\nCSV export\nProfit report", name="logs"))
         sm.add_widget(SimpleScreen("HALADÓ", "Itt lesz:\nSchedules\nLaunchpool / Airdrop\nPatch Manager\nDiagnostics", name="advanced"))
