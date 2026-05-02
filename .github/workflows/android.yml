@@ -11,7 +11,6 @@ jobs:
 
     env:
       ANDROIDSDK: /home/runner/.buildozer/android/platform/android-sdk
-      ANDROIDNDK: /home/runner/.buildozer/android/platform/android-ndk-r23b
       ANDROIDAPI: 31
       ANDROIDMINAPI: 21
 
@@ -24,13 +23,14 @@ jobs:
           sudo apt update
           sudo apt install -y zip unzip openjdk-17-jdk python3-pip wget
 
-      - name: Prepare Android SDK where Buildozer expects it
+      - name: Prepare Android SDK exactly for Buildozer
         run: |
           mkdir -p "$ANDROIDSDK/tools"
           cd "$ANDROIDSDK"
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
-          unzip -q cmdtools.zip -d temp
-          cp -r temp/cmdline-tools/* tools/
+          unzip -q cmdtools.zip -d cmdtmp
+          cp -r cmdtmp/cmdline-tools/* "$ANDROIDSDK/tools/"
+          test -f "$ANDROIDSDK/tools/bin/sdkmanager"
           mkdir -p "$ANDROIDSDK/licenses"
           printf "%s\n" \
             "8933bad161af4178b1185d1a37fbf41ea5269c55" \
@@ -54,6 +54,11 @@ jobs:
       - name: Build APK
         run: |
           buildozer -v android debug
+
+      - name: Find APK
+        run: |
+          find . -name "*.apk" -type f
+          test -n "$(find . -name '*.apk' -type f | head -n 1)"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
