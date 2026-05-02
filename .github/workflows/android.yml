@@ -3,52 +3,54 @@ name: Build APK
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-
-    env:
-      JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
-      ANDROID_HOME: /usr/local/lib/android/sdk
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Force Java 17
-        run: |
-          echo "JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64" >> $GITHUB_ENV
-          echo "/usr/lib/jvm/temurin-17-jdk-amd64/bin" >> $GITHUB_PATH
-          java -version
+    - name: Install system deps
+      run: |
+        sudo apt update
+        sudo apt install -y zip unzip openjdk-17-jdk python3-pip
 
-      - name: Install packages
-        run: |
-          sudo apt update
-          sudo apt install -y openjdk-17-jdk unzip zip git autoconf automake libtool pkg-config zlib1g-dev libffi-dev libssl-dev
-          python3 -m pip install --upgrade pip wheel setuptools
-          python3 -m pip install buildozer==1.5.0 cython==0.29.36
+    - name: Install buildozer
+      run: |
+        pip install --upgrade pip
+        pip install buildozer cython
 
-      - name: Clean old build
-        run: |
-          rm -rf .buildozer bin apk_out
+    - name: Build APK
+      run: |
+        buildozer android debug
 
-      - name: Build APK
-        run: |
-          java -version
-          buildozer -v android debug 2>&1 | tee buildozer_full.log
+    - name: List files (debug)
+      run: |
+        echo "📂 FILE LIST:"
+        ls -R
 
-      - name: Upload full log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: buildozer-full-log
-          path: buildozer_full.log
+    - name: Check APK exists
+      run: |
+        if ls bin/*.apk 1> /dev/null 2>&1; then
+          echo "✅ APK FOUND"
+        else
+          echo "❌ NINCS APK!"
+          exit 1
+        fi
 
-      - name: Upload APK
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk
-          path: bin/*.apk
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: apk
+        path: |
+          bin/*.apk
+          **/*.apk
+
+    - name: Upload full log
+      uses: actions/upload-artifact@v4
+      with:
+        name: buildozer-log
+        path: |
+          .buildozer/**/*.log
