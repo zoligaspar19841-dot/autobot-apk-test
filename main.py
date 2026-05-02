@@ -547,6 +547,7 @@ class SectionScreen(Screen):
 class DemoCoreScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._demo_core_auto_event = None
         root = BoxLayout(orientation='vertical', padding=12, spacing=10)
 
         title = Label(text='[b]DEMO CORE ENGINE[/b]\n[size=14]Demo motor / pozíciók / PnL[/size]', markup=True, size_hint_y=None, height=72)
@@ -644,6 +645,34 @@ class DemoCoreScreen(Screen):
         except Exception as e:
             self.info.text = 'Demo core hiba: ' + str(e)
 
+
+    def on_leave(self):
+        self.stop_auto_tick()
+
+    def stop_auto_tick(self):
+        try:
+            if self._demo_core_auto_event is not None:
+                self._demo_core_auto_event.cancel()
+        except Exception:
+            pass
+        self._demo_core_auto_event = None
+
+    def auto_tick(self, dt):
+        try:
+            st = demo_core.load_state()
+            if not st.get("running"):
+                self.stop_auto_tick()
+                return False
+            res = demo_core.tick()
+            st = demo_core.load_state()
+            self.update_kpi(st)
+            self.info.text = self.fmt_state(st, res.get("action", res))
+            return True
+        except Exception as e:
+            self.info.text = "Auto tick hiba: " + str(e)
+            self.stop_auto_tick()
+            return False
+
     def do_tick(self):
         try:
             res = demo_core.tick()
@@ -653,27 +682,36 @@ class DemoCoreScreen(Screen):
         except Exception as e:
             self.info.text = 'Tick hiba: ' + str(e)
 
+
     def do_start(self):
         try:
             st = demo_core.load_state()
-            st['running'] = True
-            st['last_action'] = 'Demo core START'
+            st["running"] = True
+            st["last_action"] = "Demo core START - auto tick aktív"
             demo_core.save_state(st)
+
+            self.stop_auto_tick()
+            self._demo_core_auto_event = Clock.schedule_interval(self.auto_tick, 15)
+
             self.update_kpi(st)
-            self.info.text = self.fmt_state(st, 'START')
+            self.info.text = self.fmt_state(st, "START - automatikus tick 15 mp")
         except Exception as e:
-            self.info.text = 'Start hiba: ' + str(e)
+            self.info.text = "Start hiba: " + str(e)
+
+
 
     def do_stop(self):
         try:
+            self.stop_auto_tick()
             st = demo_core.load_state()
-            st['running'] = False
-            st['last_action'] = 'Demo core STOP'
+            st["running"] = False
+            st["last_action"] = "Demo core STOP - auto tick leállítva"
             demo_core.save_state(st)
             self.update_kpi(st)
-            self.info.text = self.fmt_state(st, 'STOP')
+            self.info.text = self.fmt_state(st, "STOP")
         except Exception as e:
-            self.info.text = 'Stop hiba: ' + str(e)
+            self.info.text = "Stop hiba: " + str(e)
+
 
     def do_reset(self):
         try:
