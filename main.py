@@ -787,7 +787,7 @@ class DemoCoreScreen(Screen):
         scroll.add_widget(self.info)
         root.add_widget(scroll)
 
-        btns = GridLayout(cols=2, size_hint_y=None, height=310, spacing=8)
+        btns = GridLayout(cols=2, size_hint_y=None, height=360, spacing=8)
         buttons = [
             ('FRISSÍTÉS', self.refresh),
             ('TICK / KÉZI FUTTATÁS', self.do_tick),
@@ -795,6 +795,7 @@ class DemoCoreScreen(Screen):
             ('STOP', self.do_stop),
             ('DEMO RESET 100 USDC', self.do_reset),
             ('PANIC STOP / SAFE MODE', self.do_panic_stop),
+            ('SAFE MODE KI', self.do_safe_mode_off),
             ('VISSZA', self.go_back),
         ]
         for txt, fn in buttons:
@@ -944,6 +945,16 @@ class DemoCoreScreen(Screen):
             self.info.text = self.fmt_state(st, res.get("action", "PANIC STOP"))
         except Exception as e:
             self.info.text = "Panic stop hiba: " + str(e)
+
+
+    def do_safe_mode_off(self):
+        try:
+            res = demo_core.safe_mode_off()
+            st = demo_core.load_state()
+            self.update_kpi(st)
+            self.info.text = self.fmt_state(st, res.get("action", "Safe mode kikapcsolva"))
+        except Exception as e:
+            self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
     def do_reset(self):
         try:
