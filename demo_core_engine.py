@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import urllib.error
 from email.message import EmailMessage
 import smtplib
 import secrets as py_secrets
@@ -41,6 +42,13 @@ SECRETS_DEFAULTS = {
     "ngrok_token": "",
 }
 
+
+
+OPENAI_API_DEFAULTS = {
+    "openai_model": "gpt-5-mini",
+    "openai_timeout_sec": 25,
+    "openai_api_enabled": False,
+}
 
 EMAIL_NOTIFY_DEFAULTS = {
     "email_notify_enabled": True,
@@ -155,6 +163,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "OPENAI_API_DEFAULTS" in globals():
+        for k, v in OPENAI_API_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -1011,6 +1025,15 @@ def ai_advisor(symbol=None):
         "reasons": reasons,
     }
 
+    api_res = {"ok": False, "used_api": False, "reason": "not_requested"}
+    try:
+        if str(settings.get("ai_mode", "OFFLINE")).upper() == "API" and bool(settings.get("openai_api_enabled", False)):
+            api_res = call_openai_advisor(symbol, out)
+    except Exception as e:
+        api_res = {"ok": False, "used_api": False, "reason": str(e)}
+
+    out["openai_api"] = api_res
+
     audit_event("AI_ADVISOR", recommendation, out)
     state["last_action"] = "AI advisor: " + recommendation + " " + symbol
     save_state(state)
@@ -1366,6 +1389,137 @@ def notify_trade_event(kind, text, data=None):
             body.append(str(data))
 
     return send_email_notification(subject, "\n".join(body))
+
+
+
+def openai_config_status():
+    sec = load_secrets()
+    state = load_state()
+    settings = state.get("settings", {})
+
+    has_key = bool(sec.get("openai_api_key"))
+    api_enabled = bool(settings.get("openai_api_enabled", False))
+    mode = str(settings.get("ai_mode", "OFFLINE")).upper()
+
+    return {
+        "ok": True,
+        "has_key": has_key,
+        "api_enabled": api_enabled,
+        "ai_mode": mode,
+        "model": settings.get("openai_model", "gpt-5-mini"),
+        "ready": has_key and api_enabled and mode == "API",
+    }
+
+
+def build_ai_prompt(symbol, offline_result):
+    scanner = offline_result.get("scanner", {})
+    trade = offline_result.get("trade_guard", {})
+    fee = offline_result.get("fee_tax_example_1pct", {})
+
+    lines = []
+    lines.append("Te egy óvatos kripto trading advisor vagy a felhasználó SAJÁT Binance botjához.")
+    lines.append("Nem adhatsz túl kockázatos tanácsot. Ha bizonytalan a jel, HOLD/BLOCKED legyen.")
+    lines.append("Adj rövid JSON választ magyarul.")
+    lines.append("")
+    lines.append("Elérhető adatok:")
+    lines.append("symbol=" + str(symbol))
+    lines.append("offline_recommendation=" + str(offline_result.get("recommendation")))
+    lines.append("confidence=" + str(offline_result.get("confidence")))
+    lines.append("execution_mode=" + str(offline_result.get("execution_mode")))
+    lines.append("safe_mode=" + str(offline_result.get("safe_mode")))
+    lines.append("health_status=" + str(offline_result.get("health_status")))
+    lines.append("")
+    lines.append("scanner=" + json.dumps(scanner, ensure_ascii=False))
+    lines.append("trade_guard=" + json.dumps(trade, ensure_ascii=False))
+    lines.append("fee_tax_1pct=" + json.dumps(fee, ensure_ascii=False))
+    lines.append("")
+    lines.append("Válasz JSON séma:")
+    lines.append('{"decision":"BUY|HOLD|BLOCKED|MANUAL_REVIEW","confidence":0.0,"reason":"rövid magyar indoklás","risk_notes":["..."],"action_allowed":true}')
+    return "\n".join(lines)
+
+
+def call_openai_advisor(symbol, offline_result):
+    """
+    OpenAI API hívás opcionálisan.
+    Csak akkor fut, ha:
+    - ai_mode == API
+    - openai_api_enabled == True
+    - openai_api_key megvan secrets.enc-ben
+    """
+    cfg = openai_config_status()
+
+    if not cfg.get("ready"):
+        return {
+            "ok": False,
+            "used_api": False,
+            "reason": "openai_not_ready",
+            "config": cfg,
+        }
+
+    sec = load_secrets()
+    state = load_state()
+    settings = state.get("settings", {})
+
+    api_key = sec.get("openai_api_key", "")
+    model = settings.get("openai_model", "gpt-5-mini")
+    timeout = int(settings.get("openai_timeout_sec", 25) or 25)
+
+    prompt = build_ai_prompt(symbol, offline_result)
+
+    payload = {
+        "model": model,
+        "input": prompt,
+        "max_output_tokens": 500,
+    }
+
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/responses",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + api_key,
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+            data = json.loads(raw)
+
+        # Responses API text kinyerése többféle formátumból
+        text = ""
+        if isinstance(data, dict):
+            if isinstance(data.get("output_text"), str):
+                text = data.get("output_text")
+            elif isinstance(data.get("output"), list):
+                parts = []
+                for item in data.get("output", []):
+                    for c in item.get("content", []) if isinstance(item, dict) else []:
+                        if isinstance(c, dict) and c.get("type") in ["output_text", "text"]:
+                            parts.append(str(c.get("text", "")))
+                text = "\n".join([x for x in parts if x])
+
+        result = {
+            "ok": True,
+            "used_api": True,
+            "model": model,
+            "text": text,
+            "raw_type": str(type(data)),
+        }
+
+        audit_event("OPENAI_ADVISOR_OK", symbol, {"model": model, "text_preview": text[:300]})
+        return result
+
+    except Exception as e:
+        result = {
+            "ok": False,
+            "used_api": False,
+            "reason": str(e),
+            "model": model,
+        }
+        audit_event("OPENAI_ADVISOR_ERROR", symbol, {"error": str(e)})
+        return result
 
 
 if __name__ == "__main__":

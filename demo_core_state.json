@@ -62,7 +62,10 @@
     "email_on_buy": true,
     "email_on_sell": true,
     "email_on_error": true,
-    "email_on_health_warning": true
+    "email_on_health_warning": true,
+    "openai_model": "gpt-5-mini",
+    "openai_timeout_sec": 25,
+    "openai_api_enabled": false
   },
   "last_action": "AI advisor: HOLD BTCUSDT",
   "safe_mode": false,

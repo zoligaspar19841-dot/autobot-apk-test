@@ -714,6 +714,10 @@ class DemoCoreSecretsScreen(Screen):
                 res = demo_core.send_test_email()
                 self.refresh('Email teszt: ' + str(res.get('reason') or res.get('sent')))
                 return
+            if kind == 'openai':
+                cfg = demo_core.openai_config_status()
+                self.refresh('OpenAI ready: ' + str(cfg.get('ready')) + ' key: ' + str(cfg.get('has_key')))
+                return
             res = demo_core.integration_test(kind)
             self.refresh(res.get('message', 'Teszt kész.'))
         except Exception as e:
@@ -1245,6 +1249,9 @@ class DemoCoreSettingsScreen(Screen):
             ('email_on_sell', 'Email on SELL true/false'),
             ('email_on_error', 'Email on ERROR true/false'),
             ('email_on_health_warning', 'Email on health warning true/false'),
+            ('openai_api_enabled', 'OpenAI API enabled true/false'),
+            ('openai_model', 'OpenAI model'),
+            ('openai_timeout_sec', 'OpenAI timeout sec'),
         ]
 
         for key, label in fields:
@@ -1353,6 +1360,9 @@ class DemoCoreSettingsScreen(Screen):
             cfg['email_on_sell'] = self.inputs['email_on_sell'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['email_on_error'] = self.inputs['email_on_error'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['email_on_health_warning'] = self.inputs['email_on_health_warning'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['openai_api_enabled'] = self.inputs['openai_api_enabled'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['openai_model'] = self.inputs['openai_model'].text.strip() or 'gpt-5-mini'
+            cfg['openai_timeout_sec'] = int(float(self.inputs['openai_timeout_sec'].text.replace(',', '.')))
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
