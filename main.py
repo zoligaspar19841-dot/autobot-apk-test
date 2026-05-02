@@ -155,6 +155,30 @@ class Trend(Widget):
 def button(text, color=CARD, fs=24):
     return Button(text=text, font_size=fs, bold=True, background_color=color)
 
+
+class HistoryScreenManager(ScreenManager):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.previous_screen = "home"
+
+    def go_to(self, target):
+        try:
+            if self.current and self.current != target:
+                self.previous_screen = self.current
+            self.current = target
+        except Exception:
+            self.current = target
+
+    def go_back(self):
+        try:
+            target = self.previous_screen or "home"
+            if target == self.current:
+                target = "home"
+            self.current = target
+        except Exception:
+            self.current = "home"
+
+
 class Main(Screen):
     def __init__(self, **kw):
         super().__init__(**kw)
@@ -588,7 +612,7 @@ class DemoCoreScreen(Screen):
         self.refresh()
 
     def go_back(self):
-        self.manager.current = 'home'
+        self.manager.go_back()
 
     def update_kpi(self, st):
         try:
@@ -737,7 +761,7 @@ class AppMain(App):
     title = "Binance Autobot"
     def build(self):
         Window.clearcolor = (0, 0, 0, 1)
-        sm = ScreenManager()
+        sm = HistoryScreenManager()
         sm.add_widget(Main(name="main"))
         sm.add_widget(Dashboard("demo", ORANGE, name="demo"))
         sm.add_widget(Dashboard("live", BLUE, name="live"))
