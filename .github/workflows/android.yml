@@ -15,7 +15,26 @@ jobs:
     - name: Install system deps
       run: |
         sudo apt update
-        sudo apt install -y zip unzip openjdk-17-jdk python3-pip
+        sudo apt install -y zip unzip openjdk-17-jdk python3-pip wget
+
+    - name: Install Android SDK
+      run: |
+        mkdir -p $HOME/android-sdk
+        cd $HOME/android-sdk
+        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O sdk.zip
+        unzip sdk.zip
+        mv cmdline-tools cmdline-tools-temp
+        mkdir cmdline-tools/latest
+        mv cmdline-tools-temp/* cmdline-tools/latest/
+
+        echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+        echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
+
+    - name: Accept licenses + install SDK packages
+      run: |
+        yes | sdkmanager --licenses
+        sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0"
 
     - name: Install buildozer
       run: |
@@ -26,20 +45,6 @@ jobs:
       run: |
         buildozer android debug
 
-    - name: List files (debug)
-      run: |
-        echo "📂 FILE LIST:"
-        ls -R
-
-    - name: Check APK exists
-      run: |
-        if ls bin/*.apk 1> /dev/null 2>&1; then
-          echo "✅ APK FOUND"
-        else
-          echo "❌ NINCS APK!"
-          exit 1
-        fi
-
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
@@ -48,9 +53,3 @@ jobs:
           bin/*.apk
           **/*.apk
 
-    - name: Upload full log
-      uses: actions/upload-artifact@v4
-      with:
-        name: buildozer-log
-        path: |
-          .buildozer/**/*.log
