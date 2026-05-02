@@ -1,7 +1,8 @@
-APP_VERSION = "0.3.1-demo-core"
+APP_VERSION = "0.3.2-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
+import glob
 import shutil
 import zipfile
 import platform
@@ -52,6 +53,23 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+SYNC_DEFAULTS = {
+    "sync_enabled": True,
+    "sync_primary_device": "PHONE",
+    "drive_sync_folder": "AutobotBackups",
+    "pc_sync_folder": "PCSync",
+    "auto_backup_on_start": False,
+    "last_sync_export_ts": 0,
+    "last_sync_import_ts": 0,
+}
+
+FIRSTRUN_DEFAULTS = {
+    "first_run_done": False,
+    "first_run_require_admin_change": True,
+    "first_run_require_secrets_check": True,
+}
 
 SCHEDULE_DEFAULTS = {
     "schedules_enabled": True,
@@ -208,6 +226,18 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "SYNC_DEFAULTS" in globals():
+        for k, v in SYNC_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "FIRSTRUN_DEFAULTS" in globals():
+        for k, v in FIRSTRUN_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -2217,6 +2247,253 @@ def apk_reference_status():
         "build_policy": "APK buildhez csak külön stabil build-lépésben nyúlunk.",
         "current_dev_mode": "code_patch_only",
     }
+
+
+
+def ensure_sync_dirs():
+    state = load_state()
+    settings = state.get("settings", {})
+
+    drive_dir = str(settings.get("drive_sync_folder", "AutobotBackups") or "AutobotBackups")
+    pc_dir = str(settings.get("pc_sync_folder", "PCSync") or "PCSync")
+
+    for d in [drive_dir, pc_dir, PACKAGE_DIR, LOG_DIR]:
+        try:
+            os.makedirs(d, exist_ok=True)
+        except Exception:
+            pass
+
+    return {
+        "ok": True,
+        "drive_sync_folder": drive_dir,
+        "pc_sync_folder": pc_dir,
+        "drive_exists": os.path.isdir(drive_dir),
+        "pc_exists": os.path.isdir(pc_dir),
+    }
+
+
+def sync_status():
+    state = load_state()
+    settings = state.get("settings", {})
+    dirs = ensure_sync_dirs()
+
+    drive_dir = dirs.get("drive_sync_folder")
+    pc_dir = dirs.get("pc_sync_folder")
+
+    drive_files = []
+    pc_files = []
+
+    try:
+        drive_files = sorted(glob.glob(os.path.join(drive_dir, "*.zip")))[-10:]
+    except Exception:
+        drive_files = []
+
+    try:
+        pc_files = sorted(glob.glob(os.path.join(pc_dir, "*.zip")))[-10:]
+    except Exception:
+        pc_files = []
+
+    return {
+        "ok": True,
+        "sync_enabled": bool(settings.get("sync_enabled", True)),
+        "primary_device": settings.get("sync_primary_device", "PHONE"),
+        "drive_sync_folder": drive_dir,
+        "pc_sync_folder": pc_dir,
+        "drive_files_count": len(drive_files),
+        "pc_files_count": len(pc_files),
+        "last_drive_files": drive_files,
+        "last_pc_files": pc_files,
+        "last_sync_export_ts": settings.get("last_sync_export_ts", 0),
+        "last_sync_import_ts": settings.get("last_sync_import_ts", 0),
+    }
+
+
+def export_sync_bundle(target="drive"):
+    """
+    Sync ZIP export secrets nélkül.
+    target: drive / pc
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if not bool(settings.get("sync_enabled", True)):
+        return {"ok": False, "reason": "sync_disabled"}
+
+    dirs = ensure_sync_dirs()
+    target = str(target or "drive").lower().strip()
+
+    if target == "pc":
+        out_dir = dirs.get("pc_sync_folder")
+    else:
+        out_dir = dirs.get("drive_sync_folder")
+
+    snap = export_full_snapshot("sync_" + target)
+    src = snap.get("path")
+
+    ts = int(time.time())
+    dst = os.path.join(out_dir, f"autobot_sync_{target}_{ts}.zip")
+
+    shutil.copyfile(src, dst)
+
+    state = load_state()
+    state.setdefault("settings", {})["last_sync_export_ts"] = ts
+    state["last_action"] = "Sync export: " + dst
+    save_state(state)
+
+    audit_event("SYNC_EXPORT", "Sync export " + target, {"path": dst, "target": target})
+
+    return {
+        "ok": True,
+        "target": target,
+        "path": dst,
+        "source_snapshot": src,
+        "secrets_included": False,
+    }
+
+
+def import_latest_sync_bundle(source="drive"):
+    """
+    Biztonságos import: csak demo_core_state.json-t és logs fájlokat enged.
+    Secrets/key/env import tiltva.
+    """
+    dirs = ensure_sync_dirs()
+    source = str(source or "drive").lower().strip()
+
+    if source == "pc":
+        folder = dirs.get("pc_sync_folder")
+    else:
+        folder = dirs.get("drive_sync_folder")
+
+    files = sorted(glob.glob(os.path.join(folder, "*.zip")))
+    if not files:
+        return {"ok": False, "reason": "no_sync_zip_found", "folder": folder}
+
+    latest = files[-1]
+
+    imported = []
+    blocked = []
+
+    with zipfile.ZipFile(latest, "r") as zf:
+        for name in zf.namelist():
+            clean = name.replace("\\", "/").lstrip("/")
+
+            if ".." in clean.split("/"):
+                blocked.append(clean)
+                continue
+
+            base = os.path.basename(clean)
+
+            if base in ["secrets.enc", "demo_core_secret.key", "demo_core_secrets.json", ".env"] or base.endswith(".key") or base.endswith(".enc"):
+                blocked.append(clean)
+                continue
+
+            allowed = False
+            if clean == "demo_core_state.json":
+                allowed = True
+            if clean.startswith("logs/") and base.endswith((".csv", ".json", ".txt")):
+                allowed = True
+
+            if not allowed:
+                blocked.append(clean)
+                continue
+
+            target = clean
+            parent = os.path.dirname(target)
+            if parent:
+                os.makedirs(parent, exist_ok=True)
+
+            with zf.open(name) as src, open(target, "wb") as dst:
+                shutil.copyfileobj(src, dst)
+
+            imported.append(clean)
+
+    state = load_state()
+    state.setdefault("settings", {})["last_sync_import_ts"] = int(time.time())
+    state["last_action"] = "Sync import: " + latest
+    save_state(state)
+
+    audit_event("SYNC_IMPORT", "Sync import " + source, {"zip": latest, "imported": imported, "blocked": blocked})
+
+    return {
+        "ok": True,
+        "source": source,
+        "zip": latest,
+        "imported": imported,
+        "blocked": blocked,
+    }
+
+
+def first_run_status():
+    """
+    Első indítási ellenőrző lista.
+    Nem módosít secretet, csak jelzi, mi hiányzik.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+    sec = secrets_status() if "secrets_status" in globals() else {"ok": False}
+    live = binance_live_status() if "binance_live_status" in globals() else {"ok": False}
+    email = email_config_status() if "email_config_status" in globals() else {"ok": False}
+    openai = openai_config_status() if "openai_config_status" in globals() else {"ok": False}
+
+    checklist = []
+
+    checklist.append({
+        "id": "secrets_file",
+        "label": "Titkosított secrets fájl",
+        "ok": os.path.exists(SECRETS_ENC_FILE),
+    })
+
+    checklist.append({
+        "id": "binance_api",
+        "label": "Binance API key/secret megadva",
+        "ok": bool(sec.get("binance_api")),
+    })
+
+    checklist.append({
+        "id": "email",
+        "label": "E-mail értesítés beállítva",
+        "ok": bool(email.get("ok")),
+    })
+
+    checklist.append({
+        "id": "openai",
+        "label": "OpenAI API kulcs megadva",
+        "ok": bool(openai.get("has_key")),
+    })
+
+    checklist.append({
+        "id": "sync_dirs",
+        "label": "Drive/PC sync mappák létrehozva",
+        "ok": bool(ensure_sync_dirs().get("drive_exists")) and bool(ensure_sync_dirs().get("pc_exists")),
+    })
+
+    checklist.append({
+        "id": "live_safe",
+        "label": "Live mód biztonsági állapot ellenőrizve",
+        "ok": live.get("ok") is True,
+    })
+
+    required_missing = [x for x in checklist if not x.get("ok")]
+
+    out = {
+        "ok": True,
+        "first_run_done": bool(settings.get("first_run_done", False)),
+        "missing_count": len(required_missing),
+        "ready": len(required_missing) == 0,
+        "checklist": checklist,
+    }
+
+    audit_event("FIRST_RUN_STATUS", "First run státusz", out)
+    return out
+
+
+def mark_first_run_done():
+    state = load_state()
+    state.setdefault("settings", {})["first_run_done"] = True
+    state["last_action"] = "First-run készre állítva"
+    save_state(state)
+    audit_event("FIRST_RUN_DONE", "First-run kész", {})
+    return first_run_status()
 
 
 if __name__ == "__main__":

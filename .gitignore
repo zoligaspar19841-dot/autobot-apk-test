@@ -23,3 +23,5 @@ secrets.enc
 demo_core_secret.key
 *.key
 packages/
+AutobotBackups/
+PCSync/

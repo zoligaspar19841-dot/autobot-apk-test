@@ -577,6 +577,176 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreSyncScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(
+            text='[b]PC / GOOGLE DRIVE SYNC[/b]\n[size=14]Export/import ZIP secrets nélkül[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        )
+        root.add_widget(title)
+
+        self.info = Label(text='Sync betöltés...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+
+        b_status = Button(text='SYNC STATUS')
+        b_drive = Button(text='EXPORT DRIVE')
+        b_pc = Button(text='EXPORT PC')
+        b_import_drive = Button(text='IMPORT DRIVE')
+        b_import_pc = Button(text='IMPORT PC')
+        b_settings = Button(text='SETTINGS')
+        b_back = Button(text='VISSZA')
+
+        b_status.bind(on_press=lambda x: self.refresh())
+        b_drive.bind(on_press=lambda x: self.export('drive'))
+        b_pc.bind(on_press=lambda x: self.export('pc'))
+        b_import_drive.bind(on_press=lambda x: self.import_sync('drive'))
+        b_import_pc.bind(on_press=lambda x: self.import_sync('pc'))
+        b_settings.bind(on_press=lambda x: self.manager.go_to('demo_settings'))
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_status, b_drive, b_pc, b_import_drive, b_import_pc, b_settings, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self, extra=''):
+        try:
+            res = demo_core.sync_status()
+            lines = []
+            if extra:
+                lines.append('[b]' + extra + '[/b]')
+                lines.append('')
+            lines.append('[b]Sync státusz[/b]')
+            lines.append('')
+            lines.append(f"Enabled: {res.get('sync_enabled')}")
+            lines.append(f"Primary: {res.get('primary_device')}")
+            lines.append(f"Drive folder: {res.get('drive_sync_folder')}")
+            lines.append(f"PC folder: {res.get('pc_sync_folder')}")
+            lines.append(f"Drive ZIP count: {res.get('drive_files_count')}")
+            lines.append(f"PC ZIP count: {res.get('pc_files_count')}")
+            lines.append(f"Last export ts: {res.get('last_sync_export_ts')}")
+            lines.append(f"Last import ts: {res.get('last_sync_import_ts')}")
+            lines.append('')
+            lines.append('[size=12]Secrets/key/env fájlokat nem exportálunk.[/size]')
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Sync státusz hiba: ' + str(e)
+
+    def export(self, target):
+        try:
+            res = demo_core.export_sync_bundle(target)
+            self.refresh('Export: ' + str(res.get('path') or res.get('reason')))
+        except Exception as e:
+            self.info.text = 'Export hiba: ' + str(e)
+
+    def import_sync(self, source):
+        try:
+            res = demo_core.import_latest_sync_bundle(source)
+            self.refresh('Import: ' + str(res.get('zip') or res.get('reason')))
+        except Exception as e:
+            self.info.text = 'Import hiba: ' + str(e)
+
+
+class DemoCoreFirstRunScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(
+            text='[b]FIRST-RUN WIZARD[/b]\n[size=14]Hiányzó beállítások ellenőrzése[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        )
+        root.add_widget(title)
+
+        self.info = Label(text='First-run betöltés...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=180, spacing=8)
+
+        b_check = Button(text='ELLENŐRZÉS')
+        b_done = Button(text='KÉSZRE ÁLLÍT')
+        b_secrets = Button(text='SECRETS')
+        b_sync = Button(text='SYNC')
+        b_back = Button(text='VISSZA')
+
+        b_check.bind(on_press=lambda x: self.refresh())
+        b_done.bind(on_press=lambda x: self.done())
+        b_secrets.bind(on_press=lambda x: self.manager.go_to('secrets'))
+        b_sync.bind(on_press=lambda x: self.manager.go_to('sync'))
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_check, b_done, b_secrets, b_sync, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self, extra=''):
+        try:
+            res = demo_core.first_run_status()
+            lines = []
+            if extra:
+                lines.append('[b]' + extra + '[/b]')
+                lines.append('')
+            lines.append('[b]First-run státusz[/b]')
+            lines.append('')
+            lines.append(f"First run done: {res.get('first_run_done')}")
+            lines.append(f"Ready: {res.get('ready')}")
+            lines.append(f"Missing count: {res.get('missing_count')}")
+            lines.append('')
+            for item in res.get('checklist', []):
+                ok = 'OK' if item.get('ok') else 'HIÁNYZIK'
+                lines.append(f"- {item.get('label')}: {ok}")
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'First-run hiba: ' + str(e)
+
+    def done(self):
+        try:
+            res = demo_core.mark_first_run_done()
+            self.refresh('First-run készre állítva.')
+        except Exception as e:
+            self.info.text = 'First-run done hiba: ' + str(e)
+
+
+
 class DemoCorePackageScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1770,6 +1940,12 @@ class DemoCoreSettingsScreen(Screen):
             ('launchpool_min_apr', 'Launchpool min APR'),
             ('launchpool_watchlist', 'Launchpool watchlist'),
             ('launchpool_scan_interval_min', 'Launchpool scan interval min'),
+            ('sync_enabled', 'Sync enabled true/false'),
+            ('sync_primary_device', 'Sync primary PHONE/PC'),
+            ('drive_sync_folder', 'Drive sync folder'),
+            ('pc_sync_folder', 'PC sync folder'),
+            ('auto_backup_on_start', 'Auto backup on start true/false'),
+            ('first_run_done', 'First run done true/false'),
         ]
 
         for key, label in fields:
@@ -1903,6 +2079,12 @@ class DemoCoreSettingsScreen(Screen):
             cfg['launchpool_min_apr'] = float(self.inputs['launchpool_min_apr'].text.replace(',', '.'))
             cfg['launchpool_watchlist'] = self.inputs['launchpool_watchlist'].text.strip() or 'BNB,FDUSD,USDT'
             cfg['launchpool_scan_interval_min'] = int(float(self.inputs['launchpool_scan_interval_min'].text.replace(',', '.')))
+            cfg['sync_enabled'] = self.inputs['sync_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['sync_primary_device'] = self.inputs['sync_primary_device'].text.strip().upper() or 'PHONE'
+            cfg['drive_sync_folder'] = self.inputs['drive_sync_folder'].text.strip() or 'AutobotBackups'
+            cfg['pc_sync_folder'] = self.inputs['pc_sync_folder'].text.strip() or 'PCSync'
+            cfg['auto_backup_on_start'] = self.inputs['auto_backup_on_start'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['first_run_done'] = self.inputs['first_run_done'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -2121,6 +2303,18 @@ class DemoCoreScreen(Screen):
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
 
+    def open_first_run(self):
+        try:
+            self.manager.go_to("first_run")
+        except Exception:
+            self.manager.current = "first_run"
+
+    def open_sync(self):
+        try:
+            self.manager.go_to("sync")
+        except Exception:
+            self.manager.current = "sync"
+
     def open_package(self):
         try:
             self.manager.go_to("package")
@@ -2322,6 +2516,8 @@ class AppMain(App):
         sm.add_widget(DemoCoreSchedulesScreen(name="schedules"))
         sm.add_widget(DemoCoreLaunchpoolScreen(name="launchpool"))
         sm.add_widget(DemoCorePackageScreen(name="package"))
+        sm.add_widget(DemoCoreSyncScreen(name="sync"))
+        sm.add_widget(DemoCoreFirstRunScreen(name="first_run"))
         return sm
 
 if __name__ == "__main__":
