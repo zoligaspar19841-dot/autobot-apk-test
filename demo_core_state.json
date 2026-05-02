@@ -135,7 +135,10 @@
     "binance_signed_readonly_enabled": false,
     "binance_account_read_enabled": false,
     "binance_account_last_check_ts": 0,
-    "binance_account_last_ok": false
+    "binance_account_last_ok": false,
+    "binance_real_account_get_enabled": false,
+    "binance_http_timeout_sec": 8,
+    "binance_balance_preview_assets": "USDT,USDC,BTC,ETH,BNB,DOGE"
   },
   "last_action": "AI advisor: HOLD BTCUSDT",
   "safe_mode": false,

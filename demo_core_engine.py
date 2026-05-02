@@ -1,4 +1,4 @@
-APP_VERSION = "0.3.7-demo-core"
+APP_VERSION = "0.3.8-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -61,6 +61,13 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+BINANCE_REAL_READONLY_DEFAULTS = {
+    "binance_real_account_get_enabled": False,
+    "binance_http_timeout_sec": 8,
+    "binance_balance_preview_assets": "USDT,USDC,BTC,ETH,BNB,DOGE",
+}
 
 BINANCE_SIGNED_DEFAULTS = {
     "binance_base_url": "https://api.binance.com",
@@ -287,6 +294,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "BINANCE_REAL_READONLY_DEFAULTS" in globals():
+        for k, v in BINANCE_REAL_READONLY_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -3417,6 +3430,227 @@ def binance_signed_readonly_status():
         "last_check_ts": settings.get("binance_account_last_check_ts", 0),
         "last_ok": settings.get("binance_account_last_ok", False),
         "note": "Order endpoint nincs bekötve.",
+    }
+
+
+
+def _binance_http_get_signed(endpoint="/api/v3/account", params=None):
+    """
+    Valódi signed GET helper.
+    CSAK read-only endpointre engedjük.
+    Order endpoint tiltva.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+    sec = load_secrets_encrypted() if "load_secrets_encrypted" in globals() else {}
+
+    api_key = sec.get("binance_api_key", "")
+    api_secret = sec.get("binance_api_secret", "")
+
+    if not api_key or not api_secret:
+        return {
+            "ok": False,
+            "called": False,
+            "error": "Binance API key/secret hiányzik.",
+        }
+
+    endpoint = str(endpoint or "").strip()
+
+    allowed_readonly = [
+        "/api/v3/account",
+    ]
+
+    if endpoint not in allowed_readonly:
+        return {
+            "ok": False,
+            "called": False,
+            "error": "Tiltott endpoint. Csak read-only /api/v3/account engedélyezett.",
+            "endpoint": endpoint,
+        }
+
+    params = dict(params or {})
+    params.setdefault("timestamp", int(time.time() * 1000))
+    params.setdefault("recvWindow", int(settings.get("binance_recv_window", 5000) or 5000))
+
+    signed_qs = binance_signed_query(params, api_secret)
+
+    base_url = str(settings.get("binance_base_url", "https://api.binance.com")).rstrip("/")
+    url = base_url + endpoint + "?" + signed_qs
+
+    timeout = float(settings.get("binance_http_timeout_sec", 8) or 8)
+
+    headers = {
+        "X-MBX-APIKEY": api_key,
+        "User-Agent": "BinanceAutobot-ReadOnly/0.3.8",
+    }
+
+    req = urllib.request.Request(url, headers=headers, method="GET")
+
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            raw = resp.read().decode("utf-8")
+            status = getattr(resp, "status", 200)
+            data = json.loads(raw) if raw else {}
+
+        return {
+            "ok": 200 <= int(status) < 300,
+            "called": True,
+            "status_code": int(status),
+            "data": data,
+            "endpoint": endpoint,
+        }
+
+    except urllib.error.HTTPError as e:
+        body = ""
+        try:
+            body = e.read().decode("utf-8")[:1000]
+        except Exception:
+            body = ""
+
+        return {
+            "ok": False,
+            "called": True,
+            "status_code": int(getattr(e, "code", 0) or 0),
+            "error": "HTTPError",
+            "body": body,
+            "endpoint": endpoint,
+        }
+
+    except Exception as e:
+        return {
+            "ok": False,
+            "called": True,
+            "error": str(e),
+            "endpoint": endpoint,
+        }
+
+
+def _extract_balance_preview(account_data, assets_csv=None):
+    """
+    Account válaszból rövid balance preview.
+    """
+    assets_csv = assets_csv or "USDT,USDC,BTC,ETH,BNB,DOGE"
+    wanted = [x.strip().upper() for x in str(assets_csv).split(",") if x.strip()]
+
+    balances = account_data.get("balances", []) if isinstance(account_data, dict) else []
+    out = []
+
+    for row in balances:
+        try:
+            asset = str(row.get("asset", "")).upper()
+            if asset not in wanted:
+                continue
+
+            free = float(row.get("free", 0) or 0)
+            locked = float(row.get("locked", 0) or 0)
+
+            if free == 0 and locked == 0:
+                continue
+
+            out.append({
+                "asset": asset,
+                "free": free,
+                "locked": locked,
+                "total": free + locked,
+            })
+        except Exception:
+            pass
+
+    return out
+
+
+def binance_account_readonly_real_get():
+    """
+    Valódi Binance GET /api/v3/account.
+    Csak akkor fut, ha:
+    - binance_signed_readonly_enabled = true
+    - binance_account_read_enabled = true
+    - binance_real_account_get_enabled = true
+
+    Order endpoint nincs.
+    """
+    state = load_state()
+    settings = state.setdefault("settings", {})
+
+    if not bool(settings.get("binance_signed_readonly_enabled", False)):
+        return {
+            "ok": False,
+            "called": False,
+            "reason": "binance_signed_readonly_enabled false",
+            "message": "Signed read-only nincs bekapcsolva.",
+        }
+
+    if not bool(settings.get("binance_account_read_enabled", False)):
+        return {
+            "ok": False,
+            "called": False,
+            "reason": "binance_account_read_enabled false",
+            "message": "Account read nincs bekapcsolva.",
+        }
+
+    if not bool(settings.get("binance_real_account_get_enabled", False)):
+        return {
+            "ok": False,
+            "called": False,
+            "reason": "binance_real_account_get_enabled false",
+            "message": "Valódi Binance account GET nincs bekapcsolva.",
+        }
+
+    res = _binance_http_get_signed("/api/v3/account", {})
+
+    settings["binance_account_last_check_ts"] = int(time.time())
+    settings["binance_account_last_ok"] = bool(res.get("ok"))
+
+    preview = []
+    if res.get("ok"):
+        preview = _extract_balance_preview(
+            res.get("data", {}),
+            settings.get("binance_balance_preview_assets", "USDT,USDC,BTC,ETH,BNB,DOGE")
+        )
+
+    state["last_action"] = "Binance read-only account GET: " + ("OK" if res.get("ok") else "FAIL")
+    save_state(state)
+
+    out = {
+        "ok": bool(res.get("ok")),
+        "called": bool(res.get("called")),
+        "status_code": res.get("status_code"),
+        "error": res.get("error"),
+        "body": res.get("body"),
+        "balance_preview": preview,
+        "balances_count": len(res.get("data", {}).get("balances", [])) if isinstance(res.get("data"), dict) else 0,
+        "message": "Read-only GET /api/v3/account lefutott." if res.get("called") else "Nem futott.",
+        "order_endpoint_used": False,
+    }
+
+    audit_event("BINANCE_ACCOUNT_REAL_READONLY_GET", out["message"], {
+        "ok": out.get("ok"),
+        "called": out.get("called"),
+        "status_code": out.get("status_code"),
+        "balances_count": out.get("balances_count"),
+        "order_endpoint_used": False,
+    })
+
+    return out
+
+
+def binance_readonly_real_status():
+    state = load_state()
+    settings = state.get("settings", {})
+    sec = load_secrets_encrypted() if "load_secrets_encrypted" in globals() else {}
+
+    return {
+        "ok": True,
+        "signed_readonly_enabled": settings.get("binance_signed_readonly_enabled", False),
+        "account_read_enabled": settings.get("binance_account_read_enabled", False),
+        "real_account_get_enabled": settings.get("binance_real_account_get_enabled", False),
+        "has_api_key": bool(sec.get("binance_api_key")),
+        "has_api_secret": bool(sec.get("binance_api_secret")),
+        "timeout_sec": settings.get("binance_http_timeout_sec", 8),
+        "preview_assets": settings.get("binance_balance_preview_assets", "USDT,USDC,BTC,ETH,BNB,DOGE"),
+        "last_check_ts": settings.get("binance_account_last_check_ts", 0),
+        "last_ok": settings.get("binance_account_last_ok", False),
+        "order_endpoint_used": False,
     }
 
 
