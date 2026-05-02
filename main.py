@@ -156,7 +156,6 @@ class Main(Screen):
             ("COIN SCANNER", "scanner", CARD),
             ("NAPLÓ / EXPORT", "logs", CARD),
             ("HALADÓ", "advanced", CARD),
-            ("MASTER LISTA", "master", CARD),
         ]
         for txt, scr, col in items:
             b = button(txt, col, 24)
@@ -337,8 +336,8 @@ class SkeletonScreen(Screen):
         root = BoxLayout(orientation="vertical", padding=18, spacing=12)
         root.add_widget(Label(text=title, font_size=32, bold=True, color=(1,.75,0,1), size_hint_y=.15))
         root.add_widget(Label(text=body, font_size=21))
-        b = button("VISSZA A MASTER LISTÁHOZ", (.35,.35,.35,1), 23)
-        b.bind(on_press=lambda x: setattr(self.manager, "current", "master"))
+        b = button("VISSZA", (.35,.35,.35,1), 23)
+        b.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
         root.add_widget(b)
         self.add_widget(root)
 
@@ -368,10 +367,10 @@ class DemoResetScreen(Screen):
         root.add_widget(self.info)
 
         reset = button("DEMO RESET FUTTATÁSA", (1,.50,0,1), 24)
-        back = button("VISSZA A MASTER LISTÁHOZ", (.35,.35,.35,1), 23)
+        back = button("VISSZA", (.35,.35,.35,1), 23)
 
         reset.bind(on_press=self.do_reset)
-        back.bind(on_press=lambda x: setattr(self.manager, "current", "master"))
+        back.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
 
         root.add_widget(reset)
         root.add_widget(back)
@@ -413,12 +412,12 @@ class TradeSimpleScreen(Screen):
         start = button("START", (.05,.55,.1,1), 23)
         stop = button("STOP", (.65,0,0,1), 23)
         tick = button("TICK / TESZT", (.25,.25,.25,1), 23)
-        back = button("VISSZA A MASTER LISTÁHOZ", (.35,.35,.35,1), 22)
+        back = button("VISSZA", (.35,.35,.35,1), 22)
 
         start.bind(on_press=self.start)
         stop.bind(on_press=self.stop)
         tick.bind(on_press=self.tick)
-        back.bind(on_press=lambda x: setattr(self.manager, "current", "master"))
+        back.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
 
         root.add_widget(start)
         root.add_widget(stop)
@@ -474,10 +473,10 @@ class StrategyAdvancedScreen(Screen):
             root.add_widget(field)
 
         save = button("STRATÉGIA MENTÉS", (.05,.55,.1,1), 23)
-        back = button("VISSZA A MASTER LISTÁHOZ", (.35,.35,.35,1), 22)
+        back = button("VISSZA", (.35,.35,.35,1), 22)
 
         save.bind(on_press=self.save)
-        back.bind(on_press=lambda x: setattr(self.manager, "current", "master"))
+        back.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
 
         root.add_widget(save)
         root.add_widget(back)
@@ -489,6 +488,37 @@ class StrategyAdvancedScreen(Screen):
 
     def save(self, x):
         self.msg.text = "Stratégia UI mentve. Bekötés később."
+
+
+
+class SectionScreen(Screen):
+    def __init__(self, title, items, **kw):
+        super().__init__(**kw)
+        root = BoxLayout(orientation="vertical", padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text=title,
+            font_size=34,
+            bold=True,
+            color=(1,.75,0,1),
+            size_hint_y=.13
+        ))
+
+        grid = GridLayout(cols=1, spacing=8, size_hint_y=.74)
+
+        for txt, scr in items:
+            b = button(txt, CARD, 22)
+            b.bind(on_press=lambda x, sc=scr: setattr(self.manager, "current", sc))
+            grid.add_widget(b)
+
+        root.add_widget(grid)
+
+        back = button("VISSZA", (.35,.35,.35,1), 24)
+        back.size_hint_y = .13
+        back.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
+        root.add_widget(back)
+
+        self.add_widget(root)
 
 
 class TextScreen(Screen):
@@ -511,13 +541,13 @@ class AppMain(App):
         sm.add_widget(Dashboard("demo", ORANGE, name="demo"))
         sm.add_widget(Dashboard("live", BLUE, name="live"))
         sm.add_widget(Scanner(name="scanner"))
-        sm.add_widget(TextScreen("BEÁLLÍTÁSOK", "Alap pénznem, risk %, max coin, stratégia, téma, betűméret.", name="settings"))
-        sm.add_widget(TextScreen("BIZTONSÁG / API", "App jelszó, PIN, Binance API kulcs, e-mail, titkosítás.\nLive order jelenleg tiltva.", name="security"))
-        sm.add_widget(TextScreen("AI / STRATÉGIA", "Következő patch: AI coin választás, edge score, Normal/Hybrid/Sniper.", name="strategy"))
-        sm.add_widget(TextScreen("NAPLÓ / EXPORT", "Trades lista, CSV export, profit report, audit napló.", name="logs"))
-        sm.add_widget(TextScreen("HALADÓ", "Schedules, Launchpool/Airdrop, Patch Manager, Diagnostics.", name="advanced"))
+        sm.add_widget(SectionScreen("BEÁLLÍTÁSOK", [("Alap beállítások", "settings_base"), ("Demo beállítások", "demo_settings"), ("Live beállítások", "live_settings"), ("Megjelenés / betűméret", "ui_mockup"), ("Fee / adózás", "fee_tax")], name="settings"))
+        sm.add_widget(SectionScreen("BIZTONSÁG / API", [("App jelszó / PIN", "security_pin"), ("Binance API kulcs", "security_api"), ("E-mail beállítás", "security_email"), ("Titkosítás", "security_encrypt"), ("Healthcheck", "healthcheck")], name="security"))
+        sm.add_widget(SectionScreen("AI / STRATÉGIA", [("Strategy Advanced", "strategy_advanced"), ("AI coin választás", "ai_coin"), ("Profit-Hold AI", "profit_hold_ai"), ("Backtest / Replay", "backtest"), ("Safety Guards", "safety_guards")], name="strategy"))
+        sm.add_widget(SectionScreen("NAPLÓ / EXPORT", [("Trades / Export", "trades_export"), ("Audit log", "audit_log"), ("Snapshot export", "patch_snapshot"), ("Profit report", "profit_report")], name="logs"))
+        sm.add_widget(SectionScreen("HALADÓ", [("Schedules", "schedules"), ("Launchpool / Airdrop", "launchpool"), ("Patch Manager UI", "patch_manager_ui"), ("Diagnostics / Tests", "diagnostics"), ("PC + Google Drive Sync", "pc_drive_sync"), ("Fájlszerkezet", "file_structure"), ("Extra fejlesztések", "extra_features")], name="advanced"))
 
-        sm.add_widget(MasterMenu(name="master"))
+        sm.add_widget(MasterMenu(name="main"))
         sm.add_widget(SkeletonScreen("TRADE SIMPLE", "Symbol, Risk/trade %, minimum nettó profit %, SL/TP ATR szorzók.\nBekötés később.", name="trade_simple"))
         sm.add_widget(StrategyAdvancedScreen(name="strategy_advanced"))
         sm.add_widget(SkeletonScreen("SCHEDULES", "Snapshot 08:00, ár-trigger, automata state mentés, bővíthető szabályok.\nBekötés később.", name="schedules"))
@@ -538,6 +568,16 @@ class AppMain(App):
         sm.add_widget(SkeletonScreen("PROFIT-HOLD AI", "Profit tartás: hold idő, trailing take profit, edge keep, cooldown.\nBekötés később.", name="profit_hold_ai"))
 
         sm.add_widget(TradeSimpleScreen(name="trade_simple"))
+        sm.add_widget(SkeletonScreen("ALAP BEÁLLÍTÁSOK", "Alap pénznem, nyelv, téma, értesítések, rendszer működés.\nBekötés később.", name="settings_base"))
+        sm.add_widget(SkeletonScreen("DEMO BEÁLLÍTÁSOK", "Demo kezdő tőke, max coin, risk %, min profit %, reset szabályok.\nBekötés később.", name="demo_settings"))
+        sm.add_widget(SkeletonScreen("LIVE BEÁLLÍTÁSOK", "Live API mód, max kitettség, safety guard, slippage, stop-all.\nBekötés később.", name="live_settings"))
+        sm.add_widget(SkeletonScreen("APP JELSZÓ / PIN", "Belépési PIN, admin mód, később biometria.\nBekötés később.", name="security_pin"))
+        sm.add_widget(SkeletonScreen("BINANCE API KULCS", "API key / secret mentés, read-only ellenőrzés, live engedély később.\nBekötés később.", name="security_api"))
+        sm.add_widget(SkeletonScreen("E-MAIL BEÁLLÍTÁS", "Gmail app jelszó, teszt e-mail, trade értesítések.\nBekötés később.", name="security_email"))
+        sm.add_widget(SkeletonScreen("TITKOSÍTÁS", "Helyi titkosítás, kulcskezelés, érzékeny adatok védelme.\nBekötés később.", name="security_encrypt"))
+        sm.add_widget(SkeletonScreen("AI COIN VÁLASZTÁS", "Top coin rangsor, edge score, automata kiválasztás később.\nBekötés később.", name="ai_coin"))
+        sm.add_widget(SkeletonScreen("TRADES / EXPORT", "Trade lista, CSV export, PnL napló, letöltés.\nBekötés később.", name="trades_export"))
+        sm.add_widget(SkeletonScreen("PROFIT REPORT", "Profit trend, napi/heti összesítés, grafikon később.\nBekötés később.", name="profit_report"))
         return sm
 
 if __name__ == "__main__":
