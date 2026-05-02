@@ -53,9 +53,13 @@
     "slippage_buffer_pct": 0.1,
     "min_orderbook_imbalance": 0.48,
     "tp_sl_enabled": true,
-    "take_profit_pct": 3.0
+    "take_profit_pct": 3.0,
+    "ai_advisor_enabled": true,
+    "ai_mode": "OFFLINE",
+    "ai_min_confidence": 0.55,
+    "ai_allow_auto_trade": false
   },
-  "last_action": "Scanner futott: top DOGEUSDT, BTCUSDT, ETHUSDT",
+  "last_action": "AI advisor: HOLD BTCUSDT",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
   "last_heartbeat_ts": 1777759959,

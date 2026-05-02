@@ -17,6 +17,14 @@ os.makedirs(LOG_DIR, exist_ok=True)
 
 
 
+
+AI_ADVISOR_DEFAULTS = {
+    "ai_advisor_enabled": True,
+    "ai_mode": "OFFLINE",
+    "ai_min_confidence": 0.55,
+    "ai_allow_auto_trade": False,
+}
+
 TRADE_SCREEN_DEFAULTS = {
     "order_type": "LIMIT_BBO",
     "use_bbo": True,
@@ -115,6 +123,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "AI_ADVISOR_DEFAULTS" in globals():
+        for k, v in AI_ADVISOR_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -859,6 +873,101 @@ def trade_screen_check(symbol, side="BUY", settings=None):
         "reasons": reasons,
         "orderbook": ob,
     }
+
+
+def ai_advisor(symbol=None):
+    """
+    Offline AI-segédlet alap.
+    Nem küld adatot külső API-nak.
+    A meglévő bot-adatokból készít döntésmagyarázatot.
+    Később ezt lehet OpenAI / hírek / sentiment modullal bővíteni.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    watch = settings.get("watchlist") or ["BTCUSDT"]
+    if symbol is None:
+        symbol = watch[0]
+    symbol = str(symbol).upper()
+
+    health = healthcheck()
+    scanner = scan_symbols()
+    scan_rows = scanner.get("all", [])
+
+    row = None
+    for r in scan_rows:
+        if r.get("symbol") == symbol:
+            row = r
+            break
+
+    if row is None:
+        row = edge_score(symbol, settings)
+
+    trade = trade_screen_check(symbol, "BUY", settings)
+
+    execution_mode = str(settings.get("execution_mode", "AUTO")).upper()
+    safe_mode = bool(state.get("safe_mode", False))
+    running = bool(state.get("running", False))
+
+    score = float(row.get("score", 0.0) or 0.0)
+    min_conf = float(settings.get("ai_min_confidence", 0.55) or 0.55)
+
+    recommendation = "HOLD"
+    confidence = score
+    reasons = []
+
+    reasons.append(f"Scanner score: {score}")
+    reasons.append(f"Scanner signal: {row.get('signal')}")
+    reasons.append(f"Spread: {trade.get('spread_pct')}%")
+    reasons.append(f"BBO allowed: {trade.get('allowed')}")
+    reasons.append(f"Execution mode: {execution_mode}")
+    reasons.append(f"Safe mode: {safe_mode}")
+    reasons.append(f"Health: {health.get('status')}")
+
+    if safe_mode:
+        recommendation = "BLOCKED_SAFE_MODE"
+        reasons.append("Safe mode aktív, új vétel tiltva.")
+    elif execution_mode == "OFF":
+        recommendation = "BLOCKED_EXECUTION_OFF"
+        reasons.append("Execution mode OFF, új vétel tiltva.")
+    elif not trade.get("allowed"):
+        recommendation = "BLOCKED_TRADE_GUARD"
+        reasons.extend(trade.get("reasons", []))
+    elif score >= min_conf and row.get("signal") in ["BUY_CANDIDATE", "WATCH"]:
+        if execution_mode == "MANUAL":
+            recommendation = "MANUAL_REVIEW_BUY"
+            reasons.append("Jelölt van, de MANUAL módban csak jóváhagyási javaslat.")
+        else:
+            recommendation = "BUY_CANDIDATE"
+            reasons.append("Scanner + BBO guard alapján vételi jelölt.")
+    else:
+        recommendation = "HOLD"
+        reasons.append("Nincs elég erős edge a vételhez.")
+
+    # Konzervatív profit példa 1%-ra
+    fee_tax_1pct = profit_pct_breakdown(1.0, settings)
+
+    out = {
+        "ok": True,
+        "symbol": symbol,
+        "recommendation": recommendation,
+        "confidence": round(confidence, 4),
+        "ai_mode": settings.get("ai_mode", "OFFLINE"),
+        "execution_mode": execution_mode,
+        "safe_mode": safe_mode,
+        "running": running,
+        "scanner": row,
+        "trade_guard": trade,
+        "fee_tax_example_1pct": fee_tax_1pct,
+        "health_status": health.get("status"),
+        "reasons": reasons,
+    }
+
+    audit_event("AI_ADVISOR", recommendation, out)
+    state["last_action"] = "AI advisor: " + recommendation + " " + symbol
+    save_state(state)
+
+    return out
 
 if __name__ == "__main__":
     print(json.dumps(tick(), ensure_ascii=False, indent=2))

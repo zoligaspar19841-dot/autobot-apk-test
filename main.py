@@ -571,6 +571,97 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreAIScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(
+            text='[b]AI SEGÉDLET / DÖNTÉSMAGYARÁZAT[/b]\n[size=14]Offline advisor: scanner + BBO + fee/tax + safety[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        )
+        root.add_widget(title)
+
+        self.info = Label(text='AI advisor betöltés...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=170, spacing=8)
+        b_run = Button(text='AI ELEMZÉS')
+        b_scan = Button(text='SCANNER')
+        b_trade = Button(text='TRADE LOGIKA')
+        b_back = Button(text='VISSZA')
+
+        b_run.bind(on_press=lambda x: self.run_ai())
+        b_scan.bind(on_press=lambda x: self.manager.go_to('scanner'))
+        b_trade.bind(on_press=lambda x: self.manager.go_to('trade_logic'))
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_run, b_scan, b_trade, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.run_ai()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def run_ai(self):
+        try:
+            st = demo_core.load_state()
+            cfg = st.get('settings', {})
+            sym = (cfg.get('watchlist') or ['BTCUSDT'])[0]
+            res = demo_core.ai_advisor(sym)
+
+            lines = []
+            lines.append('[b]AI Advisor eredmény[/b]')
+            lines.append('')
+            lines.append(f"Symbol: {res.get('symbol')}")
+            lines.append(f"Recommendation: [b]{res.get('recommendation')}[/b]")
+            lines.append(f"Confidence: {res.get('confidence')}")
+            lines.append(f"AI mode: {res.get('ai_mode')}")
+            lines.append(f"Execution mode: {res.get('execution_mode')}")
+            lines.append(f"Safe mode: {res.get('safe_mode')}")
+            lines.append(f"Health: {res.get('health_status')}")
+            lines.append('')
+
+            sc = res.get('scanner') or {}
+            lines.append('[b]Scanner:[/b]')
+            lines.append(f"score={sc.get('score')} signal={sc.get('signal')} trend={sc.get('trend_pct')}% momentum={sc.get('momentum_pct')}%")
+            lines.append('')
+
+            tg = res.get('trade_guard') or {}
+            lines.append('[b]Trade guard:[/b]')
+            lines.append(f"allowed={tg.get('allowed')} spread={tg.get('spread_pct')}% bbo={tg.get('bbo_price')} limit={tg.get('limit_price')}")
+            lines.append('')
+
+            ft = res.get('fee_tax_example_1pct') or {}
+            lines.append('[b]Fee/adó példa 1% profitnál:[/b]')
+            lines.append(f"after_tax_pct={ft.get('after_tax_pct')} roundtrip_fee={ft.get('roundtrip_fee_pct')} tax_cut={ft.get('tax_cut_pct')}")
+            lines.append('')
+
+            lines.append('[b]Indoklás:[/b]')
+            for r in res.get('reasons', []):
+                lines.append('- ' + str(r))
+
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'AI advisor hiba: ' + str(e)
+
+
+
 class DemoCoreTradeScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -996,6 +1087,10 @@ class DemoCoreSettingsScreen(Screen):
             ('min_orderbook_imbalance', 'Min orderbook imbalance'),
             ('tp_sl_enabled', 'TP/SL enabled true/false'),
             ('take_profit_pct', 'Take profit %'),
+            ('ai_advisor_enabled', 'AI advisor enabled true/false'),
+            ('ai_mode', 'AI mode OFFLINE/API'),
+            ('ai_min_confidence', 'AI min confidence'),
+            ('ai_allow_auto_trade', 'AI allow auto trade true/false'),
         ]
 
         for key, label in fields:
@@ -1095,6 +1190,10 @@ class DemoCoreSettingsScreen(Screen):
             cfg['min_orderbook_imbalance'] = float(self.inputs['min_orderbook_imbalance'].text.replace(',', '.'))
             cfg['tp_sl_enabled'] = self.inputs['tp_sl_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['take_profit_pct'] = float(self.inputs['take_profit_pct'].text.replace(',', '.'))
+            cfg['ai_advisor_enabled'] = self.inputs['ai_advisor_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['ai_mode'] = self.inputs['ai_mode'].text.strip().upper() or 'OFFLINE'
+            cfg['ai_min_confidence'] = float(self.inputs['ai_min_confidence'].text.replace(',', '.'))
+            cfg['ai_allow_auto_trade'] = self.inputs['ai_allow_auto_trade'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -1313,6 +1412,12 @@ class DemoCoreScreen(Screen):
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
 
+    def open_ai_advisor(self):
+        try:
+            self.manager.go_to("ai_advisor")
+        except Exception:
+            self.manager.current = "ai_advisor"
+
     def open_trade_logic(self):
         try:
             self.manager.go_to("trade_logic")
@@ -1458,6 +1563,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreScannerScreen(name="scanner"))
         sm.add_widget(DemoCoreFeeTaxScreen(name="fee_tax"))
         sm.add_widget(DemoCoreTradeScreen(name="trade_logic"))
+        sm.add_widget(DemoCoreAIScreen(name="ai_advisor"))
         return sm
 
 if __name__ == "__main__":
