@@ -2,62 +2,57 @@ name: Build APK
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Install deps
-      run: |
-        sudo apt update
-        sudo apt install -y zip unzip openjdk-17-jdk python3-pip wget
+      - name: Install deps
+        run: |
+          sudo apt update
+          sudo apt install -y zip unzip openjdk-17-jdk python3-pip wget
 
-    - name: Install buildozer
-      run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install buildozer cython
+      - name: Install buildozer
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install buildozer cython
 
-    - name: Pre-accept Android SDK licenses
-      run: |
-        mkdir -p "$HOME/.buildozer/android/platform/android-sdk/licenses"
-        cat > "$HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license" << 'LIC'
-8933bad161af4178b1185d1a37fbf41ea5269c55
-d56f5187479451eabf01fb78af6dfcb131a6481e
-24333f8a63b6825ea9c5514f83c2829b004d1fee
-LIC
-        cat > "$HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license" << 'LIC'
-84831b9409646a918e30573bab4c9c91346d8abd
-LIC
+      - name: Pre-accept Android SDK licenses
+        run: |
+          mkdir -p "$HOME/.buildozer/android/platform/android-sdk/licenses"
+          printf "%s\n" "8933bad161af4178b1185d1a37fbf41ea5269c55" "d56f5187479451eabf01fb78af6dfcb131a6481e" "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license"
+          printf "%s\n" "84831b9409646a918e30573bab4c9c91346d8abd" > "$HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license"
 
-    - name: Build APK
-      run: |
-        buildozer -v android debug
+      - name: Build APK
+        run: |
+          buildozer -v android debug
 
-    - name: Find APK
-      run: |
-        find . -name "*.apk" -type f
-        test -n "$(find . -name '*.apk' -type f | head -n 1)"
+      - name: Find APK
+        run: |
+          find . -name "*.apk" -type f
+          test -n "$(find . -name '*.apk' -type f | head -n 1)"
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: apk
-        path: |
-          bin/*.apk
-          **/*.apk
-        if-no-files-found: error
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: |
+            bin/*.apk
+            **/*.apk
+          if-no-files-found: error
 
-    - name: Upload build logs
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-logs
-        path: |
-          .buildozer/**/*.log
-          *.log
-        if-no-files-found: ignore
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            .buildozer/**/*.log
+            *.log
+          if-no-files-found: ignore
