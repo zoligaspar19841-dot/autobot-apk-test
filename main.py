@@ -1,3 +1,4 @@
+import demo_core_engine as demo_core
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
@@ -542,6 +543,130 @@ class SectionScreen(Screen):
         self.add_widget(root)
 
 
+
+class DemoCoreScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        root = BoxLayout(orientation="vertical", padding=12, spacing=10)
+
+        title = Label(
+            text="[b]DEMO CORE ENGINE[/b]",
+            markup=True,
+            size_hint_y=None,
+            height=48
+        )
+        root.add_widget(title)
+
+        self.info = Label(
+            text="Betöltés...",
+            halign="left",
+            valign="top",
+            markup=True
+        )
+        self.info.bind(size=lambda inst, val: setattr(inst, "text_size", val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = BoxLayout(orientation="vertical", size_hint_y=None, height=260, spacing=8)
+
+        b_status = Button(text="STATUS / FRISSÍTÉS")
+        b_tick = Button(text="TICK - KÉZI FUTTATÁS")
+        b_start = Button(text="START")
+        b_stop = Button(text="STOP")
+        b_reset = Button(text="DEMO RESET 100 USDC")
+        b_back = Button(text="VISSZA")
+
+        b_status.bind(on_press=lambda x: self.refresh())
+        b_tick.bind(on_press=lambda x: self.do_tick())
+        b_start.bind(on_press=lambda x: self.do_start())
+        b_stop.bind(on_press=lambda x: self.do_stop())
+        b_reset.bind(on_press=lambda x: self.do_reset())
+        b_back.bind(on_press=lambda x: setattr(self.manager, "current", "home"))
+
+        for b in [b_status, b_tick, b_start, b_stop, b_reset, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def fmt_state(self, st, extra=""):
+        try:
+            eq = demo_core.equity(st)
+        except Exception:
+            eq = 0
+
+        positions = st.get("positions", {})
+        lines = []
+        lines.append(f"[b]Running:[/b] {st.get('running')}")
+        lines.append(f"[b]Balance:[/b] {st.get('balance')}")
+        lines.append(f"[b]Equity:[/b] {eq:.4f}")
+        lines.append(f"[b]Realized PnL:[/b] {st.get('realized_pnl')}")
+        lines.append(f"[b]Last action:[/b] {st.get('last_action')}")
+        lines.append("")
+        lines.append("[b]Positions:[/b]")
+
+        if not positions:
+            lines.append("Nincs nyitott pozíció.")
+        else:
+            for sym, pos in positions.items():
+                lines.append(f"{sym}: qty={pos.get('qty')}, avg={pos.get('avg')}, peak={pos.get('peak')}")
+
+        if extra:
+            lines.append("")
+            lines.append("[b]Utolsó művelet:[/b]")
+            lines.append(str(extra))
+
+        return "\n".join(lines)
+
+    def refresh(self):
+        try:
+            st = demo_core.load_state()
+            self.info.text = self.fmt_state(st)
+        except Exception as e:
+            self.info.text = "Demo core hiba: " + str(e)
+
+    def do_tick(self):
+        try:
+            res = demo_core.tick()
+            st = demo_core.load_state()
+            self.info.text = self.fmt_state(st, res.get("action", res))
+        except Exception as e:
+            self.info.text = "Tick hiba: " + str(e)
+
+    def do_start(self):
+        try:
+            st = demo_core.load_state()
+            st["running"] = True
+            st["last_action"] = "Demo core START"
+            demo_core.save_state(st)
+            self.info.text = self.fmt_state(st, "START")
+        except Exception as e:
+            self.info.text = "Start hiba: " + str(e)
+
+    def do_stop(self):
+        try:
+            st = demo_core.load_state()
+            st["running"] = False
+            st["last_action"] = "Demo core STOP"
+            demo_core.save_state(st)
+            self.info.text = self.fmt_state(st, "STOP")
+        except Exception as e:
+            self.info.text = "Stop hiba: " + str(e)
+
+    def do_reset(self):
+        try:
+            st = demo_core.reset_demo(100.0)
+            self.info.text = self.fmt_state(st, "RESET 100 USDC")
+        except Exception as e:
+            self.info.text = "Reset hiba: " + str(e)
+
+
 class TextScreen(Screen):
     def __init__(self, title, body, **kw):
         super().__init__(**kw)
@@ -602,6 +727,7 @@ class AppMain(App):
         sm.add_widget(SkeletonScreen("PROFIT REPORT", "Profit trend, napi/heti összesítés, grafikon később.\nBekötés később.", name="profit_report"))
 
         sm.add_widget(SkeletonScreen("HÁTTÉRFUTÁS / ÉRTESÍTÉSEK", "Később itt lesz:\n- háttérben futó bot\n- állandó értesítés\n- trade riasztások\n- hibaértesítés\n- Android foreground service alap.\nBekötés később.", name="background_service"))
+        sm.add_widget(DemoCoreScreen(name="demo_core"))
         return sm
 
 if __name__ == "__main__":
