@@ -13,13 +13,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show config
-        run: |
-          pwd
-          ls -la
-          echo "=== buildozer.spec ==="
-          sed -n '1,220p' buildozer.spec
-
       - name: Build APK with Docker arm64 only
         run: |
           set +e
@@ -34,32 +27,27 @@ jobs:
             kivy/buildozer:latest \
             -lc '
               set +e
-              echo "=== inside docker ==="
-              whoami
-              pwd
-              python --version || true
-              buildozer --version || true
-              echo "=== buildozer clean ==="
               buildozer android clean || true
-              echo "=== buildozer debug ==="
-              buildozer -v android debug
+              yes y | buildozer -v android debug
             ' 2>&1 | tee build_full_output.log
 
           code=${PIPESTATUS[0]}
 
-          echo "===== IMPORTANT ERRORS ====="
-          grep -nEi "error:|failed|traceback|exception|not found|no such file|command failed" build_full_output.log | tail -n 120 || true
+          echo ""
+          echo "==================== VALÓDI HIBAKERESÉS ===================="
+          grep -nEi "error|failed|failure|traceback|exception|command failed|no such file|not found|permission denied|syntax|invalid|license|aidl|sdkmanager|gradle|compile|cython|p4a" build_full_output.log | tail -n 250 || true
 
-          echo "===== LAST 350 LINES ====="
-          tail -n 350 build_full_output.log || true
+          echo ""
+          echo "==================== UTOLSÓ 600 SOR ===================="
+          tail -n 600 build_full_output.log || true
 
-          echo "===== EXIT CODE: $code ====="
+          echo ""
+          echo "==================== EXIT CODE: $code ===================="
           exit $code
 
       - name: Find APK
         if: always()
         run: |
-          echo "=== APK SEARCH ==="
           find . -name "*.apk" -type f || true
 
       - name: Upload APK
@@ -71,12 +59,3 @@ jobs:
             bin/*.apk
             **/*.apk
           if-no-files-found: error
-
-      - name: Upload build output
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-output
-          path: |
-            build_full_output.log
-          if-no-files-found: ignore
