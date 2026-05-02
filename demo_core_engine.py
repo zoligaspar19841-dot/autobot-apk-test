@@ -10,6 +10,7 @@ import urllib.request
 STATE_FILE = "demo_core_state.json"
 LOG_DIR = "logs"
 TRADE_LOG = os.path.join(LOG_DIR, "demo_core_trades.csv")
+AUDIT_LOG = os.path.join(LOG_DIR, "demo_core_audit.csv")
 os.makedirs(LOG_DIR, exist_ok=True)
 
 DEFAULT_STATE = {
@@ -54,6 +55,24 @@ def load_state():
 def save_state(state):
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
+
+
+def audit_event(event, detail="", data=None):
+    try:
+        new = not os.path.exists(AUDIT_LOG)
+        with open(AUDIT_LOG, "a", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            if new:
+                w.writerow(["ts", "event", "detail", "data"])
+            payload = ""
+            if data is not None:
+                try:
+                    payload = json.dumps(data, ensure_ascii=False)
+                except Exception:
+                    payload = str(data)
+            w.writerow([int(time.time()), event, detail, payload])
+    except Exception:
+        pass
 
 def log_trade(row):
     new = not os.path.exists(TRADE_LOG)
@@ -107,6 +126,7 @@ def reset_demo(balance=100.0):
     state["balance"] = float(balance)
     state["last_action"] = "Demo reset kész"
     save_state(state)
+    audit_event("RESET_DEMO", "Demo reset", {"balance": balance})
     return state
 
 def buy(state, symbol, spend):
@@ -126,6 +146,7 @@ def buy(state, symbol, spend):
     }
     note = f"BUY {symbol} spend={spend:.2f}"
     log_trade([int(time.time()), symbol, "BUY", qty, p, 0.0, note])
+    audit_event("BUY", note, {"symbol": symbol, "qty": qty, "price": p, "spend": spend})
     return note
 
 def sell(state, symbol, note="SELL"):
@@ -148,6 +169,7 @@ def sell(state, symbol, note="SELL"):
     state["positions"].pop(symbol, None)
 
     log_trade([int(time.time()), symbol, "SELL", qty, p, pnl, note])
+    audit_event("SELL", note, {"symbol": symbol, "qty": qty, "price": p, "pnl": pnl})
     return f"SELL {symbol} PnL={pnl:.4f} USDC | {note}"
 
 def signal(symbol, settings):
@@ -214,6 +236,7 @@ def tick():
     state["last_tick_ts"] = int(time.time())
     state["last_heartbeat_ts"] = int(time.time())
     save_state(state)
+    audit_event("TICK", state.get("last_action", ""), {"balance": state.get("balance"), "positions": list(state.get("positions", {}).keys())})
     return {
         "ok": True,
         "action": state["last_action"],
@@ -230,6 +253,7 @@ def panic_stop():
     state["safe_mode"] = True
     state["last_action"] = "PANIC STOP: safe mode aktív, új vétel tiltva"
     save_state(state)
+    audit_event("PANIC_STOP", state["last_action"], {"positions": list(state.get("positions", {}).keys())})
     return {
         "ok": True,
         "safe_mode": True,
@@ -246,6 +270,7 @@ def safe_mode_off():
     state["safe_mode"] = False
     state["last_action"] = "Safe mode kikapcsolva"
     save_state(state)
+    audit_event("SAFE_MODE_OFF", state["last_action"], {})
     return {
         "ok": True,
         "safe_mode": False,
@@ -283,6 +308,7 @@ def healthcheck():
 
     state["last_heartbeat_ts"] = now
     save_state(state)
+    audit_event("HEALTHCHECK", status, {"warnings": warnings, "running": state.get("running"), "safe_mode": state.get("safe_mode")})
 
     return {
         "ok": True,
@@ -302,6 +328,17 @@ def healthcheck():
         "last_heartbeat_age_sec": age_heartbeat,
         "last_action": state.get("last_action", "")
     }
+
+
+def read_audit_log(limit=50):
+    if not os.path.exists(AUDIT_LOG):
+        return []
+    try:
+        with open(AUDIT_LOG, "r", encoding="utf-8") as f:
+            rows = [x.strip() for x in f.readlines() if x.strip()]
+        return rows[-int(limit):]
+    except Exception:
+        return []
 
 if __name__ == "__main__":
     print(json.dumps(tick(), ensure_ascii=False, indent=2))

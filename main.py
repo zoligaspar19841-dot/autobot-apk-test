@@ -568,6 +568,75 @@ class SectionScreen(Screen):
 
 
 
+class DemoCoreAuditScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(text='[b]AUDIT NAPLÓ / JÓVÁHAGYÁSOK[/b]\\n[size=14]Demo Core eseménynapló[/size]', markup=True, size_hint_y=None, height=72)
+        root.add_widget(title)
+
+        self.info = Label(text='Betöltés...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=160, spacing=8)
+        b_refresh = Button(text='FRISSÍTÉS')
+        b_health = Button(text='HEALTHCHECK + LOG')
+        b_clear = Button(text='AUDIT NAPLÓ NULLÁZÁS')
+        b_back = Button(text='VISSZA')
+        b_refresh.bind(on_press=lambda x: self.refresh())
+        b_health.bind(on_press=lambda x: self.health_and_refresh())
+        b_clear.bind(on_press=lambda x: self.clear_audit())
+        b_back.bind(on_press=lambda x: self.go_back())
+        for b in [b_refresh, b_health, b_clear, b_back]:
+            btns.add_widget(b)
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self):
+        try:
+            rows = demo_core.read_audit_log(80)
+            lines = []
+            lines.append('[b]Fájl:[/b] ' + str(demo_core.AUDIT_LOG))
+            lines.append('')
+            if not rows:
+                lines.append('Még nincs audit napló.')
+            else:
+                lines.append('[b]Utolsó audit események:[/b]')
+                for r in rows:
+                    lines.append(r)
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Audit hiba: ' + str(e)
+
+    def health_and_refresh(self):
+        try:
+            demo_core.healthcheck()
+            self.refresh()
+        except Exception as e:
+            self.info.text = 'Health/audit hiba: ' + str(e)
+
+    def clear_audit(self):
+        try:
+            if demo_core.os.path.exists(demo_core.AUDIT_LOG):
+                demo_core.os.remove(demo_core.AUDIT_LOG)
+            self.info.text = '[b]OK:[/b] Audit napló törölve.'
+        except Exception as e:
+            self.info.text = 'Audit törlés hiba: ' + str(e)
+
+
 class DemoCoreLogsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1061,6 +1130,7 @@ class AppMain(App):
         sm.add_widget(SkeletonScreen("HÁTTÉRFUTÁS / ÉRTESÍTÉSEK", "Később itt lesz:\n- háttérben futó bot\n- állandó értesítés\n- trade riasztások\n- hibaértesítés\n- Android foreground service alap.\nBekötés később.", name="background_service"))
         sm.add_widget(DemoCoreScreen(name="demo_core"))
         sm.add_widget(DemoCoreLogsScreen(name="demo_logs"))
+        sm.add_widget(DemoCoreAuditScreen(name="audit_log"))
         return sm
 
 if __name__ == "__main__":
