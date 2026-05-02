@@ -7,6 +7,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
 from kivy.uix.scrollview import ScrollView
 import json, os, random, urllib.request
@@ -387,6 +388,63 @@ class DemoResetScreen(Screen):
         self.info.text = "✅ Demo Reset kész!\n\nEgyenleg: 100 USDC\nProfit/Loss: 0\nBot: leállítva"
 
 
+
+class TradeSimpleScreen(Screen):
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        root = BoxLayout(orientation="vertical", padding=16, spacing=10)
+
+        root.add_widget(Label(text="TRADE SIMPLE", font_size=32, bold=True, color=(1,.75,0,1), size_hint_y=.12))
+
+        self.symbol = TextInput(text="BTCUSDT", multiline=False, font_size=22, size_hint_y=.09)
+        self.risk = TextInput(text="10", multiline=False, font_size=22, size_hint_y=.09)
+        self.min_profit = TextInput(text="1.5", multiline=False, font_size=22, size_hint_y=.09)
+        self.max_coin = TextInput(text="3", multiline=False, font_size=22, size_hint_y=.09)
+
+        root.add_widget(Label(text="Symbol", font_size=20, size_hint_y=.06))
+        root.add_widget(self.symbol)
+        root.add_widget(Label(text="Risk %", font_size=20, size_hint_y=.06))
+        root.add_widget(self.risk)
+        root.add_widget(Label(text="Min Profit %", font_size=20, size_hint_y=.06))
+        root.add_widget(self.min_profit)
+        root.add_widget(Label(text="Max coin", font_size=20, size_hint_y=.06))
+        root.add_widget(self.max_coin)
+
+        start = button("START", (.05,.55,.1,1), 23)
+        stop = button("STOP", (.65,0,0,1), 23)
+        tick = button("TICK / TESZT", (.25,.25,.25,1), 23)
+        back = button("VISSZA A MASTER LISTÁHOZ", (.35,.35,.35,1), 22)
+
+        start.bind(on_press=self.start)
+        stop.bind(on_press=self.stop)
+        tick.bind(on_press=self.tick)
+        back.bind(on_press=lambda x: setattr(self.manager, "current", "master"))
+
+        root.add_widget(start)
+        root.add_widget(stop)
+        root.add_widget(tick)
+        root.add_widget(back)
+
+        self.add_widget(root)
+
+    def start(self, x):
+        st = load_state()
+        st.setdefault("demo", {})
+        st["demo"]["running"] = True
+        save_json(STATE_FILE, st)
+
+    def stop(self, x):
+        st = load_state()
+        st.setdefault("demo", {})
+        st["demo"]["running"] = False
+        save_json(STATE_FILE, st)
+
+    def tick(self, x):
+        st = load_state()
+        st["last_msg"] = "Trade Simple manual tick"
+        save_json(STATE_FILE, st)
+
+
 class TextScreen(Screen):
     def __init__(self, title, body, **kw):
         super().__init__(**kw)
@@ -433,6 +491,7 @@ class AppMain(App):
         sm.add_widget(SkeletonScreen("FEE / ADÓZÁS", "Maker/taker díjak nettó PnL-ben, opcionális HU 15% adózott profit nézet.\nNem adótanácsadás.", name="fee_tax"))
         sm.add_widget(SkeletonScreen("PROFIT-HOLD AI", "Profit tartás: hold idő, trailing take profit, edge keep, cooldown.\nBekötés később.", name="profit_hold_ai"))
 
+        sm.add_widget(TradeSimpleScreen(name="trade_simple"))
         return sm
 
 if __name__ == "__main__":
