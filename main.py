@@ -613,6 +613,8 @@ class DemoCoreTrendHistoryScreen(Screen):
             ('ADD SNAPSHOT', self.snapshot),
             ('NEXT VIEW', self.next_view),
             ('SELECT LATEST', self.select_latest),
+            ('EXPORT CSV', self.export_csv),
+            ('STATS', self.stats),
             ('SPOT SYNC', self.spot_sync),
             ('DASHBOARD', lambda: self.manager.go_to('demo_core')),
             ('SETTINGS', lambda: self.manager.go_to('demo_settings')),
@@ -680,6 +682,7 @@ class DemoCoreTrendHistoryScreen(Screen):
                 lines.append('[b]Kijelölt / utolsó pont:[/b]')
                 lines.append(f"index: {chart.get('selected_index')}")
                 lines.append(f"ts: {sel.get('ts')}")
+                lines.append(f"time: {demo_core.format_trend_ts(sel.get('ts'))}")
                 lines.append(f"value: {sel.get('value')}")
                 lines.append(f"equity: {sel.get('equity')}")
                 lines.append(f"total value: {sel.get('total_value_usd')}")
@@ -719,6 +722,23 @@ class DemoCoreTrendHistoryScreen(Screen):
             self.refresh()
         except Exception as e:
             self.info.text = 'Select latest hiba: ' + str(e)
+
+    def export_csv(self):
+        try:
+            res = demo_core.export_trend_history_csv()
+            self.info.text = '[b]Trend CSV export[/b]\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Trend export hiba: ' + str(e)
+
+    def stats(self):
+        try:
+            res = demo_core.trend_history_stats()
+            lines = ['[b]Trend statisztika[/b]', '']
+            for k, v in res.items():
+                lines.append(f"{k}: {v}")
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Trend stats hiba: ' + str(e)
 
     def spot_sync(self):
         try:
@@ -3017,6 +3037,9 @@ class DemoCoreSettingsScreen(Screen):
             ('trend_chart_enabled', 'Trend chart enabled true/false'),
             ('trend_chart_width', 'Trend chart width'),
             ('trend_show_crosshair_data', 'Trend show crosshair data true/false'),
+            ('trend_export_enabled', 'Trend export enabled true/false'),
+            ('trend_time_format', 'Trend time format'),
+            ('trend_export_file', 'Trend export file'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -3203,6 +3226,9 @@ class DemoCoreSettingsScreen(Screen):
             cfg['trend_chart_enabled'] = self.inputs['trend_chart_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['trend_chart_width'] = int(float(self.inputs['trend_chart_width'].text.replace(',', '.')))
             cfg['trend_show_crosshair_data'] = self.inputs['trend_show_crosshair_data'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['trend_export_enabled'] = self.inputs['trend_export_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['trend_time_format'] = self.inputs['trend_time_format'].text.strip() or '%Y-%m-%d %H:%M:%S'
+            cfg['trend_export_file'] = self.inputs['trend_export_file'].text.strip() or 'logs/trend_history.csv'
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']

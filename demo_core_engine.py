@@ -1,4 +1,4 @@
-APP_VERSION = "0.4.3-demo-core"
+APP_VERSION = "0.4.4-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -66,6 +66,13 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+TREND_EXPORT_DEFAULTS = {
+    "trend_export_enabled": True,
+    "trend_time_format": "%Y-%m-%d %H:%M:%S",
+    "trend_export_file": "logs/trend_history.csv",
+}
 
 TREND_CHART_DEFAULTS = {
     "trend_chart_enabled": True,
@@ -332,6 +339,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "TREND_EXPORT_DEFAULTS" in globals():
+        for k, v in TREND_EXPORT_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -4536,6 +4549,138 @@ def trend_crosshair_summary():
         "open_positions": sel.get("open_positions"),
         "last_action": sel.get("last_action"),
         "reason": sel.get("reason"),
+    }
+
+
+
+def format_trend_ts(ts=None):
+    """
+    Trend timestamp emberi idővé alakítása.
+    """
+    state = load_state()
+    fmt = state.get("settings", {}).get("trend_time_format", "%Y-%m-%d %H:%M:%S")
+    try:
+        return time.strftime(fmt, time.localtime(int(ts or time.time())))
+    except Exception:
+        return str(ts)
+
+
+def trend_history_stats(view=None, limit=300):
+    """
+    Trend statisztika: min/max/last/avg/change.
+    """
+    tr = trend_history_status(view=view, limit=limit)
+    pts = tr.get("points") or []
+    vals = []
+
+    for p in pts:
+        try:
+            vals.append(float(p.get("value") or 0))
+        except Exception:
+            pass
+
+    if not vals:
+        return {
+            "ok": True,
+            "view": tr.get("view"),
+            "points_count": 0,
+            "message": "Nincs trend adat.",
+        }
+
+    first = vals[0]
+    last = vals[-1]
+    change = last - first
+    change_pct = (change / abs(first) * 100.0) if first else 0.0
+
+    return {
+        "ok": True,
+        "view": tr.get("view"),
+        "value_key": tr.get("value_key"),
+        "points_count": len(vals),
+        "first": round(first, 8),
+        "last": round(last, 8),
+        "min": round(min(vals), 8),
+        "max": round(max(vals), 8),
+        "avg": round(sum(vals) / len(vals), 8),
+        "change": round(change, 8),
+        "change_pct": round(change_pct, 6),
+        "first_time": format_trend_ts(pts[0].get("ts")),
+        "last_time": format_trend_ts(pts[-1].get("ts")),
+    }
+
+
+def export_trend_history_csv(path=None):
+    """
+    Trend history export CSV-be.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if not bool(settings.get("trend_export_enabled", True)):
+        return {"ok": False, "exported": False, "reason": "trend_export_enabled false"}
+
+    hist = state.get("trend_history") or []
+
+    if path is None:
+        path = settings.get("trend_export_file", "logs/trend_history.csv") or "logs/trend_history.csv"
+
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    fields = [
+        "ts",
+        "time",
+        "reason",
+        "equity",
+        "total_value_usd",
+        "realized_pnl",
+        "pnl_pct_from_100",
+        "tradable_usd",
+        "quote_free_usd",
+        "open_positions",
+        "last_action",
+    ]
+
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fields)
+        w.writeheader()
+
+        for row in hist:
+            out = {}
+            for k in fields:
+                if k == "time":
+                    out[k] = format_trend_ts(row.get("ts"))
+                else:
+                    out[k] = row.get(k, "")
+            w.writerow(out)
+
+    audit_event("TREND_EXPORT_CSV", "Trend history CSV export", {
+        "path": path,
+        "rows": len(hist),
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "exported": True,
+        "path": path,
+        "rows": len(hist),
+        "order_endpoint_used": False,
+    }
+
+
+def trend_export_status():
+    state = load_state()
+    settings = state.get("settings", {})
+    path = settings.get("trend_export_file", "logs/trend_history.csv")
+
+    return {
+        "ok": True,
+        "trend_export_enabled": settings.get("trend_export_enabled", True),
+        "trend_export_file": path,
+        "trend_time_format": settings.get("trend_time_format", "%Y-%m-%d %H:%M:%S"),
+        "file_exists": os.path.exists(path),
+        "history_points": len(state.get("trend_history") or []),
+        "order_endpoint_used": False,
     }
 
 

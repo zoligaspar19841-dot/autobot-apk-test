@@ -1,0 +1,5 @@
+ts,time,reason,equity,total_value_usd,realized_pnl,pnl_pct_from_100,tradable_usd,quote_free_usd,open_positions,last_action
+1777766152,2026-05-03 01:55:52,spot_portfolio_sync,99.91269202,99.96609944,0.0,-0.033901,71.0,81.0,2,Spot portfolio sync OK
+1777766154,2026-05-03 01:55:54,test_snapshot,99.91269202,99.96609944,0.0,-0.033901,71.0,81.0,2,Spot portfolio sync OK
+1777766241,2026-05-03 01:57:21,chart_test_snapshot,99.90920424,99.96609944,0.0,-0.033901,71.0,81.0,2,Spot portfolio sync OK
+1777766320,2026-05-03 01:58:40,export_test_snapshot,99.9126154,99.96609944,0.0,-0.033901,71.0,81.0,2,Spot portfolio sync OK

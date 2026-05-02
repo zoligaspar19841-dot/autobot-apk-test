@@ -160,7 +160,10 @@
     "trend_chart_enabled": true,
     "trend_chart_width": 60,
     "trend_selected_index": 2,
-    "trend_show_crosshair_data": true
+    "trend_show_crosshair_data": true,
+    "trend_export_enabled": true,
+    "trend_time_format": "%Y-%m-%d %H:%M:%S",
+    "trend_export_file": "logs/trend_history.csv"
   },
   "last_action": "Spot portfolio sync OK",
   "safe_mode": false,
@@ -271,7 +274,19 @@
       "quote_free_usd": 81.0,
       "open_positions": 2,
       "last_action": "Spot portfolio sync OK"
+    },
+    {
+      "ts": 1777766320,
+      "reason": "export_test_snapshot",
+      "equity": 99.9126154,
+      "total_value_usd": 99.96609944,
+      "realized_pnl": 0.0,
+      "pnl_pct_from_100": -0.033901,
+      "tradable_usd": 71.0,
+      "quote_free_usd": 81.0,
+      "open_positions": 2,
+      "last_action": "Spot portfolio sync OK"
     }
   ],
-  "last_trend_snapshot_ts": 1777766241
+  "last_trend_snapshot_ts": 1777766320
 }
