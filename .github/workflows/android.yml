@@ -9,73 +9,43 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      ANDROIDSDK: /home/runner/.buildozer/android/platform/android-sdk
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install deps
+      - name: Show project files
         run: |
-          sudo apt update
-          sudo apt install -y zip unzip openjdk-17-jdk python3-pip wget
+          pwd
+          ls -la
+          echo "=== buildozer.spec ==="
+          sed -n '1,180p' buildozer.spec || true
 
-      - name: Prepare SDK exactly where Buildozer expects
-        run: |
-          mkdir -p "$ANDROIDSDK"
-          cd "$ANDROIDSDK"
-
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
-          unzip -q cmdtools.zip -d cmdtools_tmp
-
-          mkdir -p "$ANDROIDSDK/tools"
-          cp -r cmdtools_tmp/cmdline-tools/* "$ANDROIDSDK/tools/"
-
-          test -f "$ANDROIDSDK/tools/bin/sdkmanager"
-
-          mkdir -p "$ANDROIDSDK/licenses"
-
-          printf "%s\n" \
-            "8933bad161af4178b1185d1a37fbf41ea5269c55" \
-            "d56f5187479451eabf01fb78af6dfcb131a6481e" \
-            "24333f8a63b6825ea9c5514f83c2829b004d1fee" \
-            > "$ANDROIDSDK/licenses/android-sdk-license"
-
-          printf "%s\n" \
-            "84831b9409646a918e30573bab4c9c91346d8abd" \
-            > "$ANDROIDSDK/licenses/android-sdk-preview-license"
-
-          yes | "$ANDROIDSDK/tools/bin/sdkmanager" --sdk_root="$ANDROIDSDK" --licenses || true
-
-          "$ANDROIDSDK/tools/bin/sdkmanager" --sdk_root="$ANDROIDSDK" \
-            "platform-tools" \
-            "platforms;android-31" \
-            "platforms;android-35" \
-            "build-tools;31.0.0" \
-            "build-tools;37.0.0"
-
-          echo "=== SDK CHECK ==="
-          ls -la "$ANDROIDSDK/build-tools" || true
-          ls -la "$ANDROIDSDK/build-tools/37.0.0" || true
-          test -f "$ANDROIDSDK/build-tools/37.0.0/aidl"
-
-      - name: Install buildozer
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install buildozer cython
-
-      - name: Build APK
+      - name: Build APK with Buildozer Docker
         run: |
           set +e
-          buildozer -v android debug 2>&1 | tee build_full_output.log
+
+          docker run --rm \
+            -v "$PWD":/home/user/hostcwd \
+            -w /home/user/hostcwd \
+            kivy/buildozer:latest \
+            bash -lc 'buildozer -v android debug' 2>&1 | tee build_full_output.log
+
           code=${PIPESTATUS[0]}
-          echo "===== LAST 200 LINES ====="
-          tail -n 200 build_full_output.log
+
+          echo "===== LAST 250 LINES ====="
+          tail -n 250 build_full_output.log || true
           echo "===== EXIT CODE: $code ====="
+
           exit $code
 
+      - name: Find APK
+        if: always()
+        run: |
+          echo "=== APK SEARCH ==="
+          find . -name "*.apk" -type f || true
+
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: apk
@@ -83,3 +53,12 @@ jobs:
             bin/*.apk
             **/*.apk
           if-no-files-found: error
+
+      - name: Upload build output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            build_full_output.log
+          if-no-files-found: ignore
