@@ -1,6 +1,9 @@
-APP_VERSION = "0.3.0-demo-core"
+APP_VERSION = "0.3.1-demo-core"
+WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
+import shutil
+import zipfile
 import platform
 import urllib.error
 from email.message import EmailMessage
@@ -20,6 +23,7 @@ SECRETS_FILE = "demo_core_secrets.json"
 SECRETS_ENC_FILE = "secrets.enc"
 SECRETS_KEY_FILE = "demo_core_secret.key"
 LOG_DIR = "logs"
+PACKAGE_DIR = "packages"
 TRADE_LOG = os.path.join(LOG_DIR, "demo_core_trades.csv")
 AUDIT_LOG = os.path.join(LOG_DIR, "demo_core_audit.csv")
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -2059,6 +2063,160 @@ def launchpool_scan():
             pass
 
     return out
+
+
+
+def ensure_package_dir():
+    try:
+        os.makedirs(PACKAGE_DIR, exist_ok=True)
+    except Exception:
+        pass
+
+
+def safe_zip_add(zf, file_path, arc_name=None):
+    """
+    Csak biztonságos relatív fájlokat csomagolunk.
+    Secrets / key / enc / env nem mehet bele.
+    """
+    if not file_path or not os.path.exists(file_path):
+        return False
+
+    blocked = [
+        "secrets.enc",
+        "demo_core_secret.key",
+        "demo_core_secrets.json",
+        ".env",
+    ]
+
+    base = os.path.basename(file_path)
+    if base in blocked or base.endswith(".key") or base.endswith(".enc"):
+        return False
+
+    arc_name = arc_name or file_path
+    arc_name = str(arc_name).replace("\\", "/").lstrip("/")
+
+    if ".." in arc_name.split("/"):
+        return False
+
+    zf.write(file_path, arc_name)
+    return True
+
+
+def export_project_package(label="manual"):
+    """
+    Projekt csomag export ZIP.
+    Secrets nélkül.
+    GitHub backup mellé helyi/telefonos átadható csomag.
+    """
+    ensure_package_dir()
+    ensure_log_dir()
+
+    ts = int(time.time())
+    path = os.path.join(PACKAGE_DIR, f"autobot_package_{label}_{ts}.zip")
+
+    files = [
+        "main.py",
+        "demo_core_engine.py",
+        "demo_core_state.json",
+        "DEV_STATUS.md",
+        "DEV_STATUS_SAFETY_CORE.md",
+        ".gitignore",
+    ]
+
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zf:
+        added = []
+        for f in files:
+            if safe_zip_add(zf, f):
+                added.append(f)
+
+        # logs közül csak csv/json reportok, secrets nélkül
+        if os.path.isdir(LOG_DIR):
+            for root, dirs, fs in os.walk(LOG_DIR):
+                for name in fs:
+                    fp = os.path.join(root, name)
+                    if name.endswith((".csv", ".json", ".txt")):
+                        if safe_zip_add(zf, fp, fp):
+                            added.append(fp)
+
+        # kis státusz fájl a ZIP-be
+        status = {
+            "app_version": APP_VERSION,
+            "working_apk_reference": WORKING_APK_REFERENCE,
+            "created_ts": ts,
+            "label": label,
+            "note": "Secrets/key/env fájlok szándékosan nincsenek a csomagban.",
+        }
+        zf.writestr("PACKAGE_STATUS.json", json.dumps(status, ensure_ascii=False, indent=2))
+
+    audit_event("PACKAGE_EXPORT", "Project package export", {"path": path, "label": label})
+    st = load_state()
+    st["last_action"] = "Package export: " + path
+    save_state(st)
+
+    return {
+        "ok": True,
+        "path": path,
+        "label": label,
+        "working_apk_reference": WORKING_APK_REFERENCE,
+    }
+
+
+def export_full_snapshot(label="manual"):
+    """
+    Snapshot ZIP: state + logs + státusz, secrets nélkül.
+    """
+    ensure_package_dir()
+    ensure_log_dir()
+
+    ts = int(time.time())
+    path = os.path.join(PACKAGE_DIR, f"snapshot_{label}_{ts}.zip")
+
+    snap = snapshot_state(label)
+
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zf:
+        safe_zip_add(zf, "demo_core_state.json", "demo_core_state.json")
+        safe_zip_add(zf, snap.get("path"), snap.get("path"))
+
+        if os.path.isdir(LOG_DIR):
+            for root, dirs, fs in os.walk(LOG_DIR):
+                for name in fs:
+                    fp = os.path.join(root, name)
+                    if name.endswith((".csv", ".json", ".txt")):
+                        safe_zip_add(zf, fp, fp)
+
+        zf.writestr("SNAPSHOT_STATUS.json", json.dumps({
+            "app_version": APP_VERSION,
+            "working_apk_reference": WORKING_APK_REFERENCE,
+            "created_ts": ts,
+            "label": label,
+            "secrets_included": False,
+        }, ensure_ascii=False, indent=2))
+
+    audit_event("SNAPSHOT_EXPORT", "Snapshot zip export", {"path": path, "label": label})
+
+    st = load_state()
+    st["last_action"] = "Snapshot ZIP export: " + path
+    save_state(st)
+
+    return {
+        "ok": True,
+        "path": path,
+        "label": label,
+        "working_apk_reference": WORKING_APK_REFERENCE,
+    }
+
+
+def apk_reference_status():
+    """
+    Megmondja, melyik APK-t tekintjük utolsó működő referenciának.
+    """
+    return {
+        "ok": True,
+        "working_apk_reference": WORKING_APK_REFERENCE,
+        "app_version": APP_VERSION,
+        "build_policy": "APK buildhez csak külön stabil build-lépésben nyúlunk.",
+        "current_dev_mode": "code_patch_only",
+    }
 
 
 if __name__ == "__main__":

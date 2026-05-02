@@ -22,3 +22,4 @@ demo_core_secrets.json
 secrets.enc
 demo_core_secret.key
 *.key
+packages/

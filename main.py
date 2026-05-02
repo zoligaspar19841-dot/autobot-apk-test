@@ -576,6 +576,89 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCorePackageScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(
+            text='[b]PACKAGE / SNAPSHOT[/b]\n[size=14]ZIP export secrets nélkül + APK referencia[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        )
+        root.add_widget(title)
+
+        self.info = Label(text='Package betöltés...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=180, spacing=8)
+
+        b_pkg = Button(text='EXPORT PACKAGE')
+        b_snap = Button(text='EXPORT SNAPSHOT')
+        b_ref = Button(text='APK REF')
+        b_back = Button(text='VISSZA')
+
+        b_pkg.bind(on_press=lambda x: self.export_package())
+        b_snap.bind(on_press=lambda x: self.export_snapshot())
+        b_ref.bind(on_press=lambda x: self.refresh())
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_pkg, b_snap, b_ref, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self, extra=''):
+        try:
+            ref = demo_core.apk_reference_status()
+            lines = []
+            if extra:
+                lines.append('[b]' + extra + '[/b]')
+                lines.append('')
+            lines.append('[b]APK / Package státusz[/b]')
+            lines.append('')
+            lines.append(f"App version: {ref.get('app_version')}")
+            lines.append(f"Working APK ref: {ref.get('working_apk_reference')}")
+            lines.append(f"Build policy: {ref.get('build_policy')}")
+            lines.append(f"Dev mode: {ref.get('current_dev_mode')}")
+            lines.append('')
+            lines.append('[size=12]A package/snapshot ZIP nem tartalmaz secrets.enc, key vagy .env fájlt.[/size]')
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Package státusz hiba: ' + str(e)
+
+    def export_package(self):
+        try:
+            res = demo_core.export_project_package('ui')
+            self.refresh('Package export: ' + str(res.get('path')))
+        except Exception as e:
+            self.info.text = 'Package export hiba: ' + str(e)
+
+    def export_snapshot(self):
+        try:
+            res = demo_core.export_full_snapshot('ui')
+            self.refresh('Snapshot export: ' + str(res.get('path')))
+        except Exception as e:
+            self.info.text = 'Snapshot export hiba: ' + str(e)
+
+
+
 class DemoCoreSchedulesScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -2038,6 +2121,12 @@ class DemoCoreScreen(Screen):
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
 
+    def open_package(self):
+        try:
+            self.manager.go_to("package")
+        except Exception:
+            self.manager.current = "package"
+
     def open_schedules(self):
         try:
             self.manager.go_to("schedules")
@@ -2232,6 +2321,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreDiagnosticsScreen(name="diagnostics"))
         sm.add_widget(DemoCoreSchedulesScreen(name="schedules"))
         sm.add_widget(DemoCoreLaunchpoolScreen(name="launchpool"))
+        sm.add_widget(DemoCorePackageScreen(name="package"))
         return sm
 
 if __name__ == "__main__":

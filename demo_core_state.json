@@ -91,7 +91,7 @@
     "launchpool_scan_interval_min": 60,
     "last_launchpool_scan_ts": 1777763126
   },
-  "last_action": "Launchpool scan kész",
+  "last_action": "Snapshot ZIP export: packages/snapshot_test_1777763392.zip",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
   "last_heartbeat_ts": 1777761546,
