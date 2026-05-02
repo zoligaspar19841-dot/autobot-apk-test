@@ -14,7 +14,7 @@ requirements = python3,kivy
 orientation = portrait
 fullscreen = 0
 
-android.permissions = INTERNET, USE_BIOMETRIC, USE_FINGERPRINT
+android.permissions = INTERNET
 android.api = 35
 android.minapi = 23
 android.ndk = 25b
