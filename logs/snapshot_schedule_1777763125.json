@@ -1,6 +1,9 @@
 {
-  "base": "USDC",
+  "ts": 1777763125,
+  "label": "schedule",
+  "equity": 99.94943955589693,
   "balance": 81.0,
+  "realized_pnl": 0.0,
   "positions": {
     "BTCUSDT": {
       "qty": 0.0001267180989088671,
@@ -15,8 +18,6 @@
       "opened_ts": 1777758380
     }
   },
-  "realized_pnl": 0.0,
-  "running": false,
   "settings": {
     "risk_pct": 10.0,
     "max_positions": 3,
@@ -84,16 +85,12 @@
     "price_trigger_symbol": "BTCUSDT",
     "price_trigger_above": 0.0,
     "price_trigger_below": 0.0,
-    "last_schedule_run_ts": 1777763126,
+    "last_schedule_run_ts": 0,
     "launchpool_enabled": true,
     "launchpool_min_apr": 5.0,
     "launchpool_watchlist": "BNB,FDUSD,USDT",
     "launchpool_scan_interval_min": 60,
-    "last_launchpool_scan_ts": 1777763126
+    "last_launchpool_scan_ts": 0
   },
-  "last_action": "Launchpool scan kész",
-  "safe_mode": false,
-  "last_tick_ts": 1777759959,
-  "last_heartbeat_ts": 1777761546,
-  "cooldowns": {}
+  "last_action": "Backtest kész: BTCUSDT PnL=0.0169%"
 }

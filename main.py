@@ -575,6 +575,153 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreSchedulesScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(
+            text='[b]SCHEDULES[/b]\n[size=14]Snapshot + ár-trigger + kézi futtatás[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        )
+        root.add_widget(title)
+
+        self.info = Label(text='Schedules betöltés...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=180, spacing=8)
+        b_run = Button(text='RUN SCHEDULES')
+        b_snapshot = Button(text='SNAPSHOT')
+        b_settings = Button(text='SETTINGS')
+        b_back = Button(text='VISSZA')
+
+        b_run.bind(on_press=lambda x: self.run())
+        b_snapshot.bind(on_press=lambda x: self.snapshot())
+        b_settings.bind(on_press=lambda x: self.manager.go_to('demo_settings'))
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_run, b_snapshot, b_settings, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self, extra=''):
+        try:
+            st = demo_core.load_state()
+            cfg = st.get('settings', {})
+            lines = []
+            if extra:
+                lines.append('[b]' + extra + '[/b]')
+                lines.append('')
+            lines.append(f"Schedules enabled: {cfg.get('schedules_enabled')}")
+            lines.append(f"Snapshot: {cfg.get('snapshot_enabled')} at {cfg.get('snapshot_time')}")
+            lines.append(f"Price trigger: {cfg.get('price_trigger_enabled')}")
+            lines.append(f"Symbol: {cfg.get('price_trigger_symbol')}")
+            lines.append(f"Above: {cfg.get('price_trigger_above')}")
+            lines.append(f"Below: {cfg.get('price_trigger_below')}")
+            lines.append(f"Last run ts: {cfg.get('last_schedule_run_ts')}")
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Schedules hiba: ' + str(e)
+
+    def run(self):
+        try:
+            res = demo_core.run_schedules_once()
+            self.refresh('Schedules run: ' + str(res.get('ran')))
+        except Exception as e:
+            self.info.text = 'Run hiba: ' + str(e)
+
+    def snapshot(self):
+        try:
+            res = demo_core.snapshot_state('manual_ui')
+            self.refresh('Snapshot: ' + str(res.get('path')))
+        except Exception as e:
+            self.info.text = 'Snapshot hiba: ' + str(e)
+
+
+class DemoCoreLaunchpoolScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(
+            text='[b]LAUNCHPOOL / AIRDROP WATCH[/b]\n[size=14]Demo scan, min APR, watchlist[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        )
+        root.add_widget(title)
+
+        self.info = Label(text='Launchpool betöltés...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=180, spacing=8)
+        b_scan = Button(text='SCAN NOW')
+        b_settings = Button(text='SETTINGS')
+        b_health = Button(text='HEALTHCHECK')
+        b_back = Button(text='VISSZA')
+
+        b_scan.bind(on_press=lambda x: self.scan())
+        b_settings.bind(on_press=lambda x: self.manager.go_to('demo_settings'))
+        b_health.bind(on_press=lambda x: self.manager.go_to('healthcheck'))
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_scan, b_settings, b_health, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.scan()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def scan(self):
+        try:
+            res = demo_core.launchpool_scan()
+            lines = []
+            lines.append('[b]Launchpool / Airdrop scan[/b]')
+            lines.append('')
+            lines.append(f"Enabled: {res.get('enabled')}")
+            lines.append(f"Min APR: {res.get('min_apr')}")
+            lines.append(f"Watchlist: {', '.join(res.get('watchlist', []))}")
+            lines.append('')
+            lines.append('[b]Candidates:[/b]')
+            for c in res.get('candidates', [])[:20]:
+                flag = 'OK' if c.get('eligible') else 'WATCH'
+                lines.append(f"- {c.get('asset')}: APR {c.get('apr')}% score={c.get('score')} {flag}")
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Launchpool hiba: ' + str(e)
+
+
+
 class DemoCoreBacktestScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1529,6 +1676,17 @@ class DemoCoreSettingsScreen(Screen):
             ('backtest_start_balance', 'Backtest start balance'),
             ('backtest_risk_pct', 'Backtest risk %'),
             ('backtest_fee_pct', 'Backtest fee %'),
+            ('schedules_enabled', 'Schedules enabled true/false'),
+            ('snapshot_enabled', 'Snapshot enabled true/false'),
+            ('snapshot_time', 'Snapshot time HH:MM'),
+            ('price_trigger_enabled', 'Price trigger enabled true/false'),
+            ('price_trigger_symbol', 'Price trigger symbol'),
+            ('price_trigger_above', 'Price trigger above'),
+            ('price_trigger_below', 'Price trigger below'),
+            ('launchpool_enabled', 'Launchpool enabled true/false'),
+            ('launchpool_min_apr', 'Launchpool min APR'),
+            ('launchpool_watchlist', 'Launchpool watchlist'),
+            ('launchpool_scan_interval_min', 'Launchpool scan interval min'),
         ]
 
         for key, label in fields:
@@ -1651,6 +1809,17 @@ class DemoCoreSettingsScreen(Screen):
             cfg['backtest_start_balance'] = float(self.inputs['backtest_start_balance'].text.replace(',', '.'))
             cfg['backtest_risk_pct'] = float(self.inputs['backtest_risk_pct'].text.replace(',', '.'))
             cfg['backtest_fee_pct'] = float(self.inputs['backtest_fee_pct'].text.replace(',', '.'))
+            cfg['schedules_enabled'] = self.inputs['schedules_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['snapshot_enabled'] = self.inputs['snapshot_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['snapshot_time'] = self.inputs['snapshot_time'].text.strip() or '08:00'
+            cfg['price_trigger_enabled'] = self.inputs['price_trigger_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['price_trigger_symbol'] = self.inputs['price_trigger_symbol'].text.strip().upper() or 'BTCUSDT'
+            cfg['price_trigger_above'] = float(self.inputs['price_trigger_above'].text.replace(',', '.'))
+            cfg['price_trigger_below'] = float(self.inputs['price_trigger_below'].text.replace(',', '.'))
+            cfg['launchpool_enabled'] = self.inputs['launchpool_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['launchpool_min_apr'] = float(self.inputs['launchpool_min_apr'].text.replace(',', '.'))
+            cfg['launchpool_watchlist'] = self.inputs['launchpool_watchlist'].text.strip() or 'BNB,FDUSD,USDT'
+            cfg['launchpool_scan_interval_min'] = int(float(self.inputs['launchpool_scan_interval_min'].text.replace(',', '.')))
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -1869,6 +2038,18 @@ class DemoCoreScreen(Screen):
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
 
+    def open_schedules(self):
+        try:
+            self.manager.go_to("schedules")
+        except Exception:
+            self.manager.current = "schedules"
+
+    def open_launchpool(self):
+        try:
+            self.manager.go_to("launchpool")
+        except Exception:
+            self.manager.current = "launchpool"
+
     def open_backtest(self):
         try:
             self.manager.go_to("backtest")
@@ -2049,6 +2230,8 @@ class AppMain(App):
         sm.add_widget(DemoCoreBinanceLiveScreen(name="binance_live"))
         sm.add_widget(DemoCoreBacktestScreen(name="backtest"))
         sm.add_widget(DemoCoreDiagnosticsScreen(name="diagnostics"))
+        sm.add_widget(DemoCoreSchedulesScreen(name="schedules"))
+        sm.add_widget(DemoCoreLaunchpoolScreen(name="launchpool"))
         return sm
 
 if __name__ == "__main__":

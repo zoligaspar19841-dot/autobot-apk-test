@@ -48,6 +48,26 @@ SECRETS_DEFAULTS = {
 
 
 
+
+SCHEDULE_DEFAULTS = {
+    "schedules_enabled": True,
+    "snapshot_enabled": True,
+    "snapshot_time": "08:00",
+    "price_trigger_enabled": True,
+    "price_trigger_symbol": "BTCUSDT",
+    "price_trigger_above": 0.0,
+    "price_trigger_below": 0.0,
+    "last_schedule_run_ts": 0,
+}
+
+LAUNCHPOOL_DEFAULTS = {
+    "launchpool_enabled": True,
+    "launchpool_min_apr": 5.0,
+    "launchpool_watchlist": "BNB,FDUSD,USDT",
+    "launchpool_scan_interval_min": 60,
+    "last_launchpool_scan_ts": 0,
+}
+
 BACKTEST_DEFAULTS = {
     "backtest_symbol": "BTCUSDT",
     "backtest_limit": 240,
@@ -184,6 +204,18 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "SCHEDULE_DEFAULTS" in globals():
+        for k, v in SCHEDULE_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "LAUNCHPOOL_DEFAULTS" in globals():
+        for k, v in LAUNCHPOOL_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -1860,6 +1892,173 @@ def diagnostics_status():
         },
         "live_ready": live_status.get("ready_for_live"),
     }
+
+
+
+def snapshot_state(label="manual"):
+    ensure_log_dir()
+    state = load_state()
+    ts = int(time.time())
+    path = os.path.join(LOG_DIR, f"snapshot_{label}_{ts}.json")
+
+    payload = {
+        "ts": ts,
+        "label": label,
+        "equity": equity(state),
+        "balance": state.get("balance"),
+        "realized_pnl": state.get("realized_pnl"),
+        "positions": state.get("positions", {}),
+        "settings": state.get("settings", {}),
+        "last_action": state.get("last_action"),
+    }
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+    audit_event("SNAPSHOT", "Snapshot mentve", {"path": path, "label": label})
+    state["last_action"] = "Snapshot mentve: " + path
+    save_state(state)
+
+    return {
+        "ok": True,
+        "path": path,
+        "label": label,
+        "equity": payload["equity"],
+    }
+
+
+def price_trigger_check():
+    state = load_state()
+    settings = state.get("settings", {})
+
+    symbol = str(settings.get("price_trigger_symbol", "BTCUSDT") or "BTCUSDT").upper()
+    enabled = bool(settings.get("price_trigger_enabled", True))
+    above = float(settings.get("price_trigger_above", 0.0) or 0.0)
+    below = float(settings.get("price_trigger_below", 0.0) or 0.0)
+
+    prices = get_prices(symbol, 5)
+    price = float(prices[-1]) if prices else 0.0
+
+    hit = False
+    reasons = []
+
+    if not enabled:
+        reasons.append("Price trigger kikapcsolva.")
+    else:
+        if above > 0 and price >= above:
+            hit = True
+            reasons.append(f"{symbol} ár >= above trigger: {price} >= {above}")
+        if below > 0 and price <= below:
+            hit = True
+            reasons.append(f"{symbol} ár <= below trigger: {price} <= {below}")
+        if not hit:
+            reasons.append(f"Nincs trigger: {symbol} ár={price}")
+
+    out = {
+        "ok": True,
+        "enabled": enabled,
+        "symbol": symbol,
+        "price": price,
+        "above": above,
+        "below": below,
+        "hit": hit,
+        "reasons": reasons,
+    }
+
+    if hit:
+        audit_event("PRICE_TRIGGER_HIT", symbol, out)
+        try:
+            send_email_notification("Binance Autobot - Price Trigger", json.dumps(out, ensure_ascii=False, indent=2))
+        except Exception:
+            pass
+
+    return out
+
+
+def run_schedules_once():
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if not bool(settings.get("schedules_enabled", True)):
+        return {"ok": True, "ran": False, "reason": "schedules_disabled"}
+
+    actions = []
+
+    # kézi futtatáskor snapshot, ha engedélyezett
+    if bool(settings.get("snapshot_enabled", True)):
+        actions.append(snapshot_state("schedule"))
+
+    actions.append(price_trigger_check())
+
+    state = load_state()
+    state.setdefault("settings", {})["last_schedule_run_ts"] = int(time.time())
+    state["last_action"] = "Schedules futtatva"
+    save_state(state)
+
+    audit_event("SCHEDULES_RUN", "Schedules egyszeri futtatás", {"actions_count": len(actions)})
+
+    return {
+        "ok": True,
+        "ran": True,
+        "actions": actions,
+    }
+
+
+def launchpool_scan():
+    state = load_state()
+    settings = state.get("settings", {})
+
+    enabled = bool(settings.get("launchpool_enabled", True))
+    min_apr = float(settings.get("launchpool_min_apr", 5.0) or 5.0)
+    raw_watch = str(settings.get("launchpool_watchlist", "BNB,FDUSD,USDT") or "")
+    watch = [x.strip().upper() for x in raw_watch.split(",") if x.strip()]
+
+    if not enabled:
+        return {"ok": True, "enabled": False, "candidates": [], "message": "Launchpool watch kikapcsolva."}
+
+    candidates = []
+    base_symbols = ["BNB", "FDUSD", "USDT", "BTC", "ETH", "DOGE"]
+
+    now_bucket = int(time.time() // 3600)
+
+    for sym in base_symbols:
+        seed = sum(ord(c) for c in sym) + now_bucket
+        apr = round(2.0 + (seed % 1600) / 100.0, 2)
+        score = round(apr / max(min_apr, 1.0), 4)
+
+        if sym in watch or apr >= min_apr:
+            candidates.append({
+                "asset": sym,
+                "apr": apr,
+                "score": score,
+                "watchlisted": sym in watch,
+                "eligible": apr >= min_apr,
+                "note": "demo launchpool/airdrop watch",
+            })
+
+    candidates.sort(key=lambda x: (x["eligible"], x["apr"]), reverse=True)
+
+    state.setdefault("settings", {})["last_launchpool_scan_ts"] = int(time.time())
+    state["last_action"] = "Launchpool scan kész"
+    save_state(state)
+
+    out = {
+        "ok": True,
+        "enabled": True,
+        "min_apr": min_apr,
+        "watchlist": watch,
+        "candidates": candidates,
+    }
+
+    audit_event("LAUNCHPOOL_SCAN", "Launchpool scan", out)
+
+    if any(c.get("eligible") for c in candidates):
+        try:
+            send_email_notification("Binance Autobot - Launchpool/Airdrop jelölt", json.dumps(out, ensure_ascii=False, indent=2))
+        except Exception:
+            pass
+
+    return out
 
 
 if __name__ == "__main__":
