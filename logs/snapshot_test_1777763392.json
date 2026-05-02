@@ -1,6 +1,9 @@
 {
-  "base": "USDC",
+  "ts": 1777763392,
+  "label": "test",
+  "equity": 99.9429576545822,
   "balance": 81.0,
+  "realized_pnl": 0.0,
   "positions": {
     "BTCUSDT": {
       "qty": 0.0001267180989088671,
@@ -15,8 +18,6 @@
       "opened_ts": 1777758380
     }
   },
-  "realized_pnl": 0.0,
-  "running": false,
   "settings": {
     "risk_pct": 10.0,
     "max_positions": 3,
@@ -89,31 +90,7 @@
     "launchpool_min_apr": 5.0,
     "launchpool_watchlist": "BNB,FDUSD,USDT",
     "launchpool_scan_interval_min": 60,
-    "last_launchpool_scan_ts": 1777763126,
-    "sync_enabled": true,
-    "sync_primary_device": "PHONE",
-    "drive_sync_folder": "AutobotBackups",
-    "pc_sync_folder": "PCSync",
-    "auto_backup_on_start": false,
-    "last_sync_export_ts": 1777763617,
-    "last_sync_import_ts": 0,
-    "first_run_done": false,
-    "first_run_require_admin_change": true,
-    "first_run_require_secrets_check": true,
-    "admin_username": "admin",
-    "admin_password_hash": "2c3a940eff64300d3bc727cdd74ffd05e180494a4f16d4474bfb41957af66735",
-    "admin_password_salt": "aGRfvEEVvi8BDBBLMejREEpSzrI-w3zl",
-    "admin_session_active": false,
-    "admin_session_ts": 0,
-    "admin_timeout_sec": 300,
-    "admin_must_change_default": true,
-    "patch_manager_enabled": true,
-    "patch_require_admin": true,
-    "patch_last_queue_ts": 1777764338
+    "last_launchpool_scan_ts": 1777763126
   },
-  "last_action": "Admin logout",
-  "safe_mode": false,
-  "last_tick_ts": 1777759959,
-  "last_heartbeat_ts": 1777761546,
-  "cooldowns": {}
+  "last_action": "Package export: packages/autobot_package_test_1777763392.zip"
 }

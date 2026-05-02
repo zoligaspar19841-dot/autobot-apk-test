@@ -1,4 +1,4 @@
-APP_VERSION = "0.3.2-demo-core"
+APP_VERSION = "0.3.3-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -54,6 +54,23 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+ADMIN_SECURITY_DEFAULTS = {
+    "admin_username": "admin",
+    "admin_password_hash": "",
+    "admin_password_salt": "",
+    "admin_session_active": False,
+    "admin_session_ts": 0,
+    "admin_timeout_sec": 300,
+    "admin_must_change_default": True,
+}
+
+PATCH_MANAGER_DEFAULTS = {
+    "patch_manager_enabled": True,
+    "patch_require_admin": True,
+    "patch_last_queue_ts": 0,
+}
 
 SYNC_DEFAULTS = {
     "sync_enabled": True,
@@ -226,6 +243,18 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "ADMIN_SECURITY_DEFAULTS" in globals():
+        for k, v in ADMIN_SECURITY_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "PATCH_MANAGER_DEFAULTS" in globals():
+        for k, v in PATCH_MANAGER_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -2494,6 +2523,209 @@ def mark_first_run_done():
     save_state(state)
     audit_event("FIRST_RUN_DONE", "First-run kész", {})
     return first_run_status()
+
+
+
+def _admin_hash(password, salt):
+    return hashlib.sha256((str(salt) + "::" + str(password)).encode("utf-8")).hexdigest()
+
+
+def _admin_ensure_initialized():
+    state = load_state()
+    settings = state.setdefault("settings", {})
+    changed = False
+
+    if not settings.get("admin_password_salt"):
+        settings["admin_password_salt"] = py_secrets.token_urlsafe(24)
+        changed = True
+
+    if not settings.get("admin_password_hash"):
+        settings["admin_password_hash"] = _admin_hash("admin", settings["admin_password_salt"])
+        settings["admin_must_change_default"] = True
+        changed = True
+
+    if changed:
+        save_state(state)
+
+    return load_state()
+
+
+def admin_status():
+    state = _admin_ensure_initialized()
+    settings = state.get("settings", {})
+
+    active = bool(settings.get("admin_session_active", False))
+    ts = int(settings.get("admin_session_ts", 0) or 0)
+    timeout = int(settings.get("admin_timeout_sec", 300) or 300)
+    now = int(time.time())
+
+    expired = False
+    if active and ts and now - ts > timeout:
+        expired = True
+        settings["admin_session_active"] = False
+        settings["admin_session_ts"] = 0
+        state["last_action"] = "Admin session lejárt"
+        save_state(state)
+        active = False
+
+    return {
+        "ok": True,
+        "admin_username": settings.get("admin_username", "admin"),
+        "admin_active": active,
+        "admin_timeout_sec": timeout,
+        "seconds_left": max(0, timeout - (now - ts)) if active and ts else 0,
+        "expired": expired,
+        "must_change_default": bool(settings.get("admin_must_change_default", True)),
+    }
+
+
+def admin_login(username, password):
+    state = _admin_ensure_initialized()
+    settings = state.get("settings", {})
+
+    username = str(username or "").strip()
+    password = str(password or "")
+
+    ok = (
+        username == str(settings.get("admin_username", "admin"))
+        and _admin_hash(password, settings.get("admin_password_salt", "")) == settings.get("admin_password_hash", "")
+    )
+
+    if ok:
+        settings["admin_session_active"] = True
+        settings["admin_session_ts"] = int(time.time())
+        state["last_action"] = "Admin login OK"
+        save_state(state)
+        audit_event("ADMIN_LOGIN", "Admin login OK", {"username": username})
+    else:
+        audit_event("ADMIN_LOGIN_FAIL", "Admin login fail", {"username": username})
+
+    out = admin_status()
+    out["login_ok"] = ok
+    return out
+
+
+def admin_logout():
+    state = load_state()
+    settings = state.setdefault("settings", {})
+    settings["admin_session_active"] = False
+    settings["admin_session_ts"] = 0
+    state["last_action"] = "Admin logout"
+    save_state(state)
+    audit_event("ADMIN_LOGOUT", "Admin logout", {})
+    return admin_status()
+
+
+def admin_change_password(old_password, new_password):
+    state = _admin_ensure_initialized()
+    settings = state.get("settings", {})
+
+    old_password = str(old_password or "")
+    new_password = str(new_password or "")
+
+    if len(new_password) < 4:
+        return {"ok": False, "changed": False, "error": "Az új jelszó legalább 4 karakter legyen."}
+
+    if _admin_hash(old_password, settings.get("admin_password_salt", "")) != settings.get("admin_password_hash", ""):
+        return {"ok": False, "changed": False, "error": "Rossz régi jelszó."}
+
+    salt = py_secrets.token_urlsafe(24)
+    settings["admin_password_salt"] = salt
+    settings["admin_password_hash"] = _admin_hash(new_password, salt)
+    settings["admin_must_change_default"] = False
+    settings["admin_session_active"] = False
+    settings["admin_session_ts"] = 0
+    save_state(state)
+
+    audit_event("ADMIN_PASSWORD_CHANGED", "Admin jelszó cserélve", {})
+    return {"ok": True, "changed": True}
+
+
+def patch_manager_status():
+    st = load_state()
+    cfg = st.get("settings", {})
+    adm = admin_status()
+    qf = os.path.join(LOG_DIR, "patch_queue.jsonl")
+
+    return {
+        "ok": True,
+        "enabled": bool(cfg.get("patch_manager_enabled", True)),
+        "require_admin": bool(cfg.get("patch_require_admin", True)),
+        "admin_active": adm.get("admin_active"),
+        "queue_file": qf,
+        "queue_exists": os.path.exists(qf),
+        "allowed_paths": ["main.py", "demo_core_engine.py", "DEV_STATUS*.md", "README*.md"],
+    }
+
+
+def _patch_path_allowed(path):
+    path = str(path or "").strip().replace("\\", "/").lstrip("/")
+    if not path or ".." in path.split("/"):
+        return False, "Tiltott path."
+
+    if path in ["main.py", "demo_core_engine.py"]:
+        return True, "OK"
+
+    base = os.path.basename(path)
+    if base.startswith("DEV_STATUS") and base.endswith(".md"):
+        return True, "OK"
+
+    if base.startswith("README") and base.endswith(".md"):
+        return True, "OK"
+
+    return False, "Nem engedélyezett fájl."
+
+
+def queue_patch_request(path, description, content_preview=""):
+    ensure_log_dir()
+
+    st = load_state()
+    cfg = st.setdefault("settings", {})
+
+    if not bool(cfg.get("patch_manager_enabled", True)):
+        return {"ok": False, "queued": False, "error": "Patch manager kikapcsolva."}
+
+    if bool(cfg.get("patch_require_admin", True)) and not admin_status().get("admin_active"):
+        return {"ok": False, "queued": False, "error": "Admin login szükséges."}
+
+    allowed, reason = _patch_path_allowed(path)
+    if not allowed:
+        return {"ok": False, "queued": False, "error": reason}
+
+    row = {
+        "ts": int(time.time()),
+        "path": str(path),
+        "description": str(description or ""),
+        "content_preview": str(content_preview or "")[:1000],
+        "status": "QUEUED",
+    }
+
+    qf = os.path.join(LOG_DIR, "patch_queue.jsonl")
+    with open(qf, "a", encoding="utf-8") as f:
+        f.write(json.dumps(row, ensure_ascii=False) + "\\n")
+
+    cfg["patch_last_queue_ts"] = row["ts"]
+    st["last_action"] = "Patch queued: " + str(path)
+    save_state(st)
+    audit_event("PATCH_QUEUED", "Patch queued", row)
+
+    return {"ok": True, "queued": True, "row": row, "queue_file": qf}
+
+
+def read_patch_queue(limit=20):
+    qf = os.path.join(LOG_DIR, "patch_queue.jsonl")
+    if not os.path.exists(qf):
+        return {"ok": True, "items": [], "queue_file": qf}
+
+    items = []
+    with open(qf, "r", encoding="utf-8") as f:
+        for line in f:
+            try:
+                items.append(json.loads(line))
+            except Exception:
+                pass
+
+    return {"ok": True, "items": items[-int(limit or 20):], "queue_file": qf}
 
 
 if __name__ == "__main__":

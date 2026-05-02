@@ -578,6 +578,163 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreAdminScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]ADMIN SECURITY[/b]\n[size=14]Admin login + 5 perc auto logout[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        ))
+
+        self.info = Label(text='Admin státusz...', markup=True, halign='left', valign='top', size_hint_y=None, height=180)
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+        root.add_widget(self.info)
+
+        self.user = TextInput(text='admin', multiline=False, size_hint_y=None, height=44)
+        self.pw = TextInput(text='', hint_text='password', password=True, multiline=False, size_hint_y=None, height=44)
+        self.new_pw = TextInput(text='', hint_text='new password', password=True, multiline=False, size_hint_y=None, height=44)
+
+        root.add_widget(self.user)
+        root.add_widget(self.pw)
+        root.add_widget(self.new_pw)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        buttons = [
+            ('LOGIN', self.login),
+            ('LOGOUT', self.logout),
+            ('CHANGE PW', self.change_pw),
+            ('STATUS', self.refresh),
+            ('PATCH MANAGER', lambda: self.manager.go_to('patch_manager')),
+            ('VISSZA', self.go_back),
+        ]
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def render(self, st, extra=''):
+        lines = []
+        if extra:
+            lines.append('[b]' + extra + '[/b]')
+            lines.append('')
+        lines.append('[b]Admin státusz[/b]')
+        lines.append(f"User: {st.get('admin_username')}")
+        lines.append(f"Active: {st.get('admin_active')}")
+        lines.append(f"Seconds left: {st.get('seconds_left')}")
+        lines.append(f"Timeout sec: {st.get('admin_timeout_sec')}")
+        lines.append(f"Default password change needed: {st.get('must_change_default')}")
+        self.info.text = '\n'.join(lines)
+
+    def refresh(self):
+        self.render(demo_core.admin_status())
+
+    def login(self):
+        st = demo_core.admin_login(self.user.text, self.pw.text)
+        self.render(st, 'Login: ' + str(st.get('login_ok')))
+
+    def logout(self):
+        self.render(demo_core.admin_logout(), 'Logout OK')
+
+    def change_pw(self):
+        res = demo_core.admin_change_password(self.pw.text, self.new_pw.text)
+        self.info.text = str(res)
+
+
+class DemoCorePatchManagerScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]PATCH MANAGER SAFE BASE[/b]\n[size=14]Path védelem + patch queue, apply később[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        ))
+
+        self.info = Label(text='Patch manager...', markup=True, halign='left', valign='top', size_hint_y=None, height=220)
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+        root.add_widget(self.info)
+
+        self.path_inp = TextInput(text='main.py', hint_text='path', multiline=False, size_hint_y=None, height=44)
+        self.desc_inp = TextInput(text='', hint_text='patch leírás', multiline=False, size_hint_y=None, height=44)
+        self.preview_inp = TextInput(text='', hint_text='preview / megjegyzés', multiline=True, size_hint_y=None, height=100)
+
+        root.add_widget(self.path_inp)
+        root.add_widget(self.desc_inp)
+        root.add_widget(self.preview_inp)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=180, spacing=8)
+        buttons = [
+            ('STATUS', self.refresh),
+            ('QUEUE PATCH', self.queue),
+            ('READ QUEUE', self.read_queue),
+            ('ADMIN', lambda: self.manager.go_to('admin')),
+            ('VISSZA', self.go_back),
+        ]
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self):
+        st = demo_core.patch_manager_status()
+        lines = []
+        lines.append('[b]Patch Manager státusz[/b]')
+        lines.append(f"Enabled: {st.get('enabled')}")
+        lines.append(f"Require admin: {st.get('require_admin')}")
+        lines.append(f"Admin active: {st.get('admin_active')}")
+        lines.append(f"Queue file: {st.get('queue_file')}")
+        lines.append('')
+        lines.append('[b]Allowed paths:[/b]')
+        for p in st.get('allowed_paths', []):
+            lines.append('- ' + str(p))
+        lines.append('')
+        lines.append('[size=12]Apply funkció később, külön biztonsági lépésben.[/size]')
+        self.info.text = '\n'.join(lines)
+
+    def queue(self):
+        res = demo_core.queue_patch_request(self.path_inp.text, self.desc_inp.text, self.preview_inp.text)
+        self.info.text = str(res)
+
+    def read_queue(self):
+        res = demo_core.read_patch_queue()
+        lines = ['[b]Patch queue[/b]', '']
+        for item in res.get('items', []):
+            lines.append(f"- {item.get('path')} | {item.get('status')} | {item.get('description')}")
+        self.info.text = '\n'.join(lines)
+
+
+
 class DemoCoreSyncScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1946,6 +2103,9 @@ class DemoCoreSettingsScreen(Screen):
             ('pc_sync_folder', 'PC sync folder'),
             ('auto_backup_on_start', 'Auto backup on start true/false'),
             ('first_run_done', 'First run done true/false'),
+            ('admin_timeout_sec', 'Admin timeout sec'),
+            ('patch_manager_enabled', 'Patch manager enabled true/false'),
+            ('patch_require_admin', 'Patch require admin true/false'),
         ]
 
         for key, label in fields:
@@ -2085,6 +2245,9 @@ class DemoCoreSettingsScreen(Screen):
             cfg['pc_sync_folder'] = self.inputs['pc_sync_folder'].text.strip() or 'PCSync'
             cfg['auto_backup_on_start'] = self.inputs['auto_backup_on_start'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
             cfg['first_run_done'] = self.inputs['first_run_done'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['admin_timeout_sec'] = int(float(self.inputs['admin_timeout_sec'].text.replace(',', '.')))
+            cfg['patch_manager_enabled'] = self.inputs['patch_manager_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['patch_require_admin'] = self.inputs['patch_require_admin'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -2303,6 +2466,18 @@ class DemoCoreScreen(Screen):
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
 
+    def open_admin(self):
+        try:
+            self.manager.go_to("admin")
+        except Exception:
+            self.manager.current = "admin"
+
+    def open_patch_manager(self):
+        try:
+            self.manager.go_to("patch_manager")
+        except Exception:
+            self.manager.current = "patch_manager"
+
     def open_first_run(self):
         try:
             self.manager.go_to("first_run")
@@ -2518,6 +2693,8 @@ class AppMain(App):
         sm.add_widget(DemoCorePackageScreen(name="package"))
         sm.add_widget(DemoCoreSyncScreen(name="sync"))
         sm.add_widget(DemoCoreFirstRunScreen(name="first_run"))
+        sm.add_widget(DemoCoreAdminScreen(name="admin"))
+        sm.add_widget(DemoCorePatchManagerScreen(name="patch_manager"))
         return sm
 
 if __name__ == "__main__":
