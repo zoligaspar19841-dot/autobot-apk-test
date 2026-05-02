@@ -274,6 +274,76 @@ class Scanner(Screen):
             lines.append(f"{sym}  {price:.5g}  {chg:+.2f}%")
         self.list.text = "\n".join(lines[:12])
 
+
+class AIScreen(Screen):
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.best_symbol = None
+
+        root = BoxLayout(orientation="vertical", padding=12, spacing=8)
+        root.add_widget(Label(
+            text="AI / STRATÉGIA",
+            font_size=34,
+            bold=True,
+            color=(1,.75,0,1),
+            size_hint_y=.13
+        ))
+
+        self.info = Label(
+            text="AI coin ajánló készen áll.\nNyomj FRISSÍTÉS-t.",
+            font_size=20
+        )
+        root.add_widget(self.info)
+
+        btns = GridLayout(cols=1, spacing=8, size_hint_y=.28)
+
+        refresh = button("AI FRISSÍTÉS / EDGE SCORE", CARD, 23)
+        use = button("LEGJOBB COIN BEÁLLÍTÁSA", (.05,.55,.1,1), 23)
+        back = button("VISSZA", (.35,.35,.35,1), 23)
+
+        refresh.bind(on_press=self.refresh_ai)
+        use.bind(on_press=self.use_best)
+        back.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
+
+        btns.add_widget(refresh)
+        btns.add_widget(use)
+        btns.add_widget(back)
+
+        root.add_widget(btns)
+        self.msg = Label(text="", font_size=17, size_hint_y=.08)
+        root.add_widget(self.msg)
+        self.add_widget(root)
+
+    def refresh_ai(self, x):
+        try:
+            rec = ai.recommendations(10)
+            if not rec:
+                self.info.text = "Nincs ajánlás / offline."
+                return
+
+            self.best_symbol = rec[0]["symbol"]
+            lines = []
+            for r in rec:
+                lines.append(
+                    f'{r["symbol"]}: edge {r["edge"]:.2f} | {r["change"]:+.2f}% | {r["signal"]}'
+                )
+
+            self.info.text = "\n".join(lines)
+            self.msg.text = "Legjobb: " + self.best_symbol
+
+        except Exception as e:
+            self.info.text = "AI hiba / offline:\n" + str(e)[:140]
+
+    def use_best(self, x):
+        if not self.best_symbol:
+            self.msg.text = "Előbb AI FRISSÍTÉS kell."
+            return
+
+        cfg = load_settings()
+        cfg["symbol"] = self.best_symbol
+        save_json(SETTINGS_FILE, cfg)
+        self.msg.text = "Beállítva: " + self.best_symbol
+
 class TextScreen(Screen):
     def __init__(self, title, body, **kw):
         super().__init__(**kw)
@@ -296,7 +366,7 @@ class AppMain(App):
         sm.add_widget(Scanner(name="scanner"))
         sm.add_widget(TextScreen("BEÁLLÍTÁSOK", "Alap pénznem, risk %, max coin, stratégia, téma, betűméret.", name="settings"))
         sm.add_widget(TextScreen("BIZTONSÁG / API", "App jelszó, PIN, Binance API kulcs, e-mail, titkosítás.\nLive order jelenleg tiltva.", name="security"))
-        sm.add_widget(TextScreen("AI / STRATÉGIA", "Következő patch: AI coin választás, edge score, Normal/Hybrid/Sniper.", name="strategy"))
+        sm.add_widget(AIScreen(name="strategy"))
         sm.add_widget(TextScreen("NAPLÓ / EXPORT", "Trades lista, CSV export, profit report, audit napló.", name="logs"))
         sm.add_widget(TextScreen("HALADÓ", "Schedules, Launchpool/Airdrop, Patch Manager, Diagnostics.", name="advanced"))
         return sm
