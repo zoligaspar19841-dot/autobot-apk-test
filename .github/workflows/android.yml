@@ -9,45 +9,46 @@ jobs:
   build:
     runs-on: ubuntu-22.04
 
+    env:
+      JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install Linux dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y python3-pip build-essential git zip unzip wget openjdk-17-jdk
-        sudo apt install -y autoconf automake libtool libtool-bin m4 gettext autopoint pkg-config libltdl-dev zlib1g-dev
+      - name: Force Java 17
+        run: |
+          echo "JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64" >> $GITHUB_ENV
+          echo "/usr/lib/jvm/temurin-17-jdk-amd64/bin" >> $GITHUB_PATH
+          java -version
 
-    - name: Install Python tools
-      run: |
-        python3 -m pip install --upgrade pip setuptools wheel
-        python3 -m pip install "cython<3" buildozer==1.5.0
+      - name: Install packages
+        run: |
+          sudo apt update
+          sudo apt install -y openjdk-17-jdk unzip zip git autoconf automake libtool pkg-config zlib1g-dev libffi-dev libssl-dev
+          python3 -m pip install --upgrade pip wheel setuptools
+          python3 -m pip install buildozer cython
 
-    - name: Clean old build
-      run: |
-        rm -rf .buildozer bin apk_out
-        mkdir -p apk_out
+      - name: Clean old build
+        run: |
+          rm -rf .buildozer bin apk_out
 
-    - name: Build APK
-      run: |
-        set -o pipefail
-        buildozer -v android debug 2>&1 | tee buildozer_full.log
-        echo "=== APK keresés ==="
-        find . -name "*.apk" -print | tee apk_files.txt
-        test -s apk_files.txt
-        cp "$(head -n 1 apk_files.txt)" apk_out/autobot-debug.apk
+      - name: Build APK
+        run: |
+          java -version
+          buildozer -v android debug 2>&1 | tee buildozer_full.log
 
-    - name: Upload full log
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: buildozer-full-log
-        path: buildozer_full.log
+      - name: Upload full log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buildozer-full-log
+          path: buildozer_full.log
 
-    - name: Upload APK
-      if: success()
-      uses: actions/upload-artifact@v4
-      with:
-        name: autobot-apk
-        path: apk_out/*.apk
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: bin/*.apk
