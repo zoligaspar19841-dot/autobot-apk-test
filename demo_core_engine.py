@@ -44,6 +44,16 @@ SECRETS_DEFAULTS = {
 
 
 
+
+BINANCE_LIVE_DEFAULTS = {
+    "live_mode_enabled": False,
+    "live_require_confirm": True,
+    "live_allow_buy": False,
+    "live_allow_sell": False,
+    "live_max_order_usdt": 10.0,
+    "live_warning_ack": False,
+}
+
 OPENAI_API_DEFAULTS = {
     "openai_model": "gpt-5-mini",
     "openai_timeout_sec": 25,
@@ -163,6 +173,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "BINANCE_LIVE_DEFAULTS" in globals():
+        for k, v in BINANCE_LIVE_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -1520,6 +1536,113 @@ def call_openai_advisor(symbol, offline_result):
         }
         audit_event("OPENAI_ADVISOR_ERROR", symbol, {"error": str(e)})
         return result
+
+
+
+def binance_live_status():
+    """
+    Binance Live API státusz.
+    Ez még NEM küld megbízást.
+    Csak azt ellenőrzi, hogy a Live módhoz szükséges adatok és kapcsolók rendben vannak-e.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+    sec = load_secrets()
+
+    has_key = bool(sec.get("binance_api_key"))
+    has_secret = bool(sec.get("binance_api_secret"))
+    safe_mode = bool(state.get("safe_mode", False))
+
+    live_mode_enabled = bool(settings.get("live_mode_enabled", False))
+    live_warning_ack = bool(settings.get("live_warning_ack", False))
+    live_require_confirm = bool(settings.get("live_require_confirm", True))
+    live_allow_buy = bool(settings.get("live_allow_buy", False))
+    live_allow_sell = bool(settings.get("live_allow_sell", False))
+    execution_mode = str(settings.get("execution_mode", "AUTO")).upper()
+
+    warnings = []
+
+    if not has_key:
+        warnings.append("Binance API key hiányzik.")
+
+    if not has_secret:
+        warnings.append("Binance API secret hiányzik.")
+
+    if safe_mode:
+        warnings.append("Safe Mode aktív: live vétel tiltva.")
+
+    if execution_mode == "OFF":
+        warnings.append("Execution mode OFF: bot nem kereskedhet.")
+
+    if live_mode_enabled and live_require_confirm and not live_warning_ack:
+        warnings.append("Live figyelmeztetés nincs jóváhagyva.")
+
+    if live_mode_enabled and not live_allow_buy and not live_allow_sell:
+        warnings.append("Live mód bekapcsolva, de BUY és SELL engedély nincs.")
+
+    ready_for_live = (
+        has_key
+        and has_secret
+        and live_mode_enabled
+        and not safe_mode
+        and execution_mode != "OFF"
+        and (live_warning_ack or not live_require_confirm)
+        and (live_allow_buy or live_allow_sell)
+    )
+
+    out = {
+        "ok": True,
+        "has_api_key": has_key,
+        "has_api_secret": has_secret,
+        "live_mode_enabled": live_mode_enabled,
+        "live_require_confirm": live_require_confirm,
+        "live_warning_ack": live_warning_ack,
+        "live_allow_buy": live_allow_buy,
+        "live_allow_sell": live_allow_sell,
+        "live_max_order_usdt": settings.get("live_max_order_usdt", 10.0),
+        "execution_mode": execution_mode,
+        "safe_mode": safe_mode,
+        "ready_for_live": ready_for_live,
+        "warnings": warnings,
+    }
+
+    audit_event("BINANCE_LIVE_STATUS", "Live státusz ellenőrzés", out)
+    return out
+
+
+def acknowledge_live_warning():
+    state = load_state()
+    settings = state.setdefault("settings", {})
+    settings["live_warning_ack"] = True
+    save_state(state)
+    audit_event("LIVE_WARNING_ACK", "Live warning jóváhagyva", {})
+    return binance_live_status()
+
+
+def disable_live_mode():
+    state = load_state()
+    settings = state.setdefault("settings", {})
+    settings["live_mode_enabled"] = False
+    settings["live_allow_buy"] = False
+    settings["live_allow_sell"] = False
+    save_state(state)
+    audit_event("LIVE_MODE_DISABLED", "Live mód kikapcsolva", {})
+    return binance_live_status()
+
+
+def enable_live_check_only():
+    """
+    Csak Live státusz bekapcsolása ellenőrzéshez.
+    Nem enged automatikus vételt/eladást.
+    """
+    state = load_state()
+    settings = state.setdefault("settings", {})
+    settings["live_mode_enabled"] = True
+    settings["live_allow_buy"] = False
+    settings["live_allow_sell"] = False
+    save_state(state)
+    audit_event("LIVE_CHECK_ONLY", "Live check only bekapcsolva", {})
+    return binance_live_status()
 
 
 if __name__ == "__main__":

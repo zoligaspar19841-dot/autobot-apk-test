@@ -573,6 +573,113 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreBinanceLiveScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(
+            text='[b]BINANCE LIVE API CHECK[/b]\n[size=14]Csak ellenőrzés, NEM küld megbízást[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        )
+        root.add_widget(title)
+
+        self.info = Label(text='Live státusz betöltés...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        b_refresh = Button(text='LIVE CHECK')
+        b_ack = Button(text='FIGYELMEZTETÉS OK')
+        b_checkonly = Button(text='CHECK ONLY ON')
+        b_disable = Button(text='LIVE OFF')
+        b_secrets = Button(text='SECRETS')
+        b_back = Button(text='VISSZA')
+
+        b_refresh.bind(on_press=lambda x: self.refresh())
+        b_ack.bind(on_press=lambda x: self.ack())
+        b_checkonly.bind(on_press=lambda x: self.check_only())
+        b_disable.bind(on_press=lambda x: self.disable())
+        b_secrets.bind(on_press=lambda x: self.manager.go_to('secrets'))
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_refresh, b_ack, b_checkonly, b_disable, b_secrets, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def render(self, res):
+        lines = []
+        lines.append('[b]Binance Live státusz[/b]')
+        lines.append('')
+        lines.append(f"API key: {'OK' if res.get('has_api_key') else 'HIÁNYZIK'}")
+        lines.append(f"API secret: {'OK' if res.get('has_api_secret') else 'HIÁNYZIK'}")
+        lines.append(f"Live mode: {res.get('live_mode_enabled')}")
+        lines.append(f"BUY allowed: {res.get('live_allow_buy')}")
+        lines.append(f"SELL allowed: {res.get('live_allow_sell')}")
+        lines.append(f"Max order USDT: {res.get('live_max_order_usdt')}")
+        lines.append(f"Execution mode: {res.get('execution_mode')}")
+        lines.append(f"Safe mode: {res.get('safe_mode')}")
+        lines.append(f"Warning ACK: {res.get('live_warning_ack')}")
+        lines.append('')
+        lines.append(f"[b]Ready for live:[/b] {res.get('ready_for_live')}")
+        lines.append('')
+
+        warns = res.get('warnings') or []
+        if warns:
+            lines.append('[b]Figyelmeztetések:[/b]')
+            for w in warns:
+                lines.append('- ' + str(w))
+        else:
+            lines.append('Nincs figyelmeztetés.')
+
+        lines.append('')
+        lines.append('[size=12]Biztonság: ez a képernyő még nem küld valódi Binance megbízást.[/size]')
+
+        self.info.text = '\n'.join(lines)
+
+    def refresh(self):
+        try:
+            self.render(demo_core.binance_live_status())
+        except Exception as e:
+            self.info.text = 'Live check hiba: ' + str(e)
+
+    def ack(self):
+        try:
+            self.render(demo_core.acknowledge_live_warning())
+        except Exception as e:
+            self.info.text = 'ACK hiba: ' + str(e)
+
+    def check_only(self):
+        try:
+            self.render(demo_core.enable_live_check_only())
+        except Exception as e:
+            self.info.text = 'Check only hiba: ' + str(e)
+
+    def disable(self):
+        try:
+            self.render(demo_core.disable_live_mode())
+        except Exception as e:
+            self.info.text = 'Live off hiba: ' + str(e)
+
+
+
 class DemoCoreSecretsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1252,6 +1359,12 @@ class DemoCoreSettingsScreen(Screen):
             ('openai_api_enabled', 'OpenAI API enabled true/false'),
             ('openai_model', 'OpenAI model'),
             ('openai_timeout_sec', 'OpenAI timeout sec'),
+            ('live_mode_enabled', 'Live mode enabled true/false'),
+            ('live_require_confirm', 'Live require confirm true/false'),
+            ('live_allow_buy', 'Live allow BUY true/false'),
+            ('live_allow_sell', 'Live allow SELL true/false'),
+            ('live_max_order_usdt', 'Live max order USDT'),
+            ('live_warning_ack', 'Live warning ACK true/false'),
         ]
 
         for key, label in fields:
@@ -1363,6 +1476,12 @@ class DemoCoreSettingsScreen(Screen):
             cfg['openai_api_enabled'] = self.inputs['openai_api_enabled'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
             cfg['openai_model'] = self.inputs['openai_model'].text.strip() or 'gpt-5-mini'
             cfg['openai_timeout_sec'] = int(float(self.inputs['openai_timeout_sec'].text.replace(',', '.')))
+            cfg['live_mode_enabled'] = self.inputs['live_mode_enabled'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['live_require_confirm'] = self.inputs['live_require_confirm'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['live_allow_buy'] = self.inputs['live_allow_buy'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['live_allow_sell'] = self.inputs['live_allow_sell'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['live_max_order_usdt'] = float(self.inputs['live_max_order_usdt'].text.replace(',', '.'))
+            cfg['live_warning_ack'] = self.inputs['live_warning_ack'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -1581,6 +1700,12 @@ class DemoCoreScreen(Screen):
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
 
+    def open_binance_live(self):
+        try:
+            self.manager.go_to("binance_live")
+        except Exception:
+            self.manager.current = "binance_live"
+
     def open_secrets(self):
         try:
             self.manager.go_to("secrets")
@@ -1740,6 +1865,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreTradeScreen(name="trade_logic"))
         sm.add_widget(DemoCoreAIScreen(name="ai_advisor"))
         sm.add_widget(DemoCoreSecretsScreen(name="secrets"))
+        sm.add_widget(DemoCoreBinanceLiveScreen(name="binance_live"))
         return sm
 
 if __name__ == "__main__":

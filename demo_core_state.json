@@ -65,7 +65,13 @@
     "email_on_health_warning": true,
     "openai_model": "gpt-5-mini",
     "openai_timeout_sec": 25,
-    "openai_api_enabled": false
+    "openai_api_enabled": false,
+    "live_mode_enabled": false,
+    "live_require_confirm": true,
+    "live_allow_buy": false,
+    "live_allow_sell": false,
+    "live_max_order_usdt": 10.0,
+    "live_warning_ack": false
   },
   "last_action": "AI advisor: HOLD BTCUSDT",
   "safe_mode": false,
