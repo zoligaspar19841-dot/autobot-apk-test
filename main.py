@@ -911,6 +911,7 @@ class DemoCoreSettingsScreen(Screen):
             ('taker_fee_pct', 'Taker fee %'),
             ('tax_enabled', 'Tax enabled true/false'),
             ('tax_pct', 'HU tax %'),
+            ('min_after_tax_profit_pct', 'Min after tax profit %'),
         ]
 
         for key, label in fields:
@@ -1002,6 +1003,7 @@ class DemoCoreSettingsScreen(Screen):
             cfg['taker_fee_pct'] = float(self.inputs['taker_fee_pct'].text.replace(',', '.'))
             cfg['tax_enabled'] = self.inputs['tax_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['tax_pct'] = float(self.inputs['tax_pct'].text.replace(',', '.'))
+            cfg['min_after_tax_profit_pct'] = float(self.inputs['min_after_tax_profit_pct'].text.replace(',', '.'))
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)

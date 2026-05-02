@@ -45,7 +45,8 @@
     "maker_fee_pct": 0.1,
     "taker_fee_pct": 0.1,
     "tax_enabled": true,
-    "tax_pct": 15.0
+    "tax_pct": 15.0,
+    "min_after_tax_profit_pct": 0.1
   },
   "last_action": "Scanner futott: top BTCUSDT, ETHUSDT, DOGEUSDT",
   "safe_mode": false,

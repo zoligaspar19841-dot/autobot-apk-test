@@ -21,6 +21,7 @@ FEE_TAX_DEFAULTS = {
     "taker_fee_pct": 0.10,
     "tax_enabled": True,
     "tax_pct": 15.0,
+    "min_after_tax_profit_pct": 0.10,
 }
 
 SCANNER_DEFAULTS = {
@@ -263,7 +264,7 @@ def sell(state, symbol, note="SELL"):
 
     log_trade([int(time.time()), symbol, "SELL", qty, p, pnl, note])
     pnl_info = pnl_breakdown(pnl, state.get("settings", {}))
-    audit_event("SELL", note, {"symbol": symbol, "qty": qty, "price": p, "pnl": pnl, "pnl_breakdown": pnl_info})
+    audit_event("SELL", note, {"symbol": symbol, "qty": qty, "price": p, "pnl": pnl, "pnl_breakdown": pnl_info, "profit_pct_breakdown": profit_pct_breakdown(((p - avg) / avg) * 100 if avg else 0, state.get("settings", {}))})
     return f"SELL {symbol} PnL={pnl:.4f} USDC | {note}"
 
 def signal(symbol, settings):
@@ -295,6 +296,7 @@ def tick():
     time_in_trend_minutes_max = float(settings.get("time_in_trend_minutes_max", 240))
     cooldown_after_exit_min = float(settings.get("cooldown_after_exit_min", 10))
     profit_erosion_guard_pct = float(settings.get("profit_erosion_guard_pct", 1.5))
+    min_after_tax_profit_pct = float(settings.get("min_after_tax_profit_pct", 0.10) or 0.10)
 
     actions = []
 
@@ -318,7 +320,11 @@ def tick():
         if pnl_pct <= -stop_loss:
             actions.append(sell(state, symbol, f"STOP LOSS {pnl_pct:.2f}%"))
         elif pnl_pct >= min_profit and ((min_hold_ok and (drop_from_peak >= trailing_drop or sig == "SELL")) or max_time_reached or erosion_hit):
-            actions.append(sell(state, symbol, f"PROFIT HOLD EXIT {pnl_pct:.2f}% age={age_min:.1f}m peak_drop={drop_from_peak:.2f}%"))
+            tax_ok, tax_bd = is_after_tax_profit_ok(pnl_pct, settings)
+            if tax_ok:
+                actions.append(sell(state, symbol, f"PROFIT HOLD EXIT gross={pnl_pct:.2f}% after_tax={tax_bd.get('after_tax_pct'):.2f}% age={age_min:.1f}m peak_drop={drop_from_peak:.2f}%"))
+            else:
+                actions.append(f"HOLD {symbol} gross={pnl_pct:.2f}% after_tax={tax_bd.get('after_tax_pct'):.2f}% < min_after_tax={min_after_tax_profit_pct:.2f}%")
         else:
             actions.append(f"HOLD {symbol} PnL={pnl_pct:.2f}% age={age_min:.1f}m")
 
@@ -637,6 +643,47 @@ def pnl_breakdown(gross_pnl, settings=None):
         "taker_fee_pct": taker_fee_pct,
     }
 
+
+
+def profit_pct_breakdown(gross_profit_pct, settings=None):
+    """
+    Konzervatív becslés: nyitás + zárás taker fee-vel számol.
+    Cél: döntésnél csak olyan profit legyen elfogadva, ami fee + becsült adó után is pozitív.
+    """
+    settings = settings or load_state().get("settings", {})
+
+    gross_pct = float(gross_profit_pct or 0.0)
+    taker_fee_pct = float(settings.get("taker_fee_pct", 0.10) or 0.10)
+    tax_pct = float(settings.get("tax_pct", 15.0) or 15.0)
+    tax_enabled = bool(settings.get("tax_enabled", True))
+
+    # vétel + eladás díj, konzervatívan
+    roundtrip_fee_pct = taker_fee_pct * 2.0
+
+    net_before_tax_pct = gross_pct - roundtrip_fee_pct
+
+    tax_cut_pct = 0.0
+    after_tax_pct = net_before_tax_pct
+
+    if tax_enabled and net_before_tax_pct > 0:
+        tax_cut_pct = net_before_tax_pct * (tax_pct / 100.0)
+        after_tax_pct = net_before_tax_pct - tax_cut_pct
+
+    return {
+        "gross_profit_pct": round(gross_pct, 6),
+        "roundtrip_fee_pct": round(roundtrip_fee_pct, 6),
+        "net_before_tax_pct": round(net_before_tax_pct, 6),
+        "tax_cut_pct": round(tax_cut_pct, 6),
+        "after_tax_pct": round(after_tax_pct, 6),
+        "positive_after_tax": after_tax_pct > 0,
+    }
+
+
+def is_after_tax_profit_ok(gross_profit_pct, settings=None):
+    settings = settings or load_state().get("settings", {})
+    min_after_tax = float(settings.get("min_after_tax_profit_pct", 0.10) or 0.10)
+    bd = profit_pct_breakdown(gross_profit_pct, settings)
+    return bd["after_tax_pct"] >= min_after_tax, bd
 
 def portfolio_pnl_breakdown():
     st = load_state()
