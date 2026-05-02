@@ -568,6 +568,87 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreScannerScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(
+            text='[b]MULTI-SYMBOL SCANNER[/b]\n[size=14]Watchlist rangsor / edge score[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=72
+        )
+        root.add_widget(title)
+
+        self.info = Label(text='Scanner betöltés...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=170, spacing=8)
+        b_scan = Button(text='SCAN NOW')
+        b_tick = Button(text='SCAN + TICK')
+        b_settings = Button(text='SETTINGS')
+        b_back = Button(text='VISSZA')
+
+        b_scan.bind(on_press=lambda x: self.scan())
+        b_tick.bind(on_press=lambda x: self.scan_tick())
+        b_settings.bind(on_press=lambda x: self.manager.go_to('demo_settings'))
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_scan, b_tick, b_settings, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.scan()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def scan(self):
+        try:
+            res = demo_core.scan_symbols()
+            lines = []
+            lines.append('[b]Scanner status:[/b] OK')
+            lines.append(f"[b]Symbols:[/b] {res.get('symbols_count')}")
+            lines.append(f"[b]Top N:[/b] {res.get('top_n')}")
+            lines.append('')
+
+            rows = res.get('candidates') or []
+            if not rows:
+                lines.append('Nincs jelölt.')
+            else:
+                lines.append('[b]Top jelöltek:[/b]')
+                for i, r in enumerate(rows, 1):
+                    lines.append(
+                        f"{i}. [b]{r.get('symbol')}[/b] | score={r.get('score')} | {r.get('signal')} | "
+                        f"trend={r.get('trend_pct')}% | mom={r.get('momentum_pct')}% | vol={r.get('volatility_pct')}%"
+                    )
+
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Scanner hiba: ' + str(e)
+
+    def scan_tick(self):
+        try:
+            demo_core.scan_symbols()
+            demo_core.tick()
+            self.scan()
+        except Exception as e:
+            self.info.text = 'Scan+Tick hiba: ' + str(e)
+
+
+
 class DemoCoreAuditScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -744,6 +825,11 @@ class DemoCoreSettingsScreen(Screen):
             ('time_in_trend_minutes_max', 'Max time in trend min'),
             ('cooldown_after_exit_min', 'Cooldown after exit min'),
             ('profit_erosion_guard_pct', 'Profit erosion guard %'),
+            ('scanner_enabled', 'Scanner enabled true/false'),
+            ('scanner_top_n', 'Scanner top N'),
+            ('min_edge_score_open', 'Min edge open'),
+            ('min_edge_score_keep', 'Min edge keep'),
+            ('max_scan_symbols', 'Max scan symbols'),
         ]
 
         for key, label in fields:
@@ -826,6 +912,11 @@ class DemoCoreSettingsScreen(Screen):
             cfg['time_in_trend_minutes_max'] = float(self.inputs['time_in_trend_minutes_max'].text.replace(',', '.'))
             cfg['cooldown_after_exit_min'] = float(self.inputs['cooldown_after_exit_min'].text.replace(',', '.'))
             cfg['profit_erosion_guard_pct'] = float(self.inputs['profit_erosion_guard_pct'].text.replace(',', '.'))
+            cfg['scanner_enabled'] = self.inputs['scanner_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['scanner_top_n'] = int(float(self.inputs['scanner_top_n'].text.replace(',', '.')))
+            cfg['min_edge_score_open'] = float(self.inputs['min_edge_score_open'].text.replace(',', '.'))
+            cfg['min_edge_score_keep'] = float(self.inputs['min_edge_score_keep'].text.replace(',', '.'))
+            cfg['max_scan_symbols'] = int(float(self.inputs['max_scan_symbols'].text.replace(',', '.')))
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -1044,6 +1135,12 @@ class DemoCoreScreen(Screen):
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
 
+    def open_scanner(self):
+        try:
+            self.manager.go_to("scanner")
+        except Exception:
+            self.manager.current = "scanner"
+
     def do_healthcheck(self):
         try:
             res = demo_core.healthcheck()
@@ -1168,6 +1265,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreScreen(name="demo_core"))
         sm.add_widget(DemoCoreLogsScreen(name="demo_logs"))
         sm.add_widget(DemoCoreAuditScreen(name="audit_log"))
+        sm.add_widget(DemoCoreScannerScreen(name="scanner"))
         return sm
 
 if __name__ == "__main__":

@@ -14,6 +14,15 @@ AUDIT_LOG = os.path.join(LOG_DIR, "demo_core_audit.csv")
 os.makedirs(LOG_DIR, exist_ok=True)
 
 
+
+SCANNER_DEFAULTS = {
+    "scanner_enabled": True,
+    "scanner_top_n": 5,
+    "min_edge_score_open": 0.55,
+    "min_edge_score_keep": 0.50,
+    "max_scan_symbols": 20,
+}
+
 PROFIT_HOLD_DEFAULTS = {
     "hold_profit_minutes": 30,
     "time_in_trend_minutes_max": 240,
@@ -54,45 +63,72 @@ DEFAULT_STATE = {
 
 
 
+
 def merge_defaults(state):
     changed = False
+
+    if not isinstance(state, dict):
+        state = {}
+        changed = True
 
     for k, v in DEFAULT_STATE.items():
         if k not in state or state.get(k) is None:
             state[k] = v
             changed = True
 
-    state.setdefault("settings", {})
-    state.setdefault("positions", {})
-    state.setdefault("cooldowns", {})
+    if not isinstance(state.get("settings"), dict):
+        state["settings"] = {}
+        changed = True
+
+    if not isinstance(state.get("positions"), dict):
+        state["positions"] = {}
+        changed = True
+
+    if not isinstance(state.get("cooldowns"), dict):
+        state["cooldowns"] = {}
+        changed = True
 
     for k, v in DEFAULT_STATE.get("settings", {}).items():
         if k not in state["settings"] or state["settings"].get(k) is None:
             state["settings"][k] = v
             changed = True
 
-    for k, v in PROFIT_HOLD_DEFAULTS.items():
-        if k not in state["settings"] or state["settings"].get(k) is None:
-            state["settings"][k] = v
-            changed = True
+    if "PROFIT_HOLD_DEFAULTS" in globals():
+        for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "SCANNER_DEFAULTS" in globals():
+        for k, v in SCANNER_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
 
     return state, changed
 
 
+
 def load_state():
     if not os.path.exists(STATE_FILE):
-        save_state(DEFAULT_STATE)
-        return json.loads(json.dumps(DEFAULT_STATE))
+        state = json.loads(json.dumps(DEFAULT_STATE))
+        state, _ = merge_defaults(state)
+        save_state(state)
+        return state
+
     try:
         with open(STATE_FILE, "r", encoding="utf-8") as f:
-            d = json.load(f)
-        for k, v in DEFAULT_STATE.items():
-            d.setdefault(k, v)
-        d.setdefault("settings", DEFAULT_STATE["settings"])
-        return d
+            state = json.load(f)
     except Exception:
-        save_state(DEFAULT_STATE)
-        return json.loads(json.dumps(DEFAULT_STATE))
+        state = json.loads(json.dumps(DEFAULT_STATE))
+
+    state, changed = merge_defaults(state)
+
+    if changed:
+        save_state(state)
+
+    return state
+
 
 def save_state(state):
     with open(STATE_FILE, "w", encoding="utf-8") as f:
@@ -278,7 +314,14 @@ def tick():
     elif execution_mode == "OFF":
         actions.append("EXECUTION OFF: új vétel tiltva")
     elif open_count < max_positions:
-        for symbol in settings.get("watchlist", []):
+        scan_order = settings.get("watchlist", [])
+        if bool(settings.get("scanner_enabled", True)):
+            try:
+                scan_order = [r["symbol"] for r in scan_symbols().get("all", [])]
+            except Exception:
+                scan_order = settings.get("watchlist", [])
+
+        for symbol in scan_order:
             if symbol in state["positions"]:
                 continue
 
@@ -421,6 +464,128 @@ def set_execution_mode(mode):
     save_state(state)
     audit_event("EXECUTION_MODE", mode, {})
     return {"ok": True, "mode": mode, "state": state}
+
+
+def edge_score(symbol, settings=None):
+    settings = settings or load_state().get("settings", {})
+    prices = get_prices(symbol, limit=60)
+
+    if not prices or len(prices) < 25:
+        return {
+            "symbol": symbol,
+            "score": 0.0,
+            "signal": "NO_DATA",
+            "price": 0.0,
+            "trend_pct": 0.0,
+            "momentum_pct": 0.0,
+            "volatility_pct": 0.0,
+        }
+
+    price = float(prices[-1])
+    prev = float(prices[-5])
+    base = float(prices[-21])
+
+    momentum_pct = ((price - prev) / prev) * 100 if prev else 0.0
+    trend_pct = ((price - base) / base) * 100 if base else 0.0
+
+    hi = max(prices[-21:])
+    lo = min(prices[-21:])
+    volatility_pct = ((hi - lo) / price) * 100 if price else 0.0
+
+    score = 0.0
+
+    if trend_pct > 0:
+        score += min(0.35, trend_pct / 20.0)
+
+    if momentum_pct > 0:
+        score += min(0.35, momentum_pct / 10.0)
+
+    if 0.3 <= volatility_pct <= 8.0:
+        score += 0.20
+    elif volatility_pct > 8.0:
+        score += 0.05
+
+    sig, _ = signal(symbol, settings)
+    if sig == "BUY":
+        score += 0.10
+    elif sig == "SELL":
+        score -= 0.20
+
+    score = max(0.0, min(1.0, score))
+
+    if score >= float(settings.get("min_edge_score_open", 0.55)):
+        out_sig = "BUY_CANDIDATE"
+    elif score >= float(settings.get("min_edge_score_keep", 0.50)):
+        out_sig = "WATCH"
+    else:
+        out_sig = "WEAK"
+
+    return {
+        "symbol": symbol,
+        "score": round(score, 4),
+        "signal": out_sig,
+        "price": round(price, 8),
+        "trend_pct": round(trend_pct, 4),
+        "momentum_pct": round(momentum_pct, 4),
+        "volatility_pct": round(volatility_pct, 4),
+    }
+
+
+def scan_symbols():
+    state = load_state()
+    settings = state.get("settings", {})
+
+    raw = settings.get("watchlist", ["BTCUSDT", "ETHUSDT", "DOGEUSDT"])
+    max_scan = int(settings.get("max_scan_symbols", 20) or 20)
+    top_n = int(settings.get("scanner_top_n", 5) or 5)
+
+    symbols = []
+    for x in raw:
+        sym = str(x).strip().upper()
+        if not sym:
+            continue
+        if not sym.endswith("USDT"):
+            sym += "USDT"
+        if sym not in symbols:
+            symbols.append(sym)
+
+    symbols = symbols[:max_scan]
+
+    rows = []
+    for sym in symbols:
+        try:
+            rows.append(edge_score(sym, settings))
+        except Exception as e:
+            rows.append({
+                "symbol": sym,
+                "score": 0.0,
+                "signal": "ERROR",
+                "error": str(e),
+                "price": 0.0,
+                "trend_pct": 0.0,
+                "momentum_pct": 0.0,
+                "volatility_pct": 0.0,
+            })
+
+    rows.sort(key=lambda r: float(r.get("score", 0)), reverse=True)
+
+    result = {
+        "ok": True,
+        "top_n": top_n,
+        "symbols_count": len(symbols),
+        "candidates": rows[:top_n],
+        "all": rows,
+    }
+
+    audit_event("SCAN_SYMBOLS", "Multi-symbol scanner", {
+        "symbols_count": len(symbols),
+        "top": [r.get("symbol") for r in rows[:top_n]]
+    })
+
+    state["last_action"] = "Scanner futott: top " + ", ".join([r.get("symbol", "?") for r in rows[:top_n]])
+    save_state(state)
+
+    return result
 
 if __name__ == "__main__":
     print(json.dumps(tick(), ensure_ascii=False, indent=2))

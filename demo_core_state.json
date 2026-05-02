@@ -36,9 +36,14 @@
     "hold_profit_minutes": 30,
     "time_in_trend_minutes_max": 240,
     "cooldown_after_exit_min": 10,
-    "profit_erosion_guard_pct": 1.5
+    "profit_erosion_guard_pct": 1.5,
+    "scanner_enabled": true,
+    "scanner_top_n": 5,
+    "min_edge_score_open": 0.55,
+    "min_edge_score_keep": 0.5,
+    "max_scan_symbols": 20
   },
-  "last_action": "HOLD BTCUSDT PnL=-0.10% age=26.3m | HOLD ETHUSDT PnL=-0.15% age=26.3m",
+  "last_action": "Scanner futott: top BTCUSDT, ETHUSDT, DOGEUSDT",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
   "last_heartbeat_ts": 1777759959,
