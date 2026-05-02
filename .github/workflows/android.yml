@@ -25,10 +25,11 @@ jobs:
           set +e
 
           docker run --rm \
+            --entrypoint /bin/bash \
             -v "$PWD":/home/user/hostcwd \
             -w /home/user/hostcwd \
             kivy/buildozer:latest \
-            bash -lc 'buildozer -v android debug' 2>&1 | tee build_full_output.log
+            -lc 'buildozer -v android debug' 2>&1 | tee build_full_output.log
 
           code=${PIPESTATUS[0]}
 
