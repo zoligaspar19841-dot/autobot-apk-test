@@ -57,7 +57,12 @@
     "ai_advisor_enabled": true,
     "ai_mode": "OFFLINE",
     "ai_min_confidence": 0.55,
-    "ai_allow_auto_trade": false
+    "ai_allow_auto_trade": false,
+    "email_notify_enabled": true,
+    "email_on_buy": true,
+    "email_on_sell": true,
+    "email_on_error": true,
+    "email_on_health_warning": true
   },
   "last_action": "AI advisor: HOLD BTCUSDT",
   "safe_mode": false,

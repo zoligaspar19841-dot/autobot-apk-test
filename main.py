@@ -710,6 +710,10 @@ class DemoCoreSecretsScreen(Screen):
 
     def test(self, kind):
         try:
+            if kind == 'email':
+                res = demo_core.send_test_email()
+                self.refresh('Email teszt: ' + str(res.get('reason') or res.get('sent')))
+                return
             res = demo_core.integration_test(kind)
             self.refresh(res.get('message', 'Teszt kész.'))
         except Exception as e:
@@ -1236,6 +1240,11 @@ class DemoCoreSettingsScreen(Screen):
             ('ai_mode', 'AI mode OFFLINE/API'),
             ('ai_min_confidence', 'AI min confidence'),
             ('ai_allow_auto_trade', 'AI allow auto trade true/false'),
+            ('email_notify_enabled', 'Email notify enabled true/false'),
+            ('email_on_buy', 'Email on BUY true/false'),
+            ('email_on_sell', 'Email on SELL true/false'),
+            ('email_on_error', 'Email on ERROR true/false'),
+            ('email_on_health_warning', 'Email on health warning true/false'),
         ]
 
         for key, label in fields:
@@ -1339,6 +1348,11 @@ class DemoCoreSettingsScreen(Screen):
             cfg['ai_mode'] = self.inputs['ai_mode'].text.strip().upper() or 'OFFLINE'
             cfg['ai_min_confidence'] = float(self.inputs['ai_min_confidence'].text.replace(',', '.'))
             cfg['ai_allow_auto_trade'] = self.inputs['ai_allow_auto_trade'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['email_notify_enabled'] = self.inputs['email_notify_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['email_on_buy'] = self.inputs['email_on_buy'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['email_on_sell'] = self.inputs['email_on_sell'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['email_on_error'] = self.inputs['email_on_error'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['email_on_health_warning'] = self.inputs['email_on_health_warning'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)

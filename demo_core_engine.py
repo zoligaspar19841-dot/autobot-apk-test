@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
+from email.message import EmailMessage
+import smtplib
 import secrets as py_secrets
 import hashlib
 import base64
@@ -37,6 +39,15 @@ SECRETS_DEFAULTS = {
     "google_drive_token": "",
     "pc_sync_token": "",
     "ngrok_token": "",
+}
+
+
+EMAIL_NOTIFY_DEFAULTS = {
+    "email_notify_enabled": True,
+    "email_on_buy": True,
+    "email_on_sell": True,
+    "email_on_error": True,
+    "email_on_health_warning": True,
 }
 
 AI_ADVISOR_DEFAULTS = {
@@ -144,6 +155,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "EMAIL_NOTIFY_DEFAULTS" in globals():
+        for k, v in EMAIL_NOTIFY_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -292,6 +309,10 @@ def buy(state, symbol, spend):
     note = f"BUY {symbol} spend={spend:.2f}"
     log_trade([int(time.time()), symbol, "BUY", qty, p, 0.0, note])
     audit_event("BUY", note, {"symbol": symbol, "qty": qty, "price": p, "spend": spend})
+    try:
+        notify_trade_event("BUY", note, {"symbol": symbol, "qty": qty, "price": p, "spend": spend})
+    except Exception:
+        pass
     return note
 
 def sell(state, symbol, note="SELL"):
@@ -317,6 +338,10 @@ def sell(state, symbol, note="SELL"):
     log_trade([int(time.time()), symbol, "SELL", qty, p, pnl, note])
     pnl_info = pnl_breakdown(pnl, state.get("settings", {}))
     audit_event("SELL", note, {"symbol": symbol, "qty": qty, "price": p, "pnl": pnl, "pnl_breakdown": pnl_info, "profit_pct_breakdown": profit_pct_breakdown(((p - avg) / avg) * 100 if avg else 0, state.get("settings", {}))})
+    try:
+        notify_trade_event("SELL", note, {"symbol": symbol, "qty": qty, "price": p, "pnl": pnl})
+    except Exception:
+        pass
     return f"SELL {symbol} PnL={pnl:.4f} USDC | {note}"
 
 
@@ -1248,6 +1273,100 @@ def integration_test(kind):
         "message": msg,
         "status": st,
     }
+
+
+def email_config_status():
+    sec = load_secrets()
+    ok = bool(sec.get("email_user")) and bool(sec.get("email_app_password")) and bool(sec.get("email_to"))
+    return {
+        "ok": ok,
+        "smtp_host": sec.get("email_smtp_host", "smtp.gmail.com"),
+        "smtp_port": sec.get("email_smtp_port", "587"),
+        "email_user": sec.get("email_user", ""),
+        "email_to": sec.get("email_to", ""),
+        "has_password": bool(sec.get("email_app_password")),
+    }
+
+
+def send_email_notification(subject, body):
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if not bool(settings.get("email_notify_enabled", True)):
+        return {"ok": False, "sent": False, "reason": "email_notify_disabled"}
+
+    sec = load_secrets()
+    host = sec.get("email_smtp_host", "smtp.gmail.com") or "smtp.gmail.com"
+    port = int(sec.get("email_smtp_port", "587") or 587)
+    user = sec.get("email_user", "")
+    password = sec.get("email_app_password", "")
+    to_addr = sec.get("email_to", "")
+
+    if not user or not password or not to_addr:
+        return {"ok": False, "sent": False, "reason": "email_config_missing"}
+
+    msg = EmailMessage()
+    msg["Subject"] = str(subject)
+    msg["From"] = user
+    msg["To"] = to_addr
+    msg.set_content(str(body))
+
+    try:
+        with smtplib.SMTP(host, port, timeout=20) as smtp:
+            smtp.starttls()
+            smtp.login(user, password)
+            smtp.send_message(msg)
+
+        audit_event("EMAIL_SENT", subject, {"to": to_addr})
+        return {"ok": True, "sent": True, "to": to_addr}
+
+    except Exception as e:
+        audit_event("EMAIL_ERROR", subject, {"error": str(e)})
+        return {"ok": False, "sent": False, "reason": str(e)}
+
+
+def send_test_email():
+    st = load_state()
+    body = []
+    body.append("Binance Autobot test email")
+    body.append("")
+    body.append("Status: működik, ha ezt látod.")
+    body.append("Mode: " + str(st.get("settings", {}).get("execution_mode", "AUTO")))
+    body.append("Safe mode: " + str(st.get("safe_mode", False)))
+    body.append("Equity: " + str(equity(st)))
+    body.append("")
+    body.append("Ez automatikus teszt értesítés.")
+    return send_email_notification("Binance Autobot - Test Email", "\n".join(body))
+
+
+def notify_trade_event(kind, text, data=None):
+    state = load_state()
+    settings = state.get("settings", {})
+
+    kind = str(kind or "").upper()
+
+    if kind == "BUY" and not bool(settings.get("email_on_buy", True)):
+        return {"ok": False, "sent": False, "reason": "email_on_buy_disabled"}
+
+    if kind == "SELL" and not bool(settings.get("email_on_sell", True)):
+        return {"ok": False, "sent": False, "reason": "email_on_sell_disabled"}
+
+    subject = "Binance Autobot - " + kind
+    body = []
+    body.append(str(text))
+    body.append("")
+    body.append("Equity: " + str(equity(state)))
+    body.append("Balance: " + str(state.get("balance")))
+    body.append("Realized PnL: " + str(state.get("realized_pnl")))
+    body.append("")
+    if data is not None:
+        try:
+            body.append(json.dumps(data, ensure_ascii=False, indent=2))
+        except Exception:
+            body.append(str(data))
+
+    return send_email_notification(subject, "\n".join(body))
+
 
 if __name__ == "__main__":
     print(json.dumps(tick(), ensure_ascii=False, indent=2))
