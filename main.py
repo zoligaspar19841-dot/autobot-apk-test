@@ -170,7 +170,7 @@ class Main(Screen):
 
         grid = GridLayout(cols=2, spacing=10, size_hint_y=.78)
         items = [
-            ("DEMO", "demo", ORANGE),
+            ("DEMO", "demo_core", ORANGE),
             ("LIVE", "live", BLUE),
             ("BEÁLLÍTÁSOK", "settings", CARD),
             ("BIZTONSÁG / API", "security", CARD),
