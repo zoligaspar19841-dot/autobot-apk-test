@@ -6,8 +6,7 @@ package.domain = org.test
 
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
-
-version = 0.2
+version = 0.2.5
 requirements = python3,kivy
 
 orientation = portrait
@@ -18,10 +17,11 @@ android.minapi = 21
 android.ndk = 23b
 
 android.permissions = INTERNET
-android.accept_sdk_license = True
+
 [buildozer]
 log_level = 2
 warn_on_root = 0
-android.accept_sdk_license = True
 
-android.archs = arm64-v8a
+android.archs = arm64-v8a, armeabi-v7a
+
+android.accept_sdk_license = True

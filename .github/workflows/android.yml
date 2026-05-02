@@ -13,41 +13,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build APK with Docker arm64 only
+      - name: Install deps
         run: |
-          set +e
+          sudo apt update
+          sudo apt install -y zip unzip openjdk-17-jdk python3-pip
 
-          chmod -R a+rwX "$PWD"
+      - name: Install buildozer
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install buildozer cython
 
-          docker run --rm \
-            --entrypoint /bin/bash \
-            -e HOME=/home/user \
-            -v "$PWD":/home/user/hostcwd \
-            -w /home/user/hostcwd \
-            kivy/buildozer:latest \
-            -lc '
-              set +e
-              buildozer android clean || true
-              yes y | buildozer -v android debug
-            ' 2>&1 | tee build_full_output.log
-
-          code=${PIPESTATUS[0]}
-
-          echo ""
-          echo "==================== VALÓDI HIBAKERESÉS ===================="
-          grep -nEi "error|failed|failure|traceback|exception|command failed|no such file|not found|permission denied|syntax|invalid|license|aidl|sdkmanager|gradle|compile|cython|p4a" build_full_output.log | tail -n 250 || true
-
-          echo ""
-          echo "==================== UTOLSÓ 600 SOR ===================="
-          tail -n 600 build_full_output.log || true
-
-          echo ""
-          echo "==================== EXIT CODE: $code ===================="
-          exit $code
+      - name: Build APK
+        run: |
+          buildozer android debug
 
       - name: Find APK
         if: always()
         run: |
+          echo "=== APK keresés ==="
           find . -name "*.apk" -type f || true
 
       - name: Upload APK
