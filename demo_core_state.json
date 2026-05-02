@@ -123,11 +123,18 @@
     "live_max_order_usdt_hard": 10.0,
     "live_block_if_health_warning": true,
     "live_block_if_spread_bad": true,
-    "live_block_if_ai_hold": true
+    "live_block_if_ai_hold": true,
+    "binance_account_check_enabled": true,
+    "binance_test_order_enabled": true,
+    "binance_test_order_symbol": "BTCUSDT",
+    "binance_test_order_side": "BUY",
+    "binance_test_order_type": "MARKET",
+    "binance_test_order_quote_qty": 5.0,
+    "binance_recv_window": 5000
   },
-  "last_action": "Admin logout",
+  "last_action": "AI advisor: HOLD BTCUSDT",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
-  "last_heartbeat_ts": 1777764824,
+  "last_heartbeat_ts": 1777764909,
   "cooldowns": {}
 }

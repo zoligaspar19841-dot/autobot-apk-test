@@ -1,4 +1,4 @@
-APP_VERSION = "0.3.5-demo-core"
+APP_VERSION = "0.3.6-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -57,6 +57,17 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+BINANCE_ACCOUNT_DEFAULTS = {
+    "binance_account_check_enabled": True,
+    "binance_test_order_enabled": True,
+    "binance_test_order_symbol": "BTCUSDT",
+    "binance_test_order_side": "BUY",
+    "binance_test_order_type": "MARKET",
+    "binance_test_order_quote_qty": 5.0,
+    "binance_recv_window": 5000,
+}
 
 LIVE_EXECUTOR_GATE_DEFAULTS = {
     "live_executor_enabled": False,
@@ -265,6 +276,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "BINANCE_ACCOUNT_DEFAULTS" in globals():
+        for k, v in BINANCE_ACCOUNT_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -3129,6 +3146,145 @@ def live_executor_gate_status():
         "live_block_if_health_warning": settings.get("live_block_if_health_warning", True),
         "live_block_if_spread_bad": settings.get("live_block_if_spread_bad", True),
         "live_block_if_ai_hold": settings.get("live_block_if_ai_hold", True),
+    }
+
+
+
+def binance_account_status_adapter():
+    """
+    Binance account/status adapter.
+    Alapból nem hív order endpointot.
+    Ha nincs API kulcs, csak hiány státuszt ad.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+    sec = load_secrets_encrypted() if "load_secrets_encrypted" in globals() else {}
+
+    api_key = sec.get("binance_api_key", "")
+    api_secret = sec.get("binance_api_secret", "")
+
+    out = {
+        "ok": True,
+        "enabled": bool(settings.get("binance_account_check_enabled", True)),
+        "has_api_key": bool(api_key),
+        "has_api_secret": bool(api_secret),
+        "ready_for_private_api": bool(api_key and api_secret),
+        "live_status": binance_live_status() if "binance_live_status" in globals() else {},
+        "message": "",
+        "balances_preview": [],
+    }
+
+    if not out["enabled"]:
+        out["message"] = "Binance account check kikapcsolva."
+        return out
+
+    if not api_key or not api_secret:
+        out["message"] = "Binance API key/secret hiányzik. Private account check nem fut."
+        audit_event("BINANCE_ACCOUNT_STATUS", out["message"], out)
+        return out
+
+    # Direkt nem hívunk éles Binance account endpointot ebben a patchben.
+    # Következő lépésben külön adapterben lehet majd signed GET /api/v3/account.
+    out["message"] = "API kulcs megvan. Signed account endpoint bekötés következő patch."
+    audit_event("BINANCE_ACCOUNT_STATUS", out["message"], {"ready": True})
+    return out
+
+
+def binance_test_order_payload(symbol=None, side=None, order_type=None, quote_qty=None):
+    """
+    Test order payload előállítás.
+    Nem küld Binance-re semmit.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    symbol = str(symbol or settings.get("binance_test_order_symbol", "BTCUSDT")).upper()
+    side = str(side or settings.get("binance_test_order_side", "BUY")).upper()
+    order_type = str(order_type or settings.get("binance_test_order_type", "MARKET")).upper()
+    quote_qty = float(quote_qty or settings.get("binance_test_order_quote_qty", 5.0) or 5.0)
+
+    errors = []
+    if not symbol:
+        errors.append("symbol hiányzik")
+    if side not in ["BUY", "SELL"]:
+        errors.append("side csak BUY/SELL lehet")
+    if order_type not in ["MARKET", "LIMIT"]:
+        errors.append("type csak MARKET/LIMIT lehet")
+    if quote_qty <= 0:
+        errors.append("quote_qty <= 0")
+
+    payload = {
+        "symbol": symbol,
+        "side": side,
+        "type": order_type,
+        "timestamp": int(time.time() * 1000),
+        "recvWindow": int(settings.get("binance_recv_window", 5000) or 5000),
+    }
+
+    if order_type == "MARKET":
+        payload["quoteOrderQty"] = quote_qty
+    else:
+        # LIMIT orderhez később price + quantity kell.
+        errors.append("LIMIT test order payloadhoz price/quantity későbbi patchben.")
+
+    return {
+        "ok": len(errors) == 0,
+        "payload": payload,
+        "errors": errors,
+        "note": "Ez csak payload validate. Binance test order endpoint NEM lett meghívva.",
+    }
+
+
+def binance_test_order_validate(symbol=None, side=None, quote_qty=None):
+    """
+    Binance test order validate.
+    Nem küld ordert, nem hív Binance endpointot.
+    Safety gate + payload ellenőrzés.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if not bool(settings.get("binance_test_order_enabled", True)):
+        return {"ok": False, "validated": False, "error": "Binance test order validate kikapcsolva."}
+
+    payload_res = binance_test_order_payload(symbol=symbol, side=side, quote_qty=quote_qty)
+
+    req = {
+        "symbol": payload_res.get("payload", {}).get("symbol"),
+        "side": payload_res.get("payload", {}).get("side"),
+        "amount": float(quote_qty or settings.get("binance_test_order_quote_qty", 5.0) or 5.0),
+        "gross_profit_pct": None,
+    }
+
+    gate = live_order_safety_gate(req) if "live_order_safety_gate" in globals() else {"ok": False, "allowed": False}
+
+    out = {
+        "ok": payload_res.get("ok") is True,
+        "validated": payload_res.get("ok") is True,
+        "payload": payload_res.get("payload"),
+        "payload_errors": payload_res.get("errors"),
+        "safety_gate_allowed": gate.get("allowed"),
+        "safety_gate_blocks": gate.get("blocks"),
+        "message": "TEST ORDER VALIDATE ONLY. Binance order/test endpoint NEM lett meghívva.",
+    }
+
+    audit_event("BINANCE_TEST_ORDER_VALIDATE", out["message"], out)
+    return out
+
+
+def binance_account_test_status():
+    state = load_state()
+    settings = state.get("settings", {})
+
+    return {
+        "ok": True,
+        "account_check_enabled": settings.get("binance_account_check_enabled", True),
+        "test_order_enabled": settings.get("binance_test_order_enabled", True),
+        "test_order_symbol": settings.get("binance_test_order_symbol", "BTCUSDT"),
+        "test_order_side": settings.get("binance_test_order_side", "BUY"),
+        "test_order_type": settings.get("binance_test_order_type", "MARKET"),
+        "test_order_quote_qty": settings.get("binance_test_order_quote_qty", 5.0),
+        "recv_window": settings.get("binance_recv_window", 5000),
     }
 
 

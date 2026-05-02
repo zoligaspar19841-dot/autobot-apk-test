@@ -581,6 +581,98 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreBinanceAccountScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]BINANCE ACCOUNT / TEST ORDER[/b]\n[size=14]Account státusz + test-order validate, NEM order[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        ))
+
+        self.info = Label(text='Binance account adapter...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        buttons = [
+            ('STATUS', self.refresh),
+            ('ACCOUNT CHECK', self.account_check),
+            ('TEST ORDER VALIDATE', self.test_order),
+            ('LIVE GATE', lambda: self.manager.go_to('live_gate')),
+            ('SECRETS', lambda: self.manager.go_to('secrets')),
+            ('SETTINGS', lambda: self.manager.go_to('demo_settings')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self):
+        try:
+            st = demo_core.binance_account_test_status()
+            lines = ['[b]Binance Account/Test státusz[/b]', '']
+            for k, v in st.items():
+                if k != 'ok':
+                    lines.append(f"{k}: {v}")
+            lines.append('')
+            lines.append('[size=12]Ez még nem hív Binance order endpointot.[/size]')
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Status hiba: ' + str(e)
+
+    def account_check(self):
+        try:
+            res = demo_core.binance_account_status_adapter()
+            lines = ['[b]Account check[/b]', '']
+            for k, v in res.items():
+                lines.append(f"{k}: {v}")
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Account check hiba: ' + str(e)
+
+    def test_order(self):
+        try:
+            res = demo_core.binance_test_order_validate()
+            lines = ['[b]Test order validate[/b]', '']
+            lines.append(f"Validated: {res.get('validated')}")
+            lines.append(f"Safety allowed: {res.get('safety_gate_allowed')}")
+            lines.append('')
+            lines.append('[b]Blocks:[/b]')
+            for b in res.get('safety_gate_blocks') or []:
+                lines.append('- ' + str(b))
+            lines.append('')
+            lines.append('[b]Payload:[/b]')
+            lines.append(str(res.get('payload')))
+            lines.append('')
+            lines.append(res.get('message', ''))
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Test order hiba: ' + str(e)
+
+
+
 class DemoCoreLiveGateScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -2319,6 +2411,13 @@ class DemoCoreSettingsScreen(Screen):
             ('live_block_if_health_warning', 'Live block if health warning true/false'),
             ('live_block_if_spread_bad', 'Live block if spread bad true/false'),
             ('live_block_if_ai_hold', 'Live block if AI hold true/false'),
+            ('binance_account_check_enabled', 'Binance account check enabled true/false'),
+            ('binance_test_order_enabled', 'Binance test order enabled true/false'),
+            ('binance_test_order_symbol', 'Binance test order symbol'),
+            ('binance_test_order_side', 'Binance test order side'),
+            ('binance_test_order_type', 'Binance test order type'),
+            ('binance_test_order_quote_qty', 'Binance test order quote qty'),
+            ('binance_recv_window', 'Binance recvWindow'),
         ]
 
         for key, label in fields:
@@ -2474,6 +2573,13 @@ class DemoCoreSettingsScreen(Screen):
             cfg['live_block_if_health_warning'] = self.inputs['live_block_if_health_warning'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['live_block_if_spread_bad'] = self.inputs['live_block_if_spread_bad'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['live_block_if_ai_hold'] = self.inputs['live_block_if_ai_hold'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['binance_account_check_enabled'] = self.inputs['binance_account_check_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['binance_test_order_enabled'] = self.inputs['binance_test_order_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['binance_test_order_symbol'] = self.inputs['binance_test_order_symbol'].text.strip().upper() or 'BTCUSDT'
+            cfg['binance_test_order_side'] = self.inputs['binance_test_order_side'].text.strip().upper() or 'BUY'
+            cfg['binance_test_order_type'] = self.inputs['binance_test_order_type'].text.strip().upper() or 'MARKET'
+            cfg['binance_test_order_quote_qty'] = float(self.inputs['binance_test_order_quote_qty'].text.replace(',', '.'))
+            cfg['binance_recv_window'] = int(float(self.inputs['binance_recv_window'].text.replace(',', '.')))
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -2691,6 +2797,12 @@ class DemoCoreScreen(Screen):
         except Exception as e:
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
+
+    def open_binance_account(self):
+        try:
+            self.manager.go_to("binance_account")
+        except Exception:
+            self.manager.current = "binance_account"
 
     def open_live_gate(self):
         try:
@@ -2935,6 +3047,7 @@ class AppMain(App):
         sm.add_widget(DemoCorePatchManagerScreen(name="patch_manager"))
         sm.add_widget(DemoCoreApprovalExecutorScreen(name="approval_executor"))
         sm.add_widget(DemoCoreLiveGateScreen(name="live_gate"))
+        sm.add_widget(DemoCoreBinanceAccountScreen(name="binance_account"))
         return sm
 
 if __name__ == "__main__":
