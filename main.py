@@ -445,6 +445,52 @@ class TradeSimpleScreen(Screen):
         save_json(STATE_FILE, st)
 
 
+
+class StrategyAdvancedScreen(Screen):
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        root = BoxLayout(orientation="vertical", padding=16, spacing=8)
+
+        root.add_widget(Label(text="STRATEGY ADVANCED", font_size=32, bold=True, color=(1,.75,0,1), size_hint_y=.11))
+
+        self.profile = TextInput(text="normal", multiline=False, font_size=22, size_hint_y=.08)
+        self.sma_fast = TextInput(text="9", multiline=False, font_size=22, size_hint_y=.08)
+        self.sma_slow = TextInput(text="21", multiline=False, font_size=22, size_hint_y=.08)
+        self.rsi_buy = TextInput(text="52", multiline=False, font_size=22, size_hint_y=.08)
+        self.rsi_sell = TextInput(text="70", multiline=False, font_size=22, size_hint_y=.08)
+        self.atr_mult = TextInput(text="1.0", multiline=False, font_size=22, size_hint_y=.08)
+
+        fields = [
+            ("Profil: normal / hybrid / sniper", self.profile),
+            ("SMA fast", self.sma_fast),
+            ("SMA slow", self.sma_slow),
+            ("RSI buy min", self.rsi_buy),
+            ("RSI sell max", self.rsi_sell),
+            ("ATR szorzó", self.atr_mult),
+        ]
+
+        for label, field in fields:
+            root.add_widget(Label(text=label, font_size=19, size_hint_y=.055))
+            root.add_widget(field)
+
+        save = button("STRATÉGIA MENTÉS", (.05,.55,.1,1), 23)
+        back = button("VISSZA A MASTER LISTÁHOZ", (.35,.35,.35,1), 22)
+
+        save.bind(on_press=self.save)
+        back.bind(on_press=lambda x: setattr(self.manager, "current", "master"))
+
+        root.add_widget(save)
+        root.add_widget(back)
+
+        self.msg = Label(text="Csak UI. Logika bekötés később.", font_size=16, size_hint_y=.06)
+        root.add_widget(self.msg)
+
+        self.add_widget(root)
+
+    def save(self, x):
+        self.msg.text = "Stratégia UI mentve. Bekötés később."
+
+
 class TextScreen(Screen):
     def __init__(self, title, body, **kw):
         super().__init__(**kw)
@@ -473,7 +519,7 @@ class AppMain(App):
 
         sm.add_widget(MasterMenu(name="master"))
         sm.add_widget(SkeletonScreen("TRADE SIMPLE", "Symbol, Risk/trade %, minimum nettó profit %, SL/TP ATR szorzók.\nBekötés később.", name="trade_simple"))
-        sm.add_widget(SkeletonScreen("STRATEGY ADVANCED", "SMA fast/slow, RSI buy/sell, breakout, maker/taker fee, BUY/SELL szabályok.\nBekötés később.", name="strategy_advanced"))
+        sm.add_widget(StrategyAdvancedScreen(name="strategy_advanced"))
         sm.add_widget(SkeletonScreen("SCHEDULES", "Snapshot 08:00, ár-trigger, automata state mentés, bővíthető szabályok.\nBekötés később.", name="schedules"))
         sm.add_widget(SkeletonScreen("LAUNCHPOOL / AIRDROP", "Enabled, Min APR, Watchlist, Scan now, Status.\nBekötés később.", name="launchpool"))
         sm.add_widget(SkeletonScreen("PATCH / SNAPSHOT", "Import ZIP, Export package.zip, Snapshot.zip, path-traversal védelem.\nBekötés később.", name="patch_snapshot"))
