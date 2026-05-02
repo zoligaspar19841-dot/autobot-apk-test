@@ -19,3 +19,6 @@ apk_files.txt
 demo_core_secrets.json
 *.enc
 .env
+secrets.enc
+demo_core_secret.key
+*.key

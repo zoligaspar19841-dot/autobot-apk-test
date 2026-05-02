@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 import json
+import secrets as py_secrets
+import hashlib
+import base64
 import os
 import time
 import csv
@@ -9,6 +12,8 @@ import urllib.request
 
 STATE_FILE = "demo_core_state.json"
 SECRETS_FILE = "demo_core_secrets.json"
+SECRETS_ENC_FILE = "secrets.enc"
+SECRETS_KEY_FILE = "demo_core_secret.key"
 LOG_DIR = "logs"
 TRADE_LOG = os.path.join(LOG_DIR, "demo_core_trades.csv")
 AUDIT_LOG = os.path.join(LOG_DIR, "demo_core_audit.csv")
@@ -471,6 +476,8 @@ def tick():
     audit_event("TICK", state.get("last_action", ""), {"balance": state.get("balance"), "positions": list(state.get("positions", {}).keys())})
     return {
         "ok": True,
+        "encrypted_file": os.path.exists(SECRETS_ENC_FILE),
+        "plain_file_exists": os.path.exists(SECRETS_FILE),
         "action": state["last_action"],
         "balance": state["balance"],
         "positions": state["positions"],
@@ -986,6 +993,117 @@ def ai_advisor(symbol=None):
     return out
 
 
+
+def _secret_key_bytes():
+    """
+    Helyi eszközön tárolt kulcs.
+    GitHubra nem kerülhet, .gitignore védi.
+    """
+    env_key = os.environ.get("AUTOBOT_SECRET_KEY", "").strip()
+    if env_key:
+        raw = env_key.encode("utf-8")
+    else:
+        if not os.path.exists(SECRETS_KEY_FILE):
+            token = py_secrets.token_urlsafe(48)
+            with open(SECRETS_KEY_FILE, "w", encoding="utf-8") as f:
+                f.write(token)
+        with open(SECRETS_KEY_FILE, "r", encoding="utf-8") as f:
+            raw = f.read().strip().encode("utf-8")
+
+    return hashlib.sha256(raw).digest()
+
+
+def _xor_crypt(data_bytes, key_bytes):
+    """
+    Minimal fallback titkosítás külső függőség nélkül.
+    Nem banki HSM-szint, de sokkal jobb, mint plain JSON.
+    Később Fernet/AES modulra cserélhető.
+    """
+    out = bytearray()
+    for i, b in enumerate(data_bytes):
+        out.append(b ^ key_bytes[i % len(key_bytes)])
+    return bytes(out)
+
+
+def encrypt_text(plain_text):
+    key = _secret_key_bytes()
+    raw = plain_text.encode("utf-8")
+    enc = _xor_crypt(raw, key)
+    return base64.urlsafe_b64encode(enc).decode("ascii")
+
+
+def decrypt_text(enc_text):
+    key = _secret_key_bytes()
+    enc = base64.urlsafe_b64decode(str(enc_text).encode("ascii"))
+    raw = _xor_crypt(enc, key)
+    return raw.decode("utf-8")
+
+
+def save_secrets_encrypted(data):
+    safe = dict(SECRETS_DEFAULTS)
+    if isinstance(data, dict):
+        for k in safe:
+            if k in data:
+                safe[k] = str(data.get(k) or "")
+
+    payload = json.dumps(safe, ensure_ascii=False, indent=2)
+    enc = encrypt_text(payload)
+
+    with open(SECRETS_ENC_FILE, "w", encoding="utf-8") as f:
+        f.write(enc)
+
+    return safe
+
+
+def load_secrets_encrypted():
+    if not os.path.exists(SECRETS_ENC_FILE):
+        return None
+
+    try:
+        with open(SECRETS_ENC_FILE, "r", encoding="utf-8") as f:
+            enc = f.read().strip()
+        if not enc:
+            return None
+        plain = decrypt_text(enc)
+        data = json.loads(plain)
+        if not isinstance(data, dict):
+            return None
+        return data
+    except Exception:
+        return None
+
+
+def migrate_plain_secrets_to_encrypted():
+    """
+    Ha van régi demo_core_secrets.json, átmásolja secrets.enc-be,
+    majd a plain fájlt törli.
+    """
+    if os.path.exists(SECRETS_ENC_FILE):
+        return {"ok": True, "migrated": False, "reason": "encrypted already exists"}
+
+    if not os.path.exists(SECRETS_FILE):
+        save_secrets_encrypted(dict(SECRETS_DEFAULTS))
+        return {"ok": True, "migrated": False, "reason": "created empty encrypted secrets"}
+
+    try:
+        with open(SECRETS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            data = dict(SECRETS_DEFAULTS)
+
+        save_secrets_encrypted(data)
+
+        try:
+            os.remove(SECRETS_FILE)
+        except Exception:
+            pass
+
+        audit_event("SECRETS_MIGRATE_ENC", "plain json -> secrets.enc", {"removed_plain": not os.path.exists(SECRETS_FILE)})
+        return {"ok": True, "migrated": True, "reason": "plain json migrated to encrypted"}
+    except Exception as e:
+        return {"ok": False, "migrated": False, "error": str(e)}
+
+
 def mask_secret(value, keep=4):
     value = str(value or "")
     if not value:
@@ -995,15 +1113,17 @@ def mask_secret(value, keep=4):
     return "*" * max(0, len(value) - keep) + value[-keep:]
 
 
-def load_secrets():
-    if not os.path.exists(SECRETS_FILE):
-        return dict(SECRETS_DEFAULTS)
 
-    try:
-        with open(SECRETS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except Exception:
-        data = {}
+def load_secrets():
+    # 1) plain -> enc migráció
+    migrate_plain_secrets_to_encrypted()
+
+    # 2) enc betöltés
+    data = load_secrets_encrypted()
+
+    if data is None:
+        data = dict(SECRETS_DEFAULTS)
+        save_secrets_encrypted(data)
 
     if not isinstance(data, dict):
         data = {}
@@ -1015,20 +1135,21 @@ def load_secrets():
             changed = True
 
     if changed:
-        save_secrets(data)
+        save_secrets_encrypted(data)
 
     return data
 
 
-def save_secrets(data):
-    safe = dict(SECRETS_DEFAULTS)
-    if isinstance(data, dict):
-        for k in safe:
-            if k in data:
-                safe[k] = str(data.get(k) or "")
 
-    with open(SECRETS_FILE, "w", encoding="utf-8") as f:
-        json.dump(safe, f, ensure_ascii=False, indent=2)
+def save_secrets(data):
+    safe = save_secrets_encrypted(data)
+
+    # plain JSON-t nem tartunk meg
+    try:
+        if os.path.exists(SECRETS_FILE):
+            os.remove(SECRETS_FILE)
+    except Exception:
+        pass
 
     return safe
 
