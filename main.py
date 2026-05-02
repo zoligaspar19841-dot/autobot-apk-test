@@ -8,7 +8,8 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.widget import Widget
-import json, os, random, urllib.request
+import json, os, random
+import ai_engine as ai, urllib.request
 
 STATE_FILE = "state.json"
 SETTINGS_FILE = "settings_app.json"
@@ -84,6 +85,13 @@ def top_coins():
         return arr[:12]
     except Exception:
         return []
+
+
+def safe_ai_recommendations(limit=10):
+    try:
+        return ai.recommendations(limit)
+    except Exception as e:
+        return {"error": str(e)}
 
 class Card(BoxLayout):
     def __init__(self, bg=CARD, **kw):
@@ -316,7 +324,10 @@ class AIScreen(Screen):
 
     def refresh_ai(self, x):
         try:
-            rec = ai.recommendations(10)
+            rec = safe_ai_recommendations(10)
+            if isinstance(rec, dict) and rec.get("error"):
+                self.info.text = "AI hiba / offline:\n" + rec.get("error", "")[:140]
+                return
             if not rec:
                 self.info.text = "Nincs ajánlás / offline."
                 return
