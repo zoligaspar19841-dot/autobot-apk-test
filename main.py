@@ -787,7 +787,7 @@ class DemoCoreScreen(Screen):
         scroll.add_widget(self.info)
         root.add_widget(scroll)
 
-        btns = GridLayout(cols=2, size_hint_y=None, height=360, spacing=8)
+        btns = GridLayout(cols=2, size_hint_y=None, height=420, spacing=8)
         buttons = [
             ('FRISSÍTÉS', self.refresh),
             ('TICK / KÉZI FUTTATÁS', self.do_tick),
@@ -955,6 +955,40 @@ class DemoCoreScreen(Screen):
             self.info.text = self.fmt_state(st, res.get("action", "Safe mode kikapcsolva"))
         except Exception as e:
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
+
+
+    def do_healthcheck(self):
+        try:
+            res = demo_core.healthcheck()
+            lines = []
+            lines.append("[b]HEALTHCHECK / HEARTBEAT[/b]")
+            lines.append("")
+            lines.append(f"[b]Status:[/b] {res.get('status')}")
+            lines.append(f"[b]Running:[/b] {res.get('running')}")
+            lines.append(f"[b]Safe mode:[/b] {res.get('safe_mode')}")
+            lines.append(f"[b]Positions:[/b] {res.get('positions_count')}")
+            lines.append(f"[b]Balance:[/b] {res.get('balance')}")
+            lines.append(f"[b]Equity:[/b] {res.get('equity'):.4f}")
+            lines.append(f"[b]Realized PnL:[/b] {res.get('realized_pnl')}")
+            lines.append(f"[b]Trade log:[/b] {'van' if res.get('trade_log_exists') else 'nincs'}")
+            lines.append(f"[b]Last tick age sec:[/b] {res.get('last_tick_age_sec')}")
+            lines.append(f"[b]Last action:[/b] {res.get('last_action')}")
+
+            warns = res.get("warnings") or []
+            if warns:
+                lines.append("")
+                lines.append("[b]Figyelmeztetések:[/b]")
+                for w in warns:
+                    lines.append("- " + str(w))
+            else:
+                lines.append("")
+                lines.append("[b]Nincs aktív figyelmeztetés.[/b]")
+
+            st = demo_core.load_state()
+            self.update_kpi(st)
+            self.info.text = "\n".join(lines)
+        except Exception as e:
+            self.info.text = "Healthcheck hiba: " + str(e)
 
     def do_reset(self):
         try:

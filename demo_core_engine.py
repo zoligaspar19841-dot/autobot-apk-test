@@ -31,7 +31,9 @@ DEFAULT_STATE = {
         "sma_slow": 21,
         "watchlist": ["BTCUSDT", "ETHUSDT", "DOGEUSDT"]
     },
-    "last_action": "Demo core engine ready"
+    "last_action": "Demo core engine ready",
+    "last_tick_ts": 0,
+    "last_heartbeat_ts": 0
 }
 
 def load_state():
@@ -209,6 +211,8 @@ def tick():
                     break
 
     state["last_action"] = " | ".join(actions) if actions else "HOLD"
+    state["last_tick_ts"] = int(time.time())
+    state["last_heartbeat_ts"] = int(time.time())
     save_state(state)
     return {
         "ok": True,
@@ -248,6 +252,55 @@ def safe_mode_off():
         "running": state.get("running", False),
         "action": state["last_action"],
         "state": state
+    }
+
+
+def healthcheck():
+    state = load_state()
+    now = int(time.time())
+
+    positions = state.get("positions", {})
+    trade_log_exists = os.path.exists(TRADE_LOG)
+
+    last_tick = int(state.get("last_tick_ts", 0) or 0)
+    last_heartbeat = int(state.get("last_heartbeat_ts", 0) or 0)
+
+    age_tick = now - last_tick if last_tick else None
+    age_heartbeat = now - last_heartbeat if last_heartbeat else None
+
+    warnings = []
+
+    if state.get("safe_mode"):
+        warnings.append("SAFE MODE aktív")
+
+    if state.get("running") and age_tick is not None and age_tick > 120:
+        warnings.append("Régi tick időbélyeg")
+
+    if not trade_log_exists:
+        warnings.append("Trade log még nem létezik")
+
+    status = "OK" if not warnings else "FIGYELMEZTETÉS"
+
+    state["last_heartbeat_ts"] = now
+    save_state(state)
+
+    return {
+        "ok": True,
+        "status": status,
+        "warnings": warnings,
+        "running": bool(state.get("running")),
+        "safe_mode": bool(state.get("safe_mode")),
+        "positions_count": len(positions),
+        "balance": state.get("balance", 0),
+        "realized_pnl": state.get("realized_pnl", 0),
+        "equity": equity(state),
+        "trade_log_exists": trade_log_exists,
+        "trade_log_path": TRADE_LOG,
+        "last_tick_ts": last_tick,
+        "last_heartbeat_ts": now,
+        "last_tick_age_sec": age_tick,
+        "last_heartbeat_age_sec": age_heartbeat,
+        "last_action": state.get("last_action", "")
     }
 
 if __name__ == "__main__":
