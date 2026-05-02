@@ -200,7 +200,7 @@ class Main(Screen):
             ("BIZTONSÁG / API", "security", CARD),
             ("AI / STRATÉGIA", "strategy", CARD),
             ("COIN SCANNER", "scanner", CARD),
-            ("NAPLÓ / EXPORT", "logs", CARD),
+            ("NAPLÓ / EXPORT", "demo_logs", CARD),
             ("HALADÓ", "advanced", CARD),
         ]
         for txt, scr, col in items:
@@ -568,6 +568,90 @@ class SectionScreen(Screen):
 
 
 
+class DemoCoreLogsScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+
+        title = Label(text='[b]DEMO TRADE NAPLÓ / EXPORT[/b]\\n[size=14]demo_core_trades.csv megjelenítés[/size]', markup=True, size_hint_y=None, height=72)
+        root.add_widget(title)
+
+        self.info = Label(text='Betöltés...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=170, spacing=8)
+        b_refresh = Button(text='FRISSÍTÉS')
+        b_tick = Button(text='TICK + FRISSÍTÉS')
+        b_clear = Button(text='NAPLÓ NULLÁZÁS')
+        b_back = Button(text='VISSZA')
+
+        b_refresh.bind(on_press=lambda x: self.refresh())
+        b_tick.bind(on_press=lambda x: self.tick_and_refresh())
+        b_clear.bind(on_press=lambda x: self.clear_log())
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_refresh, b_tick, b_clear, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self):
+        try:
+            path = demo_core.TRADE_LOG
+            lines = []
+            lines.append('[b]Fájl:[/b] ' + str(path))
+            lines.append('')
+
+            if not demo_core.os.path.exists(path):
+                lines.append('Még nincs trade napló.')
+                self.info.text = '\\n'.join(lines)
+                return
+
+            with open(path, 'r', encoding='utf-8') as f:
+                rows = [x.strip() for x in f.readlines() if x.strip()]
+
+            if not rows:
+                lines.append('Üres napló.')
+            else:
+                lines.append('[b]Utolsó trade-ek:[/b]')
+                for row in rows[-25:]:
+                    lines.append(row)
+
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Napló hiba: ' + str(e)
+
+    def tick_and_refresh(self):
+        try:
+            demo_core.tick()
+            self.refresh()
+        except Exception as e:
+            self.info.text = 'Tick/log hiba: ' + str(e)
+
+    def clear_log(self):
+        try:
+            path = demo_core.TRADE_LOG
+            if demo_core.os.path.exists(path):
+                demo_core.os.remove(path)
+            self.info.text = '[b]OK:[/b] Demo trade napló törölve.'
+        except Exception as e:
+            self.info.text = 'Napló törlés hiba: ' + str(e)
+
+
 class DemoCoreSettingsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -918,6 +1002,7 @@ class AppMain(App):
 
         sm.add_widget(SkeletonScreen("HÁTTÉRFUTÁS / ÉRTESÍTÉSEK", "Később itt lesz:\n- háttérben futó bot\n- állandó értesítés\n- trade riasztások\n- hibaértesítés\n- Android foreground service alap.\nBekötés később.", name="background_service"))
         sm.add_widget(DemoCoreScreen(name="demo_core"))
+        sm.add_widget(DemoCoreLogsScreen(name="demo_logs"))
         return sm
 
 if __name__ == "__main__":
