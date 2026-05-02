@@ -7,27 +7,36 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
-    - name: Install dependencies
+    - name: Install Linux dependencies
       run: |
         sudo apt update
-        sudo apt install -y python3-pip build-essential git zip unzip wget openjdk-17-jdk autoconf automake libtool libtool-bin m4 gettext autopoint pkg-config libltdl-dev
+        sudo apt install -y python3-pip build-essential git zip unzip wget openjdk-17-jdk
+        sudo apt install -y autoconf automake libtool libtool-bin m4 gettext autopoint pkg-config libltdl-dev zlib1g-dev
+
+    - name: Install Python tools
+      run: |
         python3 -m pip install --upgrade pip setuptools wheel
-        python3 -m pip install buildozer cython
+        python3 -m pip install "cython<3" buildozer==1.5.0
+
+    - name: Clean old build
+      run: |
+        rm -rf .buildozer bin apk_out
+        mkdir -p apk_out
 
     - name: Build APK
       run: |
         set -o pipefail
-        python3 -m buildozer -v android debug 2>&1 | tee buildozer_full.log
+        buildozer -v android debug 2>&1 | tee buildozer_full.log
         echo "=== APK keresés ==="
         find . -name "*.apk" -print | tee apk_files.txt
         test -s apk_files.txt
-        mkdir -p apk_out
-        cp $(cat apk_files.txt | head -n 1) apk_out/autobot-debug.apk
+        cp "$(head -n 1 apk_files.txt)" apk_out/autobot-debug.apk
 
     - name: Upload full log
       if: always()
@@ -37,6 +46,7 @@ jobs:
         path: buildozer_full.log
 
     - name: Upload APK
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: autobot-apk

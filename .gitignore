@@ -1,6 +1,7 @@
 .buildozer/
 bin/
+apk_out/
 *.pyc
 __pycache__/
-.buildozer/
-bin/
+buildozer_full.log
+apk_files.txt
