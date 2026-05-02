@@ -82,4 +82,5 @@ jobs:
             .buildozer/**/*.log
             *.log
             build_full_output.log
+            build_full_output.log
           if-no-files-found: ignore
