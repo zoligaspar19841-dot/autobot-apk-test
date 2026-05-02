@@ -547,124 +547,141 @@ class SectionScreen(Screen):
 class DemoCoreScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
 
-        root = BoxLayout(orientation="vertical", padding=12, spacing=10)
-
-        title = Label(
-            text="[b]DEMO CORE ENGINE[/b]",
-            markup=True,
-            size_hint_y=None,
-            height=48
-        )
+        title = Label(text='[b]DEMO CORE ENGINE[/b]\n[size=14]Demo motor / pozíciók / PnL[/size]', markup=True, size_hint_y=None, height=72)
         root.add_widget(title)
 
-        self.info = Label(
-            text="Betöltés...",
-            halign="left",
-            valign="top",
-            markup=True
-        )
-        self.info.bind(size=lambda inst, val: setattr(inst, "text_size", val))
+        self.kpi = GridLayout(cols=2, spacing=8, size_hint_y=None, height=140)
+        self.lbl_balance = Label(text='[b]Balance[/b]\n-', markup=True)
+        self.lbl_equity = Label(text='[b]Equity[/b]\n-', markup=True)
+        self.lbl_pnl = Label(text='[b]Realized PnL[/b]\n-', markup=True)
+        self.lbl_positions = Label(text='[b]Open Positions[/b]\n-', markup=True)
+        for w in [self.lbl_balance, self.lbl_equity, self.lbl_pnl, self.lbl_positions]:
+            self.kpi.add_widget(w)
+        root.add_widget(self.kpi)
 
+        self.info = Label(text='Betöltés...', halign='left', valign='top', markup=True)
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
         scroll = ScrollView()
         scroll.add_widget(self.info)
         root.add_widget(scroll)
 
-        btns = BoxLayout(orientation="vertical", size_hint_y=None, height=260, spacing=8)
-
-        b_status = Button(text="STATUS / FRISSÍTÉS")
-        b_tick = Button(text="TICK - KÉZI FUTTATÁS")
-        b_start = Button(text="START")
-        b_stop = Button(text="STOP")
-        b_reset = Button(text="DEMO RESET 100 USDC")
-        b_back = Button(text="VISSZA")
-
-        b_status.bind(on_press=lambda x: self.refresh())
-        b_tick.bind(on_press=lambda x: self.do_tick())
-        b_start.bind(on_press=lambda x: self.do_start())
-        b_stop.bind(on_press=lambda x: self.do_stop())
-        b_reset.bind(on_press=lambda x: self.do_reset())
-        b_back.bind(on_press=lambda x: setattr(self.manager, "current", "home"))
-
-        for b in [b_status, b_tick, b_start, b_stop, b_reset, b_back]:
+        btns = GridLayout(cols=2, size_hint_y=None, height=250, spacing=8)
+        buttons = [
+            ('FRISSÍTÉS', self.refresh),
+            ('TICK / KÉZI FUTTATÁS', self.do_tick),
+            ('START', self.do_start),
+            ('STOP', self.do_stop),
+            ('DEMO RESET 100 USDC', self.do_reset),
+            ('VISSZA', self.go_back),
+        ]
+        for txt, fn in buttons:
+            b = Button(text=txt)
+            b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
-
         root.add_widget(btns)
         self.add_widget(root)
 
     def on_pre_enter(self):
         self.refresh()
 
-    def fmt_state(self, st, extra=""):
+    def go_back(self):
+        self.manager.current = 'home'
+
+    def update_kpi(self, st):
         try:
             eq = demo_core.equity(st)
         except Exception:
-            eq = 0
+            eq = 0.0
+        bal = float(st.get('balance', 0.0))
+        pnl = float(st.get('realized_pnl', 0.0))
+        positions = st.get('positions', {})
+        base = st.get('base', 'USDC')
+        self.lbl_balance.text = f'[b]Balance[/b]\n{bal:.4f} {base}'
+        self.lbl_equity.text = f'[b]Equity[/b]\n{eq:.4f} {base}'
+        self.lbl_pnl.text = f'[b]Realized PnL[/b]\n{pnl:.4f}'
+        self.lbl_positions.text = f'[b]Open Positions[/b]\n{len(positions)}'
 
-        positions = st.get("positions", {})
+    def fmt_state(self, st, extra=''):
         lines = []
-        lines.append(f"[b]Running:[/b] {st.get('running')}")
-        lines.append(f"[b]Balance:[/b] {st.get('balance')}")
-        lines.append(f"[b]Equity:[/b] {eq:.4f}")
-        lines.append(f"[b]Realized PnL:[/b] {st.get('realized_pnl')}")
-        lines.append(f"[b]Last action:[/b] {st.get('last_action')}")
-        lines.append("")
-        lines.append("[b]Positions:[/b]")
-
+        lines.append(f'[b]Állapot:[/b] {"FUT" if st.get("running") else "ÁLL"}')
+        lines.append(f'[b]Utolsó művelet:[/b] {st.get("last_action", "-")}')
+        lines.append('')
+        lines.append('[b]Nyitott pozíciók:[/b]')
+        positions = st.get('positions', {})
         if not positions:
-            lines.append("Nincs nyitott pozíció.")
+            lines.append('Nincs nyitott pozíció.')
         else:
             for sym, pos in positions.items():
-                lines.append(f"{sym}: qty={pos.get('qty')}, avg={pos.get('avg')}, peak={pos.get('peak')}")
-
+                qty = float(pos.get('qty', 0))
+                avg = float(pos.get('avg', 0))
+                peak = float(pos.get('peak', 0))
+                try:
+                    now = demo_core.price(sym)
+                    pnl_pct = ((now - avg) / avg) * 100 if avg else 0
+                    lines.append(f'[b]{sym}[/b] qty={qty:.8f} avg={avg:.4f} now={now:.4f} peak={peak:.4f} PnL={pnl_pct:.2f}%')
+                except Exception:
+                    lines.append(f'[b]{sym}[/b] qty={qty:.8f} avg={avg:.4f} peak={peak:.4f}')
+        settings = st.get('settings', {})
+        lines.append('')
+        lines.append('[b]Beállítások:[/b]')
+        lines.append(f'Risk/trade: {settings.get("risk_pct")}%')
+        lines.append(f'Max positions: {settings.get("max_positions")}')
+        lines.append(f'Min profit: {settings.get("min_profit_pct")}%')
+        lines.append(f'Watchlist: {", ".join(settings.get("watchlist", []))}')
         if extra:
-            lines.append("")
-            lines.append("[b]Utolsó művelet:[/b]")
+            lines.append('')
+            lines.append('[b]Most futott:[/b]')
             lines.append(str(extra))
-
-        return "\n".join(lines)
+        return '\n'.join(lines)
 
     def refresh(self):
         try:
             st = demo_core.load_state()
+            self.update_kpi(st)
             self.info.text = self.fmt_state(st)
         except Exception as e:
-            self.info.text = "Demo core hiba: " + str(e)
+            self.info.text = 'Demo core hiba: ' + str(e)
 
     def do_tick(self):
         try:
             res = demo_core.tick()
             st = demo_core.load_state()
-            self.info.text = self.fmt_state(st, res.get("action", res))
+            self.update_kpi(st)
+            self.info.text = self.fmt_state(st, res.get('action', res))
         except Exception as e:
-            self.info.text = "Tick hiba: " + str(e)
+            self.info.text = 'Tick hiba: ' + str(e)
 
     def do_start(self):
         try:
             st = demo_core.load_state()
-            st["running"] = True
-            st["last_action"] = "Demo core START"
+            st['running'] = True
+            st['last_action'] = 'Demo core START'
             demo_core.save_state(st)
-            self.info.text = self.fmt_state(st, "START")
+            self.update_kpi(st)
+            self.info.text = self.fmt_state(st, 'START')
         except Exception as e:
-            self.info.text = "Start hiba: " + str(e)
+            self.info.text = 'Start hiba: ' + str(e)
 
     def do_stop(self):
         try:
             st = demo_core.load_state()
-            st["running"] = False
-            st["last_action"] = "Demo core STOP"
+            st['running'] = False
+            st['last_action'] = 'Demo core STOP'
             demo_core.save_state(st)
-            self.info.text = self.fmt_state(st, "STOP")
+            self.update_kpi(st)
+            self.info.text = self.fmt_state(st, 'STOP')
         except Exception as e:
-            self.info.text = "Stop hiba: " + str(e)
+            self.info.text = 'Stop hiba: ' + str(e)
 
     def do_reset(self):
         try:
             st = demo_core.reset_demo(100.0)
-            self.info.text = self.fmt_state(st, "RESET 100 USDC")
+            self.update_kpi(st)
+            self.info.text = self.fmt_state(st, 'RESET 100 USDC')
         except Exception as e:
-            self.info.text = "Reset hiba: " + str(e)
+            self.info.text = 'Reset hiba: ' + str(e)
 
 
 class TextScreen(Screen):
