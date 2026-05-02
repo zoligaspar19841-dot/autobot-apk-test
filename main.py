@@ -587,6 +587,111 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreTrendHistoryScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]TREND HISTORY / PROFIT INGADOZÁS[/b]\n[size=14]Időalapú Equity / Profit / Tradable / Total Value nézetek[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        ))
+
+        self.info = Label(text='Trend history...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        buttons = [
+            ('REFRESH', self.refresh),
+            ('ADD SNAPSHOT', self.snapshot),
+            ('NEXT VIEW', self.next_view),
+            ('SPOT SYNC', self.spot_sync),
+            ('DASHBOARD', lambda: self.manager.go_to('demo_core')),
+            ('SETTINGS', lambda: self.manager.go_to('demo_settings')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def render(self, res):
+        lines = []
+        lines.append(f"[b]Trend nézet:[/b] {res.get('view')} / {res.get('value_key')}")
+        lines.append(f"Pontok: {res.get('points_count')} | min={res.get('min')} | max={res.get('max')}")
+        lines.append('')
+        last = res.get('last') or {}
+        if last:
+            lines.append('[b]Utolsó pont adatai:[/b]')
+            lines.append(f"ts: {last.get('ts')}")
+            lines.append(f"value: {last.get('value')}")
+            lines.append(f"equity: {last.get('equity')}")
+            lines.append(f"total value: {last.get('total_value_usd')}")
+            lines.append(f"profit %: {last.get('pnl_pct_from_100')}")
+            lines.append(f"tradable: {last.get('tradable_usd')}")
+            lines.append(f"positions: {last.get('open_positions')}")
+            lines.append(f"action: {last.get('last_action')}")
+            lines.append('')
+
+        lines.append('[b]Utolsó 20 pont:[/b]')
+        for p in (res.get('points') or [])[-20:]:
+            lines.append(
+                f"{p.get('i')}. ts={p.get('ts')} value={p.get('value')} "
+                f"eq={p.get('equity')} tradable={p.get('tradable_usd')} action={p.get('last_action')}"
+            )
+
+        lines.append('')
+        lines.append('[size=12]Később az érintés/célkereszt ebből a pontlistából mutat adatot.[/size]')
+        self.info.text = '\n'.join(lines)
+
+    def refresh(self):
+        try:
+            self.render(demo_core.trend_history_status())
+        except Exception as e:
+            self.info.text = 'Trend status hiba: ' + str(e)
+
+    def snapshot(self):
+        try:
+            demo_core.append_trend_history('ui_manual_snapshot')
+            self.refresh()
+        except Exception as e:
+            self.info.text = 'Snapshot hiba: ' + str(e)
+
+    def next_view(self):
+        try:
+            self.render(demo_core.cycle_trend_view_mode())
+        except Exception as e:
+            self.info.text = 'Next view hiba: ' + str(e)
+
+    def spot_sync(self):
+        try:
+            demo_core.sync_spot_portfolio()
+            self.refresh()
+        except Exception as e:
+            self.info.text = 'Spot sync hiba: ' + str(e)
+
+
+
 class DemoCoreSpotPortfolioScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -2867,6 +2972,11 @@ class DemoCoreSettingsScreen(Screen):
             ('spot_safety_reserve', 'Spot safety reserve USD'),
             ('spot_max_tradeable_pct', 'Spot max tradeable %'),
             ('spot_min_asset_value_usd', 'Spot min asset value USD'),
+            ('dashboard_use_portfolio_cache', 'Dashboard use portfolio cache true/false'),
+            ('trend_history_enabled', 'Trend history enabled true/false'),
+            ('trend_history_max_points', 'Trend history max points'),
+            ('trend_view_mode', 'Trend view mode'),
+            ('trend_supported_views', 'Trend supported views'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -3045,6 +3155,11 @@ class DemoCoreSettingsScreen(Screen):
             cfg['spot_safety_reserve'] = float(self.inputs['spot_safety_reserve'].text.replace(',', '.'))
             cfg['spot_max_tradeable_pct'] = float(self.inputs['spot_max_tradeable_pct'].text.replace(',', '.'))
             cfg['spot_min_asset_value_usd'] = float(self.inputs['spot_min_asset_value_usd'].text.replace(',', '.'))
+            cfg['dashboard_use_portfolio_cache'] = self.inputs['dashboard_use_portfolio_cache'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['trend_history_enabled'] = self.inputs['trend_history_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['trend_history_max_points'] = int(float(self.inputs['trend_history_max_points'].text.replace(',', '.')))
+            cfg['trend_view_mode'] = self.inputs['trend_view_mode'].text.strip().upper() or 'PROFIT'
+            cfg['trend_supported_views'] = self.inputs['trend_supported_views'].text.strip().upper() or 'EQUITY,PROFIT,TRADABLE,TOTAL_VALUE'
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -3117,6 +3232,19 @@ class DemoCoreScreen(Screen):
         self.manager.go_back()
 
     def update_kpi(self, st):
+        try:
+            k = demo_core.dashboard_kpi_snapshot()
+            if hasattr(self, 'lbl_balance'):
+                self.lbl_balance.text = f"[b]Balance / Free[/b]\nUSDC {k.get('usdc_free', 0):.4f} | USDT {k.get('usdt_free', 0):.4f}"
+            if hasattr(self, 'lbl_equity'):
+                self.lbl_equity.text = f"[b]Total Value[/b]\n{k.get('total_value_usd', 0):.4f} USD"
+            if hasattr(self, 'lbl_pnl'):
+                self.lbl_pnl.text = f"[b]PnL / Profit[/b]\n{k.get('realized_pnl', 0):.4f} | {k.get('pnl_pct_from_100', 0):.2f}%"
+            if hasattr(self, 'lbl_positions'):
+                self.lbl_positions.text = f"[b]Open / Tradable[/b]\n{k.get('open_positions', 0)} pos | {k.get('tradable_usd', 0):.4f} USD"
+        except Exception:
+            pass
+
         try:
             eq = demo_core.equity(st)
         except Exception:
@@ -3266,6 +3394,12 @@ class DemoCoreScreen(Screen):
         except Exception as e:
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
+
+    def open_trend_history(self):
+        try:
+            self.manager.go_to("trend_history")
+        except Exception:
+            self.manager.current = "trend_history"
 
     def open_spot_portfolio(self):
         try:
@@ -3552,6 +3686,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreIntegrationOverviewScreen(name="integrations"))
         sm.add_widget(DemoCoreStartupSafetyScreen(name="startup_safety"))
         sm.add_widget(DemoCoreSpotPortfolioScreen(name="spot_portfolio"))
+        sm.add_widget(DemoCoreTrendHistoryScreen(name="trend_history"))
         return sm
 
 if __name__ == "__main__":

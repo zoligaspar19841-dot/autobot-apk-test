@@ -1,4 +1,4 @@
-APP_VERSION = "0.4.1-demo-core"
+APP_VERSION = "0.4.2-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -64,6 +64,15 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+DASHBOARD_TREND_DEFAULTS = {
+    "dashboard_use_portfolio_cache": True,
+    "trend_history_enabled": True,
+    "trend_history_max_points": 300,
+    "trend_view_mode": "PROFIT",
+    "trend_supported_views": "EQUITY,PROFIT,TRADABLE,TOTAL_VALUE",
+}
 
 SPOT_PORTFOLIO_DEFAULTS = {
     "spot_sync_enabled": True,
@@ -315,6 +324,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "DASHBOARD_TREND_DEFAULTS" in globals():
+        for k, v in DASHBOARD_TREND_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -4108,6 +4123,11 @@ def sync_spot_portfolio():
         "order_endpoint_used": False,
     })
 
+    try:
+        append_trend_history("spot_portfolio_sync")
+    except Exception:
+        pass
+
     return {
         "ok": True,
         "synced": True,
@@ -4137,6 +4157,223 @@ def spot_portfolio_status():
         "top_assets": (cache.get("assets") or [])[:8],
         "order_endpoint_used": False,
     }
+
+
+
+def dashboard_kpi_snapshot():
+    """
+    Dashboard KPI snapshot:
+    portfolio_cache + demo state + PnL.
+    Nem hív order endpointot.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+    portfolio = state.get("portfolio_cache") or {}
+
+    eq = equity(state) if "equity" in globals() else float(state.get("balance", 0) or 0)
+    realized = float(state.get("realized_pnl", 0) or 0)
+    positions = state.get("positions", {}) or {}
+
+    use_portfolio = bool(settings.get("dashboard_use_portfolio_cache", True))
+
+    total_value = float(portfolio.get("total_value_usd", 0) or 0)
+    tradable = float(portfolio.get("tradable_usd", 0) or 0)
+
+    if not use_portfolio or total_value <= 0:
+        total_value = float(eq or 0)
+        tradable = max(0.0, float(state.get("balance", 0) or 0) - float(settings.get("spot_safety_reserve", 10) or 10))
+
+    quote_assets = [x.strip().upper() for x in str(settings.get("spot_quote_assets", "USDC,USDT")).split(",") if x.strip()]
+    assets = portfolio.get("assets") or []
+
+    quote_free = 0.0
+    usdc_free = 0.0
+    usdt_free = 0.0
+
+    for a in assets:
+        asset = str(a.get("asset", "")).upper()
+        free = float(a.get("free", 0) or 0)
+        price = float(a.get("price_usd", 1) or 1)
+        if asset in quote_assets:
+            quote_free += free * price
+        if asset == "USDC":
+            usdc_free += free
+        if asset == "USDT":
+            usdt_free += free
+
+    if not assets:
+        base = str(settings.get("spot_base_asset", state.get("base", "USDC"))).upper()
+        if base == "USDC":
+            usdc_free = float(state.get("balance", 0) or 0)
+        elif base == "USDT":
+            usdt_free = float(state.get("balance", 0) or 0)
+        quote_free = float(state.get("balance", 0) or 0)
+
+    pnl_pct = 0.0
+    start_ref = 100.0
+    try:
+        pnl_pct = ((total_value - start_ref) / start_ref) * 100.0
+    except Exception:
+        pnl_pct = 0.0
+
+    out = {
+        "ok": True,
+        "ts": int(time.time()),
+        "mode": "DEMO" if not settings.get("live_mode_enabled") else "LIVE",
+        "total_value_usd": round(total_value, 8),
+        "equity": round(float(eq or 0), 8),
+        "realized_pnl": round(realized, 8),
+        "pnl_pct_from_100": round(pnl_pct, 6),
+        "tradable_usd": round(tradable, 8),
+        "quote_free_usd": round(quote_free, 8),
+        "usdc_free": round(usdc_free, 8),
+        "usdt_free": round(usdt_free, 8),
+        "open_positions": len(positions),
+        "safe_mode": bool(state.get("safe_mode")),
+        "running": bool(state.get("running")),
+        "execution_mode": settings.get("execution_mode", "AUTO"),
+        "last_action": state.get("last_action", ""),
+        "order_endpoint_used": False,
+    }
+
+    return out
+
+
+def append_trend_history(reason="snapshot"):
+    """
+    Időalapú trend history mentés.
+    Profit/equity/portfolio ingadozás követéséhez.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if not bool(settings.get("trend_history_enabled", True)):
+        return {"ok": False, "saved": False, "reason": "trend_history_enabled false"}
+
+    snap = dashboard_kpi_snapshot()
+    row = {
+        "ts": int(time.time()),
+        "reason": reason,
+        "equity": snap.get("equity"),
+        "total_value_usd": snap.get("total_value_usd"),
+        "realized_pnl": snap.get("realized_pnl"),
+        "pnl_pct_from_100": snap.get("pnl_pct_from_100"),
+        "tradable_usd": snap.get("tradable_usd"),
+        "quote_free_usd": snap.get("quote_free_usd"),
+        "open_positions": snap.get("open_positions"),
+        "last_action": snap.get("last_action"),
+    }
+
+    hist = state.get("trend_history") or []
+    hist.append(row)
+
+    max_points = int(settings.get("trend_history_max_points", 300) or 300)
+    if len(hist) > max_points:
+        hist = hist[-max_points:]
+
+    state["trend_history"] = hist
+    state["last_trend_snapshot_ts"] = row["ts"]
+    save_state(state)
+
+    return {"ok": True, "saved": True, "row": row, "points": len(hist)}
+
+
+def trend_history_status(view=None, limit=80):
+    """
+    Trend history adatok UI-nak.
+    view:
+    - EQUITY
+    - PROFIT
+    - TRADABLE
+    - TOTAL_VALUE
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    view = str(view or settings.get("trend_view_mode", "PROFIT")).upper()
+    supported = [x.strip().upper() for x in str(settings.get("trend_supported_views", "EQUITY,PROFIT,TRADABLE,TOTAL_VALUE")).split(",") if x.strip()]
+    if view not in supported:
+        view = "PROFIT"
+
+    hist = state.get("trend_history") or []
+
+    if not hist:
+        append_trend_history("auto_empty_history")
+        state = load_state()
+        hist = state.get("trend_history") or []
+
+    hist = hist[-int(limit or 80):]
+
+    key_map = {
+        "EQUITY": "equity",
+        "PROFIT": "pnl_pct_from_100",
+        "TRADABLE": "tradable_usd",
+        "TOTAL_VALUE": "total_value_usd",
+    }
+    value_key = key_map.get(view, "pnl_pct_from_100")
+
+    points = []
+    for i, row in enumerate(hist):
+        points.append({
+            "i": i,
+            "ts": row.get("ts"),
+            "value": row.get(value_key),
+            "equity": row.get("equity"),
+            "total_value_usd": row.get("total_value_usd"),
+            "realized_pnl": row.get("realized_pnl"),
+            "pnl_pct_from_100": row.get("pnl_pct_from_100"),
+            "tradable_usd": row.get("tradable_usd"),
+            "quote_free_usd": row.get("quote_free_usd"),
+            "open_positions": row.get("open_positions"),
+            "last_action": row.get("last_action"),
+            "reason": row.get("reason"),
+        })
+
+    values = [float(p.get("value") or 0) for p in points]
+    min_v = min(values) if values else 0.0
+    max_v = max(values) if values else 0.0
+    last = points[-1] if points else {}
+
+    return {
+        "ok": True,
+        "view": view,
+        "value_key": value_key,
+        "supported_views": supported,
+        "points_count": len(points),
+        "min": round(min_v, 8),
+        "max": round(max_v, 8),
+        "last": last,
+        "points": points,
+        "note": "Érintés/célkereszt UI később ezekből a pontokból olvas adatot.",
+    }
+
+
+def set_trend_view_mode(view):
+    state = load_state()
+    settings = state.setdefault("settings", {})
+    view = str(view or "PROFIT").upper()
+
+    supported = [x.strip().upper() for x in str(settings.get("trend_supported_views", "EQUITY,PROFIT,TRADABLE,TOTAL_VALUE")).split(",") if x.strip()]
+    if view not in supported:
+        return {"ok": False, "error": "Nem támogatott trend nézet.", "supported": supported}
+
+    settings["trend_view_mode"] = view
+    save_state(state)
+    return trend_history_status(view=view)
+
+
+def cycle_trend_view_mode():
+    state = load_state()
+    settings = state.setdefault("settings", {})
+    supported = [x.strip().upper() for x in str(settings.get("trend_supported_views", "EQUITY,PROFIT,TRADABLE,TOTAL_VALUE")).split(",") if x.strip()]
+    cur = str(settings.get("trend_view_mode", "PROFIT")).upper()
+    if cur not in supported:
+        cur = supported[0] if supported else "PROFIT"
+    idx = supported.index(cur)
+    nxt = supported[(idx + 1) % len(supported)] if supported else "PROFIT"
+    settings["trend_view_mode"] = nxt
+    save_state(state)
+    return trend_history_status(view=nxt)
 
 
 if __name__ == "__main__":
