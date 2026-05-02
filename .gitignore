@@ -16,3 +16,6 @@ apk_out/
 __pycache__/
 buildozer_full.log
 apk_files.txt
+demo_core_secrets.json
+*.enc
+.env

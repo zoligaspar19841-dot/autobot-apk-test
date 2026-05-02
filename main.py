@@ -572,6 +572,151 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreSecretsScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        title = Label(
+            text='[b]SECRETS / INTEGRÁCIÓK[/b]\n[size=14]Binance API, OpenAI, E-mail, Drive, PC Sync[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        )
+        root.add_widget(title)
+
+        self.info = Label(text='Betöltés...', markup=True, halign='left', valign='top', size_hint_y=None, height=220)
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+        root.add_widget(self.info)
+
+        form_scroll = ScrollView()
+        form = GridLayout(cols=1, size_hint_y=None, spacing=6)
+        form.bind(minimum_height=form.setter('height'))
+
+        self.inputs = {}
+
+        fields = [
+            ('binance_api_key', 'Binance API key'),
+            ('binance_api_secret', 'Binance API secret'),
+            ('openai_api_key', 'OpenAI API key'),
+            ('email_smtp_host', 'SMTP host'),
+            ('email_smtp_port', 'SMTP port'),
+            ('email_user', 'E-mail user'),
+            ('email_app_password', 'E-mail app password'),
+            ('email_to', 'E-mail címzett'),
+            ('google_drive_token', 'Google Drive token'),
+            ('pc_sync_token', 'PC sync token'),
+            ('ngrok_token', 'ngrok token'),
+        ]
+
+        data = {}
+        try:
+            data = demo_core.load_secrets()
+        except Exception:
+            data = {}
+
+        for key, label in fields:
+            form.add_widget(Label(text='[b]' + label + '[/b]', markup=True, size_hint_y=None, height=28))
+            inp = TextInput(
+                text=str(data.get(key, '')),
+                multiline=False,
+                password=('password' in key or 'secret' in key or 'token' in key or 'api_key' in key),
+                size_hint_y=None,
+                height=44
+            )
+            self.inputs[key] = inp
+            form.add_widget(inp)
+
+        form_scroll.add_widget(form)
+        root.add_widget(form_scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=250, spacing=8)
+
+        b_save = Button(text='MENTÉS')
+        b_refresh = Button(text='STÁTUSZ')
+        b_binance = Button(text='TESZT BINANCE')
+        b_openai = Button(text='TESZT OPENAI')
+        b_email = Button(text='TESZT EMAIL')
+        b_drive = Button(text='TESZT DRIVE')
+        b_pc = Button(text='TESZT PC')
+        b_back = Button(text='VISSZA')
+
+        b_save.bind(on_press=lambda x: self.save())
+        b_refresh.bind(on_press=lambda x: self.refresh())
+        b_binance.bind(on_press=lambda x: self.test('binance'))
+        b_openai.bind(on_press=lambda x: self.test('openai'))
+        b_email.bind(on_press=lambda x: self.test('email'))
+        b_drive.bind(on_press=lambda x: self.test('drive'))
+        b_pc.bind(on_press=lambda x: self.test('pc'))
+        b_back.bind(on_press=lambda x: self.go_back())
+
+        for b in [b_save, b_refresh, b_binance, b_openai, b_email, b_drive, b_pc, b_back]:
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def save(self):
+        try:
+            data = {}
+            for k, inp in self.inputs.items():
+                data[k] = inp.text.strip()
+            demo_core.save_secrets(data)
+            demo_core.audit_event("SECRETS_SAVE_UI", "Secrets UI mentés", {"keys": list(data.keys())})
+            self.refresh("Mentve.")
+        except Exception as e:
+            self.info.text = "Mentési hiba: " + str(e)
+
+    def refresh(self, prefix=''):
+        try:
+            st = demo_core.secrets_status()
+            m = st.get('masked', {})
+            lines = []
+            if prefix:
+                lines.append('[b]' + prefix + '[/b]')
+                lines.append('')
+
+            lines.append('[b]Integráció státusz[/b]')
+            lines.append('')
+            lines.append(f"Binance API: {'OK' if st.get('binance_api') else 'HIÁNYZIK'}")
+            lines.append(f"OpenAI API: {'OK' if st.get('openai_api') else 'HIÁNYZIK'}")
+            lines.append(f"E-mail: {'OK' if st.get('email') else 'HIÁNYZIK'}")
+            lines.append(f"Google Drive: {'OK' if st.get('google_drive') else 'HIÁNYZIK'}")
+            lines.append(f"PC Sync: {'OK' if st.get('pc_sync') else 'HIÁNYZIK'}")
+            lines.append(f"ngrok: {'OK' if st.get('ngrok') else 'HIÁNYZIK'}")
+            lines.append('')
+            lines.append('[b]Maszkolt értékek[/b]')
+            lines.append(f"Binance key: {m.get('binance_api_key')}")
+            lines.append(f"Binance secret: {m.get('binance_api_secret')}")
+            lines.append(f"OpenAI key: {m.get('openai_api_key')}")
+            lines.append(f"Email user: {m.get('email_user')}")
+            lines.append(f"Email to: {m.get('email_to')}")
+            lines.append('')
+            lines.append('[size=12]Figyelem: kulcsot/jelszót ne commitolj GitHubra. Ez a helyi secrets fájlba kerül.[/size]')
+
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Státusz hiba: ' + str(e)
+
+    def test(self, kind):
+        try:
+            res = demo_core.integration_test(kind)
+            self.refresh(res.get('message', 'Teszt kész.'))
+        except Exception as e:
+            self.info.text = 'Teszt hiba: ' + str(e)
+
+
+
 class DemoCoreAIScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1412,6 +1557,12 @@ class DemoCoreScreen(Screen):
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
 
+    def open_secrets(self):
+        try:
+            self.manager.go_to("secrets")
+        except Exception:
+            self.manager.current = "secrets"
+
     def open_ai_advisor(self):
         try:
             self.manager.go_to("ai_advisor")
@@ -1564,6 +1715,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreFeeTaxScreen(name="fee_tax"))
         sm.add_widget(DemoCoreTradeScreen(name="trade_logic"))
         sm.add_widget(DemoCoreAIScreen(name="ai_advisor"))
+        sm.add_widget(DemoCoreSecretsScreen(name="secrets"))
         return sm
 
 if __name__ == "__main__":

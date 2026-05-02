@@ -8,6 +8,7 @@ import random
 import urllib.request
 
 STATE_FILE = "demo_core_state.json"
+SECRETS_FILE = "demo_core_secrets.json"
 LOG_DIR = "logs"
 TRADE_LOG = os.path.join(LOG_DIR, "demo_core_trades.csv")
 AUDIT_LOG = os.path.join(LOG_DIR, "demo_core_audit.csv")
@@ -17,6 +18,21 @@ os.makedirs(LOG_DIR, exist_ok=True)
 
 
 
+
+
+SECRETS_DEFAULTS = {
+    "binance_api_key": "",
+    "binance_api_secret": "",
+    "openai_api_key": "",
+    "email_smtp_host": "smtp.gmail.com",
+    "email_smtp_port": "587",
+    "email_user": "",
+    "email_app_password": "",
+    "email_to": "",
+    "google_drive_token": "",
+    "pc_sync_token": "",
+    "ngrok_token": "",
+}
 
 AI_ADVISOR_DEFAULTS = {
     "ai_advisor_enabled": True,
@@ -968,6 +984,149 @@ def ai_advisor(symbol=None):
     save_state(state)
 
     return out
+
+
+def mask_secret(value, keep=4):
+    value = str(value or "")
+    if not value:
+        return ""
+    if len(value) <= keep:
+        return "*" * len(value)
+    return "*" * max(0, len(value) - keep) + value[-keep:]
+
+
+def load_secrets():
+    if not os.path.exists(SECRETS_FILE):
+        return dict(SECRETS_DEFAULTS)
+
+    try:
+        with open(SECRETS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
+
+    if not isinstance(data, dict):
+        data = {}
+
+    changed = False
+    for k, v in SECRETS_DEFAULTS.items():
+        if k not in data or data.get(k) is None:
+            data[k] = v
+            changed = True
+
+    if changed:
+        save_secrets(data)
+
+    return data
+
+
+def save_secrets(data):
+    safe = dict(SECRETS_DEFAULTS)
+    if isinstance(data, dict):
+        for k in safe:
+            if k in data:
+                safe[k] = str(data.get(k) or "")
+
+    with open(SECRETS_FILE, "w", encoding="utf-8") as f:
+        json.dump(safe, f, ensure_ascii=False, indent=2)
+
+    return safe
+
+
+def update_secret(key, value):
+    data = load_secrets()
+    if key not in SECRETS_DEFAULTS:
+        return {"ok": False, "error": "Unknown secret key: " + str(key)}
+
+    data[key] = str(value or "")
+    save_secrets(data)
+    audit_event("SECRET_UPDATE", key, {"key": key, "has_value": bool(data[key])})
+    return {"ok": True, "key": key, "has_value": bool(data[key])}
+
+
+def secrets_status():
+    data = load_secrets()
+
+    status = {
+        "ok": True,
+        "binance_api": bool(data.get("binance_api_key")) and bool(data.get("binance_api_secret")),
+        "openai_api": bool(data.get("openai_api_key")),
+        "email": bool(data.get("email_user")) and bool(data.get("email_app_password")) and bool(data.get("email_to")),
+        "google_drive": bool(data.get("google_drive_token")),
+        "pc_sync": bool(data.get("pc_sync_token")),
+        "ngrok": bool(data.get("ngrok_token")),
+        "masked": {
+            "binance_api_key": mask_secret(data.get("binance_api_key")),
+            "binance_api_secret": mask_secret(data.get("binance_api_secret")),
+            "openai_api_key": mask_secret(data.get("openai_api_key")),
+            "email_user": data.get("email_user", ""),
+            "email_to": data.get("email_to", ""),
+            "email_app_password": mask_secret(data.get("email_app_password")),
+            "google_drive_token": mask_secret(data.get("google_drive_token")),
+            "pc_sync_token": mask_secret(data.get("pc_sync_token")),
+            "ngrok_token": mask_secret(data.get("ngrok_token")),
+        }
+    }
+
+    return status
+
+
+def integration_test(kind):
+    kind = str(kind or "").lower().strip()
+    st = secrets_status()
+
+    if kind == "binance":
+        if st["binance_api"]:
+            msg = "Binance API adatok megvannak. Live ellenőrzés később külön modulban."
+            ok = True
+        else:
+            msg = "Binance API key/secret hiányzik."
+            ok = False
+
+    elif kind == "openai":
+        if st["openai_api"]:
+            msg = "OpenAI API key megvan. API hívás később külön modulban."
+            ok = True
+        else:
+            msg = "OpenAI API key hiányzik."
+            ok = False
+
+    elif kind == "email":
+        if st["email"]:
+            msg = "E-mail beállítások megvannak. Tesztküldés később külön modulban."
+            ok = True
+        else:
+            msg = "E-mail user/app password/címzett hiányzik."
+            ok = False
+
+    elif kind == "drive":
+        if st["google_drive"]:
+            msg = "Google Drive token megvan. Sync később külön modulban."
+            ok = True
+        else:
+            msg = "Google Drive token hiányzik."
+            ok = False
+
+    elif kind == "pc":
+        if st["pc_sync"]:
+            msg = "PC sync token megvan. PC agent később külön modulban."
+            ok = True
+        else:
+            msg = "PC sync token hiányzik."
+            ok = False
+
+    else:
+        msg = "Ismeretlen integration test: " + str(kind)
+        ok = False
+
+    audit_event("INTEGRATION_TEST", kind, {"ok": ok, "message": msg})
+
+    return {
+        "ok": ok,
+        "kind": kind,
+        "message": msg,
+        "status": st,
+    }
 
 if __name__ == "__main__":
     print(json.dumps(tick(), ensure_ascii=False, indent=2))
