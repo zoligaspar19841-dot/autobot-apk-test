@@ -156,7 +156,11 @@
     "trend_history_enabled": true,
     "trend_history_max_points": 300,
     "trend_view_mode": "TRADABLE",
-    "trend_supported_views": "EQUITY,PROFIT,TRADABLE,TOTAL_VALUE"
+    "trend_supported_views": "EQUITY,PROFIT,TRADABLE,TOTAL_VALUE",
+    "trend_chart_enabled": true,
+    "trend_chart_width": 60,
+    "trend_selected_index": 2,
+    "trend_show_crosshair_data": true
   },
   "last_action": "Spot portfolio sync OK",
   "safe_mode": false,
@@ -255,7 +259,19 @@
       "quote_free_usd": 81.0,
       "open_positions": 2,
       "last_action": "Spot portfolio sync OK"
+    },
+    {
+      "ts": 1777766241,
+      "reason": "chart_test_snapshot",
+      "equity": 99.90920424,
+      "total_value_usd": 99.96609944,
+      "realized_pnl": 0.0,
+      "pnl_pct_from_100": -0.033901,
+      "tradable_usd": 71.0,
+      "quote_free_usd": 81.0,
+      "open_positions": 2,
+      "last_action": "Spot portfolio sync OK"
     }
   ],
-  "last_trend_snapshot_ts": 1777766154
+  "last_trend_snapshot_ts": 1777766241
 }

@@ -612,6 +612,7 @@ class DemoCoreTrendHistoryScreen(Screen):
             ('REFRESH', self.refresh),
             ('ADD SNAPSHOT', self.snapshot),
             ('NEXT VIEW', self.next_view),
+            ('SELECT LATEST', self.select_latest),
             ('SPOT SYNC', self.spot_sync),
             ('DASHBOARD', lambda: self.manager.go_to('demo_core')),
             ('SETTINGS', lambda: self.manager.go_to('demo_settings')),
@@ -666,9 +667,38 @@ class DemoCoreTrendHistoryScreen(Screen):
 
     def refresh(self):
         try:
-            self.render(demo_core.trend_history_status())
+            chart = demo_core.trend_chart_data()
+            lines = []
+            lines.append(f"[b]Trend nézet:[/b] {chart.get('view')} / {chart.get('value_key')}")
+            lines.append(f"Pontok: {chart.get('points_count')} | min={chart.get('min')} | max={chart.get('max')}")
+            lines.append('')
+            lines.append('[b]Mini chart:[/b]')
+            lines.append(str(chart.get('sparkline', '')))
+            lines.append('')
+            sel = chart.get('selected') or {}
+            if sel:
+                lines.append('[b]Kijelölt / utolsó pont:[/b]')
+                lines.append(f"index: {chart.get('selected_index')}")
+                lines.append(f"ts: {sel.get('ts')}")
+                lines.append(f"value: {sel.get('value')}")
+                lines.append(f"equity: {sel.get('equity')}")
+                lines.append(f"total value: {sel.get('total_value_usd')}")
+                lines.append(f"profit %: {sel.get('pnl_pct_from_100')}")
+                lines.append(f"tradable: {sel.get('tradable_usd')}")
+                lines.append(f"positions: {sel.get('open_positions')}")
+                lines.append(f"action: {sel.get('last_action')}")
+                lines.append('')
+            lines.append('[b]Utolsó 20 pont:[/b]')
+            for pnt in (chart.get('points') or [])[-20:]:
+                lines.append(
+                    f"{pnt.get('i')}. ts={pnt.get('ts')} value={pnt.get('value')} "
+                    f"eq={pnt.get('equity')} tradable={pnt.get('tradable_usd')} action={pnt.get('last_action')}"
+                )
+            lines.append('')
+            lines.append('[size=12]Később touch/crosshair ezt a kijelölt pontot váltja.[/size]')
+            self.info.text = '\n'.join(lines)
         except Exception as e:
-            self.info.text = 'Trend status hiba: ' + str(e)
+            self.info.text = 'Trend chart hiba: ' + str(e)
 
     def snapshot(self):
         try:
@@ -682,6 +712,13 @@ class DemoCoreTrendHistoryScreen(Screen):
             self.render(demo_core.cycle_trend_view_mode())
         except Exception as e:
             self.info.text = 'Next view hiba: ' + str(e)
+
+    def select_latest(self):
+        try:
+            demo_core.select_trend_latest()
+            self.refresh()
+        except Exception as e:
+            self.info.text = 'Select latest hiba: ' + str(e)
 
     def spot_sync(self):
         try:
@@ -2977,6 +3014,9 @@ class DemoCoreSettingsScreen(Screen):
             ('trend_history_max_points', 'Trend history max points'),
             ('trend_view_mode', 'Trend view mode'),
             ('trend_supported_views', 'Trend supported views'),
+            ('trend_chart_enabled', 'Trend chart enabled true/false'),
+            ('trend_chart_width', 'Trend chart width'),
+            ('trend_show_crosshair_data', 'Trend show crosshair data true/false'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -3160,6 +3200,9 @@ class DemoCoreSettingsScreen(Screen):
             cfg['trend_history_max_points'] = int(float(self.inputs['trend_history_max_points'].text.replace(',', '.')))
             cfg['trend_view_mode'] = self.inputs['trend_view_mode'].text.strip().upper() or 'PROFIT'
             cfg['trend_supported_views'] = self.inputs['trend_supported_views'].text.strip().upper() or 'EQUITY,PROFIT,TRADABLE,TOTAL_VALUE'
+            cfg['trend_chart_enabled'] = self.inputs['trend_chart_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['trend_chart_width'] = int(float(self.inputs['trend_chart_width'].text.replace(',', '.')))
+            cfg['trend_show_crosshair_data'] = self.inputs['trend_show_crosshair_data'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']

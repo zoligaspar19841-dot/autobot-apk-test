@@ -1,4 +1,4 @@
-APP_VERSION = "0.4.2-demo-core"
+APP_VERSION = "0.4.3-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -65,6 +65,14 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+TREND_CHART_DEFAULTS = {
+    "trend_chart_enabled": True,
+    "trend_chart_width": 60,
+    "trend_selected_index": -1,
+    "trend_show_crosshair_data": True,
+}
 
 DASHBOARD_TREND_DEFAULTS = {
     "dashboard_use_portfolio_cache": True,
@@ -324,6 +332,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "TREND_CHART_DEFAULTS" in globals():
+        for k, v in TREND_CHART_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -4374,6 +4388,155 @@ def cycle_trend_view_mode():
     settings["trend_view_mode"] = nxt
     save_state(state)
     return trend_history_status(view=nxt)
+
+
+
+def _sparkline_from_values(values, width=None):
+    """
+    Egyszerű unicode mini chart.
+    UI-ban később Canvas chart válthatja.
+    """
+    if not values:
+        return ""
+
+    try:
+        width = int(width or 60)
+    except Exception:
+        width = 60
+
+    vals = [float(v or 0) for v in values]
+
+    if len(vals) > width:
+        step = max(1, int(len(vals) / width))
+        vals = vals[::step][-width:]
+
+    blocks = "▁▂▃▄▅▆▇█"
+    mn = min(vals)
+    mx = max(vals)
+
+    if mx == mn:
+        return blocks[3] * len(vals)
+
+    out = []
+    for v in vals:
+        idx = int((v - mn) / (mx - mn) * (len(blocks) - 1))
+        idx = max(0, min(len(blocks) - 1, idx))
+        out.append(blocks[idx])
+
+    return "".join(out)
+
+
+def trend_chart_data(view=None, limit=80):
+    """
+    Trend mini chart adatcsomag.
+    Tartalmaz:
+    - sparkline
+    - min/max/last
+    - pontlista
+    - kiválasztott pont
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    tr = trend_history_status(view=view, limit=limit)
+    points = tr.get("points") or []
+    values = [p.get("value") for p in points]
+
+    selected_index = int(settings.get("trend_selected_index", -1) or -1)
+
+    if not points:
+        selected = None
+    else:
+        if selected_index < 0 or selected_index >= len(points):
+            selected_index = len(points) - 1
+        selected = points[selected_index]
+
+    chart_width = int(settings.get("trend_chart_width", 60) or 60)
+
+    return {
+        "ok": True,
+        "view": tr.get("view"),
+        "value_key": tr.get("value_key"),
+        "sparkline": _sparkline_from_values(values, chart_width),
+        "points_count": len(points),
+        "min": tr.get("min"),
+        "max": tr.get("max"),
+        "last": tr.get("last"),
+        "selected_index": selected_index,
+        "selected": selected,
+        "points": points,
+        "chart_width": chart_width,
+        "note": "Ez a chart adat alap. Később Canvas érintés/célkereszt ebből dolgozik.",
+    }
+
+
+def select_trend_point(index=None):
+    """
+    Trend pont kijelölése index alapján.
+    UI touch/crosshair később ezt fogja hívni.
+    """
+    state = load_state()
+    settings = state.setdefault("settings", {})
+
+    tr = trend_history_status()
+    points = tr.get("points") or []
+
+    if not points:
+        return {"ok": False, "error": "Nincs trend pont."}
+
+    try:
+        idx = int(index)
+    except Exception:
+        idx = len(points) - 1
+
+    idx = max(0, min(len(points) - 1, idx))
+    settings["trend_selected_index"] = idx
+    save_state(state)
+
+    selected = points[idx]
+
+    return {
+        "ok": True,
+        "selected_index": idx,
+        "selected": selected,
+        "message": "Trend pont kijelölve.",
+    }
+
+
+def select_trend_latest():
+    tr = trend_history_status()
+    points = tr.get("points") or []
+    if not points:
+        return {"ok": False, "error": "Nincs trend pont."}
+    return select_trend_point(len(points) - 1)
+
+
+def trend_crosshair_summary():
+    """
+    Kijelölt trendpont emberi olvasható adatpanel.
+    """
+    ch = trend_chart_data()
+    sel = ch.get("selected") or {}
+
+    if not sel:
+        return {"ok": False, "message": "Nincs kijelölt trendpont."}
+
+    return {
+        "ok": True,
+        "view": ch.get("view"),
+        "selected_index": ch.get("selected_index"),
+        "ts": sel.get("ts"),
+        "value": sel.get("value"),
+        "equity": sel.get("equity"),
+        "total_value_usd": sel.get("total_value_usd"),
+        "realized_pnl": sel.get("realized_pnl"),
+        "pnl_pct_from_100": sel.get("pnl_pct_from_100"),
+        "tradable_usd": sel.get("tradable_usd"),
+        "quote_free_usd": sel.get("quote_free_usd"),
+        "open_positions": sel.get("open_positions"),
+        "last_action": sel.get("last_action"),
+        "reason": sel.get("reason"),
+    }
 
 
 if __name__ == "__main__":
