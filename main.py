@@ -580,6 +580,95 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreLiveGateScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]LIVE EXECUTOR SAFETY GATE[/b]\n[size=14]Éles order előtti végső kapu, NEM küld ordert[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        ))
+
+        self.info = Label(text='Live gate státusz...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        buttons = [
+            ('STATUS', self.refresh),
+            ('TEST LATEST', self.test_latest),
+            ('LIVE CHECK', lambda: self.manager.go_to('binance_live')),
+            ('APPROVAL', lambda: self.manager.go_to('approval_executor')),
+            ('SETTINGS', lambda: self.manager.go_to('demo_settings')),
+            ('ADMIN', lambda: self.manager.go_to('admin')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self):
+        try:
+            st = demo_core.live_executor_gate_status()
+            lines = []
+            lines.append('[b]Live Executor Gate státusz[/b]')
+            lines.append('')
+            for k, v in st.items():
+                if k != 'ok':
+                    lines.append(f"{k}: {v}")
+            lines.append('')
+            lines.append('[size=12]Ez még nem küld Binance ordert.[/size]')
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Live gate status hiba: ' + str(e)
+
+    def test_latest(self):
+        try:
+            res = demo_core.simulate_live_order_gate_from_latest()
+            lines = []
+            lines.append('[b]Live Gate teszt[/b]')
+            lines.append('')
+            lines.append(f"Allowed: {res.get('allowed')}")
+            lines.append(f"Symbol: {res.get('symbol')}")
+            lines.append(f"Side: {res.get('side')}")
+            lines.append(f"Amount: {res.get('amount')}")
+            lines.append('')
+            lines.append('[b]Blocks:[/b]')
+            for b in res.get('blocks', []):
+                lines.append('- ' + str(b))
+            lines.append('')
+            lines.append('[b]Warnings:[/b]')
+            for w in res.get('warnings', []):
+                lines.append('- ' + str(w))
+            lines.append('')
+            lines.append(str(res.get('message') or res.get('error') or ''))
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Live gate test hiba: ' + str(e)
+
+
+
 class DemoCoreApprovalExecutorScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -2220,6 +2309,16 @@ class DemoCoreSettingsScreen(Screen):
             ('approval_required_for_manual', 'Approval required manual true/false'),
             ('approval_required_for_live', 'Approval required live true/false'),
             ('dry_run_executor_enabled', 'Dry-run executor enabled true/false'),
+            ('live_executor_enabled', 'Live executor enabled true/false'),
+            ('live_hard_stop_enabled', 'Live hard stop enabled true/false'),
+            ('live_require_admin_active', 'Live require admin active true/false'),
+            ('live_require_approval', 'Live require approval true/false'),
+            ('live_require_positive_after_tax', 'Live require positive after tax true/false'),
+            ('live_min_after_tax_profit_pct', 'Live min after tax profit %'),
+            ('live_max_order_usdt_hard', 'Live max order hard USDT'),
+            ('live_block_if_health_warning', 'Live block if health warning true/false'),
+            ('live_block_if_spread_bad', 'Live block if spread bad true/false'),
+            ('live_block_if_ai_hold', 'Live block if AI hold true/false'),
         ]
 
         for key, label in fields:
@@ -2365,6 +2464,16 @@ class DemoCoreSettingsScreen(Screen):
             cfg['approval_required_for_manual'] = self.inputs['approval_required_for_manual'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['approval_required_for_live'] = self.inputs['approval_required_for_live'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['dry_run_executor_enabled'] = self.inputs['dry_run_executor_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['live_executor_enabled'] = self.inputs['live_executor_enabled'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['live_hard_stop_enabled'] = self.inputs['live_hard_stop_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['live_require_admin_active'] = self.inputs['live_require_admin_active'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['live_require_approval'] = self.inputs['live_require_approval'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['live_require_positive_after_tax'] = self.inputs['live_require_positive_after_tax'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['live_min_after_tax_profit_pct'] = float(self.inputs['live_min_after_tax_profit_pct'].text.replace(',', '.'))
+            cfg['live_max_order_usdt_hard'] = float(self.inputs['live_max_order_usdt_hard'].text.replace(',', '.'))
+            cfg['live_block_if_health_warning'] = self.inputs['live_block_if_health_warning'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['live_block_if_spread_bad'] = self.inputs['live_block_if_spread_bad'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['live_block_if_ai_hold'] = self.inputs['live_block_if_ai_hold'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -2582,6 +2691,12 @@ class DemoCoreScreen(Screen):
         except Exception as e:
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
+
+    def open_live_gate(self):
+        try:
+            self.manager.go_to("live_gate")
+        except Exception:
+            self.manager.current = "live_gate"
 
     def open_approval_executor(self):
         try:
@@ -2819,6 +2934,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreAdminScreen(name="admin"))
         sm.add_widget(DemoCorePatchManagerScreen(name="patch_manager"))
         sm.add_widget(DemoCoreApprovalExecutorScreen(name="approval_executor"))
+        sm.add_widget(DemoCoreLiveGateScreen(name="live_gate"))
         return sm
 
 if __name__ == "__main__":

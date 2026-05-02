@@ -1,4 +1,4 @@
-APP_VERSION = "0.3.4-demo-core"
+APP_VERSION = "0.3.5-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -56,6 +56,20 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+LIVE_EXECUTOR_GATE_DEFAULTS = {
+    "live_executor_enabled": False,
+    "live_hard_stop_enabled": True,
+    "live_require_admin_active": True,
+    "live_require_approval": True,
+    "live_require_positive_after_tax": True,
+    "live_min_after_tax_profit_pct": 0.10,
+    "live_max_order_usdt_hard": 10.0,
+    "live_block_if_health_warning": True,
+    "live_block_if_spread_bad": True,
+    "live_block_if_ai_hold": True,
+}
 
 APPROVAL_EXECUTOR_DEFAULTS = {
     "approval_required_for_manual": True,
@@ -251,6 +265,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "LIVE_EXECUTOR_GATE_DEFAULTS" in globals():
+        for k, v in LIVE_EXECUTOR_GATE_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -2939,6 +2959,176 @@ def approval_executor_status():
         "approved_count": len([x for x in items if x.get("status") == "APPROVED"]),
         "executed_count": len([x for x in items if x.get("status") == "DRY_RUN_EXECUTED"]),
         "last_items": items[-10:],
+    }
+
+
+
+def live_order_safety_gate(req=None):
+    """
+    Végső live order előtti safety gate.
+    Ez NEM küld Binance ordert.
+    Csak megmondja, hogy később engedhető lenne-e.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+    req = req or {}
+
+    symbol = str(req.get("symbol") or (settings.get("watchlist") or ["BTCUSDT"])[0]).upper()
+    side = str(req.get("side") or "BUY").upper()
+    amount = float(req.get("amount") or 0)
+
+    blocks = []
+    warnings = []
+
+    live_status = binance_live_status() if "binance_live_status" in globals() else {"ok": False, "ready_for_live": False}
+    admin = admin_status() if "admin_status" in globals() else {"ok": False, "admin_active": False}
+    health = healthcheck() if "healthcheck" in globals() else {"ok": False, "status": "UNKNOWN", "warnings": ["healthcheck_missing"]}
+
+    if not bool(settings.get("live_executor_enabled", False)):
+        blocks.append("Live executor nincs bekapcsolva.")
+
+    if bool(settings.get("live_hard_stop_enabled", True)):
+        if not live_status.get("ready_for_live"):
+            blocks.append("Binance live status nem ready.")
+
+        if bool(settings.get("live_require_admin_active", True)) and not admin.get("admin_active"):
+            blocks.append("Admin session nem aktív.")
+
+        if state.get("safe_mode"):
+            blocks.append("Safe Mode aktív.")
+
+        if str(settings.get("execution_mode", "AUTO")).upper() == "OFF":
+            blocks.append("Execution mode OFF.")
+
+        if side == "BUY" and not bool(settings.get("live_allow_buy", False)):
+            blocks.append("Live BUY nincs engedélyezve.")
+
+        if side == "SELL" and not bool(settings.get("live_allow_sell", False)):
+            blocks.append("Live SELL nincs engedélyezve.")
+
+        max_order = float(settings.get("live_max_order_usdt_hard", settings.get("live_max_order_usdt", 10.0)) or 10.0)
+        if amount > max_order:
+            blocks.append(f"Order amount túl nagy: {amount} > hard limit {max_order}")
+
+        if amount <= 0:
+            blocks.append("Order amount <= 0.")
+
+        if bool(settings.get("live_block_if_health_warning", True)):
+            hw = health.get("warnings") or []
+            if hw:
+                blocks.append("Healthcheck warning van: " + ", ".join([str(x) for x in hw[:3]]))
+
+    trade_guard = {"ok": True}
+    if "trade_screen_check" in globals():
+        try:
+            trade_guard = trade_screen_check(symbol, side, settings)
+        except Exception as e:
+            trade_guard = {"ok": False, "error": str(e)}
+
+    if bool(settings.get("live_block_if_spread_bad", True)) and not trade_guard.get("ok", False):
+        blocks.append("Trade guard / spread / slippage nem OK.")
+
+    ai = {}
+    if "ai_advisor" in globals():
+        try:
+            ai = ai_advisor(symbol)
+        except Exception as e:
+            ai = {"ok": False, "error": str(e)}
+
+    rec = str(ai.get("recommendation", "")).upper()
+    if bool(settings.get("live_block_if_ai_hold", True)):
+        if rec in ["HOLD", "BLOCKED", "BLOCKED_SAFE_MODE", "BLOCKED_EXECUTION_OFF", "BLOCKED_TRADE_GUARD"]:
+            blocks.append("AI advisor nem engedi: " + rec)
+
+    if bool(settings.get("live_require_positive_after_tax", True)):
+        # BUY-nál nincs realizált pnl, ezért csak figyelmeztetés.
+        # SELL-nél ha van becsült gross profit, ellenőrizzük.
+        gross_pct = req.get("gross_profit_pct", None)
+        if gross_pct is not None:
+            ok_tax, tax_bd = is_after_tax_profit_ok(float(gross_pct), settings)
+            if not ok_tax:
+                blocks.append(
+                    "Adó/fee utáni profit nem elég: "
+                    + str(tax_bd.get("after_tax_pct"))
+                    + "% < "
+                    + str(settings.get("live_min_after_tax_profit_pct", settings.get("min_after_tax_profit_pct", 0.10)))
+                    + "%"
+                )
+        else:
+            warnings.append("Nincs gross_profit_pct adat, csak BUY/előzetes gate ellenőrzés.")
+
+    approved_ok = False
+    if bool(settings.get("live_require_approval", True)):
+        q = read_approval_queue(500) if "read_approval_queue" in globals() else {"items": []}
+        rid = req.get("id") or req.get("request_id")
+        for item in q.get("items", []):
+            if rid and item.get("id") == rid and item.get("status") in ["APPROVED", "DRY_RUN_EXECUTED"]:
+                approved_ok = True
+                break
+
+        if not approved_ok:
+            blocks.append("Nincs jóváhagyott approval request ehhez az orderhez.")
+    else:
+        approved_ok = True
+
+    allowed = len(blocks) == 0
+
+    out = {
+        "ok": True,
+        "allowed": allowed,
+        "symbol": symbol,
+        "side": side,
+        "amount": amount,
+        "blocks": blocks,
+        "warnings": warnings,
+        "live_status": live_status,
+        "admin_active": admin.get("admin_active"),
+        "health_status": health.get("status"),
+        "trade_guard_ok": trade_guard.get("ok"),
+        "ai_recommendation": rec,
+        "approved_ok": approved_ok,
+        "message": "LIVE ORDER NEM lett elküldve. Ez csak safety gate.",
+    }
+
+    audit_event("LIVE_ORDER_SAFETY_GATE", "Live order safety gate", out)
+    return out
+
+
+def simulate_live_order_gate_from_latest():
+    """
+    Legutóbbi approved/dry-run request alapján live gate szimuláció.
+    Nem küld ordert.
+    """
+    adm = admin_status()
+    if not adm.get("admin_active"):
+        return {"ok": False, "allowed": False, "error": "Admin login szükséges."}
+
+    q = read_approval_queue(500)
+    items = q.get("items", [])
+    candidates = [x for x in items if x.get("status") in ["APPROVED", "DRY_RUN_EXECUTED"]]
+
+    if not candidates:
+        return {"ok": False, "allowed": False, "error": "Nincs approved/dry-run request."}
+
+    req = candidates[-1]
+    return live_order_safety_gate(req)
+
+
+def live_executor_gate_status():
+    state = load_state()
+    settings = state.get("settings", {})
+
+    return {
+        "ok": True,
+        "live_executor_enabled": settings.get("live_executor_enabled", False),
+        "live_hard_stop_enabled": settings.get("live_hard_stop_enabled", True),
+        "live_require_admin_active": settings.get("live_require_admin_active", True),
+        "live_require_approval": settings.get("live_require_approval", True),
+        "live_require_positive_after_tax": settings.get("live_require_positive_after_tax", True),
+        "live_max_order_usdt_hard": settings.get("live_max_order_usdt_hard", 10.0),
+        "live_block_if_health_warning": settings.get("live_block_if_health_warning", True),
+        "live_block_if_spread_bad": settings.get("live_block_if_spread_bad", True),
+        "live_block_if_ai_hold": settings.get("live_block_if_ai_hold", True),
     }
 
 
