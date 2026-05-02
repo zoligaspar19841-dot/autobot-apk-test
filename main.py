@@ -582,6 +582,87 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreBinanceSignedScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]BINANCE SIGNED READ-ONLY[/b]\n[size=14]Signed preview + account read előkészítés, order nincs[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        ))
+
+        self.info = Label(text='Signed readonly státusz...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        buttons = [
+            ('STATUS', self.refresh),
+            ('SIGNED PREVIEW', self.preview),
+            ('ACCOUNT READ CHECK', self.account_read),
+            ('SECRETS', lambda: self.manager.go_to('secrets')),
+            ('BINANCE ACCOUNT', lambda: self.manager.go_to('binance_account')),
+            ('SETTINGS', lambda: self.manager.go_to('demo_settings')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self):
+        try:
+            st = demo_core.binance_signed_readonly_status()
+            lines = ['[b]Binance signed read-only státusz[/b]', '']
+            for k, v in st.items():
+                if k != 'ok':
+                    lines.append(f"{k}: {v}")
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Status hiba: ' + str(e)
+
+    def preview(self):
+        try:
+            res = demo_core.binance_signed_request_preview()
+            lines = ['[b]Signed preview[/b]', '']
+            for k, v in res.items():
+                lines.append(f"{k}: {v}")
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Preview hiba: ' + str(e)
+
+    def account_read(self):
+        try:
+            res = demo_core.binance_account_readonly_check()
+            lines = ['[b]Account read-only check[/b]', '']
+            for k, v in res.items():
+                lines.append(f"{k}: {v}")
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Account read hiba: ' + str(e)
+
+
+
 class DemoCoreBinanceAccountScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -2418,6 +2499,9 @@ class DemoCoreSettingsScreen(Screen):
             ('binance_test_order_type', 'Binance test order type'),
             ('binance_test_order_quote_qty', 'Binance test order quote qty'),
             ('binance_recv_window', 'Binance recvWindow'),
+            ('binance_base_url', 'Binance base URL'),
+            ('binance_signed_readonly_enabled', 'Binance signed readonly enabled true/false'),
+            ('binance_account_read_enabled', 'Binance account read enabled true/false'),
         ]
 
         for key, label in fields:
@@ -2580,6 +2664,9 @@ class DemoCoreSettingsScreen(Screen):
             cfg['binance_test_order_type'] = self.inputs['binance_test_order_type'].text.strip().upper() or 'MARKET'
             cfg['binance_test_order_quote_qty'] = float(self.inputs['binance_test_order_quote_qty'].text.replace(',', '.'))
             cfg['binance_recv_window'] = int(float(self.inputs['binance_recv_window'].text.replace(',', '.')))
+            cfg['binance_base_url'] = self.inputs['binance_base_url'].text.strip() or 'https://api.binance.com'
+            cfg['binance_signed_readonly_enabled'] = self.inputs['binance_signed_readonly_enabled'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['binance_account_read_enabled'] = self.inputs['binance_account_read_enabled'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -2797,6 +2884,12 @@ class DemoCoreScreen(Screen):
         except Exception as e:
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
+
+    def open_binance_signed(self):
+        try:
+            self.manager.go_to("binance_signed")
+        except Exception:
+            self.manager.current = "binance_signed"
 
     def open_binance_account(self):
         try:
@@ -3048,6 +3141,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreApprovalExecutorScreen(name="approval_executor"))
         sm.add_widget(DemoCoreLiveGateScreen(name="live_gate"))
         sm.add_widget(DemoCoreBinanceAccountScreen(name="binance_account"))
+        sm.add_widget(DemoCoreBinanceSignedScreen(name="binance_signed"))
         return sm
 
 if __name__ == "__main__":

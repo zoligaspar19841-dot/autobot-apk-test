@@ -1,4 +1,4 @@
-APP_VERSION = "0.3.6-demo-core"
+APP_VERSION = "0.3.7-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -11,6 +11,8 @@ from email.message import EmailMessage
 import smtplib
 import secrets as py_secrets
 import hashlib
+import urllib.parse
+import hmac
 import base64
 import os
 import time
@@ -58,6 +60,15 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+BINANCE_SIGNED_DEFAULTS = {
+    "binance_base_url": "https://api.binance.com",
+    "binance_signed_readonly_enabled": False,
+    "binance_account_read_enabled": False,
+    "binance_account_last_check_ts": 0,
+    "binance_account_last_ok": False,
+}
 
 BINANCE_ACCOUNT_DEFAULTS = {
     "binance_account_check_enabled": True,
@@ -276,6 +287,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "BINANCE_SIGNED_DEFAULTS" in globals():
+        for k, v in BINANCE_SIGNED_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -3285,6 +3302,121 @@ def binance_account_test_status():
         "test_order_type": settings.get("binance_test_order_type", "MARKET"),
         "test_order_quote_qty": settings.get("binance_test_order_quote_qty", 5.0),
         "recv_window": settings.get("binance_recv_window", 5000),
+    }
+
+
+
+def binance_signed_query(params, secret):
+    """
+    Binance signed query string előállítás.
+    Nem küld hálózati kérést.
+    """
+    params = dict(params or {})
+    qs = urllib.parse.urlencode(params, doseq=True)
+    sig = hmac.new(str(secret).encode("utf-8"), qs.encode("utf-8"), hashlib.sha256).hexdigest()
+    return qs + "&signature=" + sig
+
+
+def binance_signed_request_preview(method="GET", endpoint="/api/v3/account", params=None):
+    """
+    Signed request preview.
+    Nem küld kérést Binance felé.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+    sec = load_secrets_encrypted() if "load_secrets_encrypted" in globals() else {}
+
+    api_key = sec.get("binance_api_key", "")
+    api_secret = sec.get("binance_api_secret", "")
+
+    if not api_key or not api_secret:
+        return {
+            "ok": False,
+            "ready": False,
+            "error": "Binance API key/secret hiányzik.",
+            "method": method,
+            "endpoint": endpoint,
+        }
+
+    params = dict(params or {})
+    params.setdefault("timestamp", int(time.time() * 1000))
+    params.setdefault("recvWindow", int(settings.get("binance_recv_window", 5000) or 5000))
+
+    signed_qs = binance_signed_query(params, api_secret)
+
+    base_url = str(settings.get("binance_base_url", "https://api.binance.com")).rstrip("/")
+    url_preview = base_url + endpoint + "?" + signed_qs
+
+    # Secretet nem logolunk. Signature benne van a previewban, de csak local.
+    return {
+        "ok": True,
+        "ready": True,
+        "method": method.upper(),
+        "endpoint": endpoint,
+        "base_url": base_url,
+        "has_api_key": True,
+        "has_api_secret": True,
+        "headers": {"X-MBX-APIKEY": mask_secret(api_key) if "mask_secret" in globals() else "***"},
+        "signed_query_preview": signed_qs[:80] + "...",
+        "url_preview": url_preview[:120] + "...",
+        "note": "Preview only. Hálózati kérés NEM ment ki.",
+    }
+
+
+def binance_account_readonly_check():
+    """
+    Read-only Binance account check előkészítés.
+    Alapból nem küld hálózati kérést, amíg binance_account_read_enabled=False.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if not bool(settings.get("binance_signed_readonly_enabled", False)):
+        return {
+            "ok": False,
+            "called": False,
+            "reason": "binance_signed_readonly_enabled false",
+            "message": "Read-only signed Binance funkció kikapcsolva.",
+        }
+
+    preview = binance_signed_request_preview("GET", "/api/v3/account", {})
+
+    if not preview.get("ok"):
+        audit_event("BINANCE_ACCOUNT_READONLY_PREVIEW_FAIL", preview.get("error", ""), preview)
+        return preview | {"called": False}
+
+    if not bool(settings.get("binance_account_read_enabled", False)):
+        out = preview | {
+            "called": False,
+            "message": "Signed account request preview kész, de valós GET /api/v3/account nincs bekapcsolva.",
+        }
+        audit_event("BINANCE_ACCOUNT_READONLY_PREVIEW", "Read-only account preview", out)
+        return out
+
+    # Biztonsági okból ebben a patchben még akkor sem hívunk hálózatot.
+    out = preview | {
+        "called": False,
+        "message": "Read-only account GET még nincs aktiválva ebben a patchben. Következő külön lépés.",
+    }
+    audit_event("BINANCE_ACCOUNT_READONLY_NOT_CALLED", "Account read not called", out)
+    return out
+
+
+def binance_signed_readonly_status():
+    state = load_state()
+    settings = state.get("settings", {})
+    sec = load_secrets_encrypted() if "load_secrets_encrypted" in globals() else {}
+
+    return {
+        "ok": True,
+        "base_url": settings.get("binance_base_url", "https://api.binance.com"),
+        "signed_readonly_enabled": settings.get("binance_signed_readonly_enabled", False),
+        "account_read_enabled": settings.get("binance_account_read_enabled", False),
+        "has_api_key": bool(sec.get("binance_api_key")),
+        "has_api_secret": bool(sec.get("binance_api_secret")),
+        "last_check_ts": settings.get("binance_account_last_check_ts", 0),
+        "last_ok": settings.get("binance_account_last_ok", False),
+        "note": "Order endpoint nincs bekötve.",
     }
 
 

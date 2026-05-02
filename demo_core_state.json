@@ -130,7 +130,12 @@
     "binance_test_order_side": "BUY",
     "binance_test_order_type": "MARKET",
     "binance_test_order_quote_qty": 5.0,
-    "binance_recv_window": 5000
+    "binance_recv_window": 5000,
+    "binance_base_url": "https://api.binance.com",
+    "binance_signed_readonly_enabled": false,
+    "binance_account_read_enabled": false,
+    "binance_account_last_check_ts": 0,
+    "binance_account_last_ok": false
   },
   "last_action": "AI advisor: HOLD BTCUSDT",
   "safe_mode": false,
