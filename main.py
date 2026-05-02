@@ -585,6 +585,97 @@ class SectionScreen(Screen):
 
 
 
+
+class DemoCoreStartupSafetyScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]STARTUP SAFETY SUMMARY[/b]\n[size=14]Indulási biztonsági összefoglaló + first-run teendők[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        ))
+
+        self.info = Label(text='Startup safety...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        buttons = [
+            ('REFRESH', self.refresh),
+            ('FIRST RUN', self.first_run),
+            ('ADMIN', lambda: self.manager.go_to('admin')),
+            ('INTEGRÁCIÓK', lambda: self.manager.go_to('integrations')),
+            ('SECRETS', lambda: self.manager.go_to('secrets')),
+            ('SETTINGS', lambda: self.manager.go_to('demo_settings')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self):
+        try:
+            res = demo_core.startup_safety_summary()
+            lines = []
+            lines.append('[b]Startup Safety Summary[/b]')
+            lines.append(f"App version: {res.get('app_version')}")
+            lines.append(f"Health: {res.get('health')}")
+            lines.append('')
+            lines.append('[b]Safety flags:[/b]')
+            for k, v in (res.get('safety_flags') or {}).items():
+                lines.append(f"- {k}: {v}")
+            lines.append('')
+            if res.get('warnings'):
+                lines.append('[b]Warnings:[/b]')
+                for w in res.get('warnings') or []:
+                    lines.append('- ' + str(w))
+                lines.append('')
+            lines.append('[size=12]' + str(res.get('safe_message')) + '[/size]')
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Startup safety hiba: ' + str(e)
+
+    def first_run(self):
+        try:
+            res = demo_core.first_run_security_check()
+            lines = []
+            lines.append('[b]First-run security check[/b]')
+            lines.append(f"Complete: {res.get('complete')}")
+            lines.append(f"Missing required: {res.get('required_missing_count')}")
+            lines.append('')
+            for t in res.get('tasks') or []:
+                mark = '✅' if t.get('ok') else '⚠️'
+                req = 'KÖTELEZŐ' if t.get('required') else 'opcionális'
+                lines.append(f"{mark} [b]{t.get('title')}[/b] ({req})")
+                lines.append('   ' + str(t.get('detail')))
+            lines.append('')
+            lines.append(str(res.get('message')))
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'First-run hiba: ' + str(e)
+
+
+
 class DemoCoreIntegrationOverviewScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -2684,6 +2775,10 @@ class DemoCoreSettingsScreen(Screen):
             ('binance_real_account_get_enabled', 'Binance real account GET enabled true/false'),
             ('binance_http_timeout_sec', 'Binance HTTP timeout sec'),
             ('binance_balance_preview_assets', 'Binance balance preview assets'),
+            ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
+            ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
+            ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
+            ('first_run_show_live_warning', 'First-run show live warning true/false'),
         ]
 
         for key, label in fields:
@@ -2852,6 +2947,10 @@ class DemoCoreSettingsScreen(Screen):
             cfg['binance_real_account_get_enabled'] = self.inputs['binance_real_account_get_enabled'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
             cfg['binance_http_timeout_sec'] = float(self.inputs['binance_http_timeout_sec'].text.replace(',', '.'))
             cfg['binance_balance_preview_assets'] = self.inputs['binance_balance_preview_assets'].text.strip() or 'USDT,USDC,BTC,ETH,BNB,DOGE'
+            cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['first_run_show_live_warning'] = self.inputs['first_run_show_live_warning'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
 
             st['last_action'] = 'Demo settings mentve'
             demo_core.save_state(st)
@@ -3069,6 +3168,12 @@ class DemoCoreScreen(Screen):
         except Exception as e:
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
+
+    def open_startup_safety(self):
+        try:
+            self.manager.go_to("startup_safety")
+        except Exception:
+            self.manager.current = "startup_safety"
 
     def open_integrations(self):
         try:
@@ -3341,6 +3446,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreBinanceSignedScreen(name="binance_signed"))
         sm.add_widget(DemoCoreBinanceReadOnlyRealScreen(name="binance_readonly_real"))
         sm.add_widget(DemoCoreIntegrationOverviewScreen(name="integrations"))
+        sm.add_widget(DemoCoreStartupSafetyScreen(name="startup_safety"))
         return sm
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-APP_VERSION = "0.3.9-demo-core"
+APP_VERSION = "0.4.0-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -62,6 +62,14 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+STARTUP_SAFETY_DEFAULTS = {
+    "startup_safety_summary_enabled": True,
+    "first_run_require_admin_password_change": True,
+    "first_run_require_secrets_review": True,
+    "first_run_show_live_warning": True,
+}
 
 BINANCE_REAL_READONLY_DEFAULTS = {
     "binance_real_account_get_enabled": False,
@@ -294,6 +302,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "STARTUP_SAFETY_DEFAULTS" in globals():
+        for k, v in STARTUP_SAFETY_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -3753,6 +3767,116 @@ def readonly_activation_help():
         ],
         "current": st,
         "danger_note": "Ez csak /api/v3/account olvasás. Order endpoint továbbra sincs bekötve.",
+    }
+
+
+
+def first_run_security_check():
+    """
+    First-run wizard biztonsági állapot.
+    Nem hív hálózatot, nem küld ordert.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    admin = admin_status() if "admin_status" in globals() else {"ok": False}
+    integ = integration_overview_status() if "integration_overview_status" in globals() else {"ok": False, "items": []}
+    live = binance_live_status() if "binance_live_status" in globals() else {"ok": False}
+    readonly = binance_readonly_real_status() if "binance_readonly_real_status" in globals() else {"ok": False}
+
+    tasks = []
+
+    tasks.append({
+        "id": "admin_password",
+        "title": "Admin jelszó csere",
+        "required": bool(settings.get("first_run_require_admin_password_change", True)),
+        "ok": not bool(admin.get("must_change_default", True)),
+        "detail": "Alap admin/admin jelszót első használatkor cserélni kell.",
+    })
+
+    tasks.append({
+        "id": "secrets_review",
+        "title": "Secrets / integrációk ellenőrzése",
+        "required": bool(settings.get("first_run_require_secrets_review", True)),
+        "ok": bool(integ.get("ok")),
+        "detail": "Binance/OpenAI/E-mail kulcsok helyi titkosított tárolóban kezelhetők.",
+    })
+
+    tasks.append({
+        "id": "live_warning",
+        "title": "Live mód figyelmeztetés",
+        "required": bool(settings.get("first_run_show_live_warning", True)),
+        "ok": not bool(live.get("live_mode_enabled", False)) or bool(live.get("ready_for_live", False)),
+        "detail": "Live order csak safety gate, approval, API és külön kapcsolók után engedhető.",
+    })
+
+    tasks.append({
+        "id": "readonly_warning",
+        "title": "Read-only Binance olvasás",
+        "required": False,
+        "ok": not bool(readonly.get("real_account_get_enabled", False)) or bool(readonly.get("has_api_key") and readonly.get("has_api_secret")),
+        "detail": "Valódi account olvasás csak 3 külön kapcsolóval és API kulccsal fut.",
+    })
+
+    required_bad = [t for t in tasks if t.get("required") and not t.get("ok")]
+
+    return {
+        "ok": True,
+        "complete": len(required_bad) == 0,
+        "required_missing_count": len(required_bad),
+        "tasks": tasks,
+        "message": "First-run kész." if len(required_bad) == 0 else "First-run teendők vannak.",
+    }
+
+
+def startup_safety_summary():
+    """
+    Indulási biztonsági összefoglaló.
+    UI-nak és diagnosztikának.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    health = healthcheck() if "healthcheck" in globals() else {"ok": False}
+    admin = admin_status() if "admin_status" in globals() else {"ok": False}
+    live = live_executor_gate_status() if "live_executor_gate_status" in globals() else {"ok": False}
+    binance = binance_readonly_real_status() if "binance_readonly_real_status" in globals() else {"ok": False}
+    integ = integration_overview_status() if "integration_overview_status" in globals() else {"ok": False, "warnings": []}
+    first = first_run_security_check() if "first_run_security_check" in globals() else {"ok": False}
+
+    safety_flags = {
+        "safe_mode": bool(state.get("safe_mode", False)),
+        "running": bool(state.get("running", False)),
+        "execution_mode": settings.get("execution_mode", "AUTO"),
+        "live_executor_enabled": settings.get("live_executor_enabled", False),
+        "live_buy_allowed": settings.get("live_allow_buy", False),
+        "live_sell_allowed": settings.get("live_allow_sell", False),
+        "order_endpoint_bound": False,
+        "readonly_real_get_enabled": binance.get("real_account_get_enabled", False),
+        "admin_active": admin.get("admin_active", False),
+        "first_run_complete": first.get("complete", False),
+    }
+
+    warnings = []
+    warnings.extend(integ.get("warnings", []) or [])
+
+    if settings.get("live_executor_enabled", False):
+        warnings.append("Live executor ON. Csak safety gate + approval után engedhető.")
+
+    if settings.get("live_allow_buy", False) or settings.get("live_allow_sell", False):
+        warnings.append("Live BUY/SELL kapcsoló ON. Ellenőrizd API és approval állapotot.")
+
+    if first.get("required_missing_count", 0) > 0:
+        warnings.append("First-run kötelező teendő van: " + str(first.get("required_missing_count")))
+
+    return {
+        "ok": True,
+        "app_version": globals().get("APP_VERSION", ""),
+        "health": health.get("status", "UNKNOWN"),
+        "safety_flags": safety_flags,
+        "warnings": warnings,
+        "first_run": first,
+        "safe_message": "Order endpoint nincs bekötve. APK buildhez nem nyúltunk.",
     }
 
 

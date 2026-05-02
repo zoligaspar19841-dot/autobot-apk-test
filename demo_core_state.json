@@ -138,11 +138,15 @@
     "binance_account_last_ok": false,
     "binance_real_account_get_enabled": false,
     "binance_http_timeout_sec": 8,
-    "binance_balance_preview_assets": "USDT,USDC,BTC,ETH,BNB,DOGE"
+    "binance_balance_preview_assets": "USDT,USDC,BTC,ETH,BNB,DOGE",
+    "startup_safety_summary_enabled": true,
+    "first_run_require_admin_password_change": true,
+    "first_run_require_secrets_review": true,
+    "first_run_show_live_warning": true
   },
   "last_action": "AI advisor: HOLD BTCUSDT",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
-  "last_heartbeat_ts": 1777765120,
+  "last_heartbeat_ts": 1777765531,
   "cooldowns": {}
 }
