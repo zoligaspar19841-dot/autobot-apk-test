@@ -342,6 +342,51 @@ class SkeletonScreen(Screen):
         self.add_widget(root)
 
 
+
+class DemoResetScreen(Screen):
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        root = BoxLayout(orientation="vertical", padding=18, spacing=12)
+
+        root.add_widget(Label(
+            text="DEMO RESET",
+            font_size=34,
+            bold=True,
+            color=(1,.75,0,1),
+            size_hint_y=.16
+        ))
+
+        self.info = Label(
+            text="Demo számla visszaállítása:\n\n"
+                 "- egyenleg: 100 USDC\n"
+                 "- profit/loss: 0\n"
+                 "- futás: leállítva\n\n"
+                 "Live módot nem érinti.",
+            font_size=22
+        )
+        root.add_widget(self.info)
+
+        reset = button("DEMO RESET FUTTATÁSA", (1,.50,0,1), 24)
+        back = button("VISSZA A MASTER LISTÁHOZ", (.35,.35,.35,1), 23)
+
+        reset.bind(on_press=self.do_reset)
+        back.bind(on_press=lambda x: setattr(self.manager, "current", "master"))
+
+        root.add_widget(reset)
+        root.add_widget(back)
+        self.add_widget(root)
+
+    def do_reset(self, x):
+        st = load_state()
+        st["mode"] = "demo"
+        st["demo"] = {"balance": 100.0, "profit": 0.0, "running": False}
+        if "live" not in st:
+            st["live"] = {"running": False, "api_ready": False}
+        st["last_msg"] = "Demo reset kész"
+        save_json(STATE_FILE, st)
+        self.info.text = "✅ Demo Reset kész!\n\nEgyenleg: 100 USDC\nProfit/Loss: 0\nBot: leállítva"
+
+
 class TextScreen(Screen):
     def __init__(self, title, body, **kw):
         super().__init__(**kw)
@@ -377,7 +422,7 @@ class AppMain(App):
         sm.add_widget(SkeletonScreen("PC + GOOGLE DRIVE SYNC", "Primary/Secondary, Push to PC, Drive backup/import/export.\nBekötés később.", name="pc_drive_sync"))
         sm.add_widget(SkeletonScreen("DIAGNOSTICS / TESTS", "Routes, state, build/version, OpenAPI, toast visszajelzés.\nBekötés később.", name="diagnostics"))
         sm.add_widget(SkeletonScreen("PATCH MANAGER UI", "Beépített UI, JSON validáció, piros/zöld jelzés, real-time mentés.\nBekötés később.", name="patch_manager_ui"))
-        sm.add_widget(SkeletonScreen("DEMO RESET", "Csak Demo: 100 USDC, P/L nullázás, pozíciók zárása, grafikon ürítés.\nBekötés később.", name="demo_reset"))
+        sm.add_widget(DemoResetScreen(name="demo_reset"))
         sm.add_widget(SkeletonScreen("FÁJLSZERKEZET", "main.py, autobot_core.py, settings, state, trades, logs, patch.sh.\nStruktúra később részletezve.", name="file_structure"))
         sm.add_widget(SkeletonScreen("EXTRA FEJLESZTÉSEK", "Smart cooldown, volatility filter, max drawdown, auto parameter tuning.\nBekötés később.", name="extra_features"))
         sm.add_widget(SkeletonScreen("SAFETY GUARDS", "Spread guard, slippage guard, API rate-limit, Panic Stop-All, Safe Mode.\nBekötés később.", name="safety_guards"))
