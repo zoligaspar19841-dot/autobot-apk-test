@@ -72,13 +72,13 @@ class MainMenu(Screen):
 
         header = Card(bg=(0.03,0.03,0.03,1), orientation="vertical", size_hint_y=.22)
         header.add_widget(Label(text="🤖 BINANCE AUTOBOT", font_size=26, bold=True, color=(1,0.75,0,1)))
-        header.add_widget(Label(text="Demo / Live külön menü • Binance adat • AI/Stratégia • Export", font_size=13, color=(.85,.85,.85,1)))
+        header.add_widget(Label(text="Demo / Live külön menü • Binance adat • AI/Stratégia • Export", font_size=16, color=(.85,.85,.85,1)))
         root.add_widget(header)
 
         big = GridLayout(cols=2, spacing=12, size_hint_y=.30)
 
-        demo = Button(text="📊 DEMO\nnarancs/sárga dashboard", font_size=20, bold=True, background_color=(1,.55,0,1))
-        live = Button(text="💎 LIVE\nkék sci-fi dashboard", font_size=20, bold=True, background_color=(0,.32,1,1))
+        demo = Button(text="DEMO\nNarancs / sárga dashboard", font_size=24, bold=True, background_color=(1,.55,0,1))
+        live = Button(text="LIVE\nKék sci-fi dashboard", font_size=24, bold=True, background_color=(0,.32,1,1))
 
         demo.bind(on_press=lambda x: setattr(self.manager, "current", "demo"))
         live.bind(on_press=lambda x: setattr(self.manager, "current", "live"))
@@ -90,14 +90,15 @@ class MainMenu(Screen):
         menu = GridLayout(cols=2, spacing=10, size_hint_y=.40)
 
         items = [
-            ("🔐 SECURITY / API", "security", (.18,.18,.18,1)),
-            ("🎯 AI / STRATÉGIA", "strategy", (.18,.18,.18,1)),
-            ("📁 NAPLÓ / EXPORT", "logs", (.18,.18,.18,1)),
-            ("⚙️ ADVANCED", "advanced", (.18,.18,.18,1)),
+            ("BIZTONSÁG / API", "security", (.18,.18,.18,1)),
+            ("BEÁLLÍTÁSOK", "settings", (.18,.18,.18,1)),
+            ("AI / STRATÉGIA", "strategy", (.18,.18,.18,1)),
+            ("NAPLÓ / EXPORT", "logs", (.18,.18,.18,1)),
+            ("HALADÓ", "advanced", (.18,.18,.18,1)),
         ]
 
         for txt, scr, col in items:
-            b = Button(text=txt, font_size=18, bold=True, background_color=col)
+            b = Button(text=txt, font_size=22, bold=True, background_color=col)
             b.bind(on_press=lambda x, s=scr: setattr(self.manager, "current", s))
             menu.add_widget(b)
 
@@ -136,10 +137,10 @@ class DashboardScreen(Screen):
         root.add_widget(kpis)
 
         buttons = GridLayout(cols=2, spacing=10, size_hint_y=.20)
-        start = Button(text="🚀 START BOT", font_size=18, bold=True, background_color=(0.15,.7,.25,1))
-        stop = Button(text="⏹ STOP BOT", font_size=18, bold=True, background_color=(.9,.1,.1,1))
-        reset = Button(text="🔄 DEMO RESET" if mode=="demo" else "🔐 API CHECK", font_size=18, bold=True, background_color=(1,.55,0,1))
-        back = Button(text="⬅ VISSZA", font_size=18, bold=True, background_color=(.25,.25,.25,1))
+        start = Button(text="🚀 START BOT", font_size=22, bold=True, background_color=(0.15,.7,.25,1))
+        stop = Button(text="⏹ STOP BOT", font_size=22, bold=True, background_color=(.9,.1,.1,1))
+        reset = Button(text="🔄 DEMO RESET" if mode=="demo" else "🔐 API CHECK", font_size=22, bold=True, background_color=(1,.55,0,1))
+        back = Button(text="⬅ VISSZA", font_size=22, bold=True, background_color=(.25,.25,.25,1))
 
         start.bind(on_press=self.start_bot)
         stop.bind(on_press=self.stop_bot)
@@ -150,7 +151,7 @@ class DashboardScreen(Screen):
             buttons.add_widget(b)
 
         root.add_widget(buttons)
-        self.footer = Label(text="Trend + KPI dashboard alap kész. Következő: élő coin lista, stratégia, export.", font_size=12, size_hint_y=.06)
+        self.footer = Label(text="Trend + KPI dashboard alap kész. Következő: coin lista, Demo beállítások, stratégia, export.", font_size=15, size_hint_y=.06)
         root.add_widget(self.footer)
 
         self.add_widget(root)
@@ -179,7 +180,7 @@ class SimpleScreen(Screen):
         root = BoxLayout(orientation="vertical", padding=18, spacing=12)
         root.add_widget(Label(text=title, font_size=24, bold=True, color=(1,.75,0,1), size_hint_y=.16))
         root.add_widget(Label(text=body, font_size=16, halign="center"))
-        b = Button(text="⬅ VISSZA", font_size=18, size_hint_y=.15, background_color=(.25,.25,.25,1))
+        b = Button(text="⬅ VISSZA", font_size=22, size_hint_y=.15, background_color=(.25,.25,.25,1))
         b.bind(on_press=lambda x: setattr(self.manager, "current", "main"))
         root.add_widget(b)
         self.add_widget(root)
@@ -192,10 +193,11 @@ class MyApp(App):
         sm.add_widget(MainMenu(name="main"))
         sm.add_widget(DashboardScreen("📊 DEMO DASHBOARD", "demo", (1,.48,0,1), name="demo"))
         sm.add_widget(DashboardScreen("💎 LIVE DASHBOARD", "live", (.04,.20,.48,1), name="live"))
-        sm.add_widget(SimpleScreen("🔐 SECURITY / API", "Itt lesz:\nBinance API kulcs\nE-mail\nJelszó / PIN\nTitkosítás", name="security"))
-        sm.add_widget(SimpleScreen("🎯 AI / STRATÉGIA", "Itt lesz:\nNormal / Hybrid / Sniper\nSMA / RSI / ATR\nAI mód: Auto / Manual / Off", name="strategy"))
-        sm.add_widget(SimpleScreen("📁 NAPLÓ / EXPORT", "Itt lesz:\nTrades lista\nCSV export\nProfit report", name="logs"))
-        sm.add_widget(SimpleScreen("⚙️ ADVANCED", "Itt lesz:\nSchedules\nLaunchpool / Airdrop\nPatch Manager\nDiagnostics", name="advanced"))
+        sm.add_widget(SimpleScreen("BIZTONSÁG / API", "Itt lesz:\nBinance API kulcs\nE-mail\nJelszó / PIN\nTitkosítás", name="security"))
+        sm.add_widget(SimpleScreen("BEÁLLÍTÁSOK", "Itt lesz:\nDemo beállítások\nLive beállítások\nAlap pénznem\nKockázat %\nNyelv / téma", name="settings"))
+        sm.add_widget(SimpleScreen("AI / STRATÉGIA", "Itt lesz:\nNormal / Hybrid / Sniper\nSMA / RSI / ATR\nAI mód: Auto / Manual / Off", name="strategy"))
+        sm.add_widget(SimpleScreen("NAPLÓ / EXPORT", "Itt lesz:\nTrades lista\nCSV export\nProfit report", name="logs"))
+        sm.add_widget(SimpleScreen("HALADÓ", "Itt lesz:\nSchedules\nLaunchpool / Airdrop\nPatch Manager\nDiagnostics", name="advanced"))
         return sm
 
 if __name__ == "__main__":
