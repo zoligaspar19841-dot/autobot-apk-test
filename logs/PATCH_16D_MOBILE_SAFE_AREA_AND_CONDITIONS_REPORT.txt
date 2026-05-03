@@ -1,0 +1,14 @@
+PATCH 16D OK
+Date: Sun May  3 22:15:50 CEST 2026
+
+Javítás:
+- mobil alsó safe-area hozzáadva
+- böngészősáv miatti kitakarás ellen extra alsó hely
+- Report oldal feltétel / safety checklist
+- Demo mód feltétel megjelenítve
+- Live mód figyelmeztetés megjelenítve
+- Live order tiltás külön jelölve
+- titkosítás / API / report / profit-hold következő lépésként jelölve
+- APK build NEM indult
+- Commit NEM történt
+- Binance order NEM történt
