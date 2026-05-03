@@ -32,10 +32,16 @@ jobs:
             libncurses5 libffi-dev libssl-dev \
             build-essential
 
-      - name: Install Buildozer and Cython
+      - name: Install Buildozer with pinned Cython
         run: |
           python -m pip install --upgrade pip wheel setuptools
-          pip install buildozer cython
+          pip uninstall -y cython Cython || true
+          pip install "Cython==0.29.36"
+          pip install buildozer
+          python - <<'PY'
+          import Cython
+          print("CYTHON_VERSION =", Cython.__version__)
+          PY
 
       - name: Precheck apk_stage
         run: |
@@ -47,6 +53,12 @@ jobs:
           echo "=== PY COMPILE ==="
           python -m py_compile main.py demo_core_engine.py
 
+      - name: Clean old Buildozer cache
+        run: |
+          rm -rf apk_stage/.buildozer
+          rm -rf ~/.buildozer/android/platform/build-*
+          echo "OK: build cache cleaned"
+
       - name: Build APK with full log
         run: |
           mkdir -p ci_logs
@@ -57,7 +69,7 @@ jobs:
           echo "$CODE" > ../ci_logs/buildozer_exit_code.txt
 
           echo "=== ERROR SEARCH ===" | tee ../ci_logs/error_search.txt
-          grep -niE "error:|failed|exception|traceback|no such file|command failed|stderr|fatal|could not|undefined|permission denied" ../ci_logs/buildozer_full.log | tail -120 | tee -a ../ci_logs/error_search.txt || true
+          grep -niE "error:|failed|exception|traceback|no such file|command failed|stderr|fatal|could not|undefined|permission denied|undeclared" ../ci_logs/buildozer_full.log | tail -160 | tee -a ../ci_logs/error_search.txt || true
 
           echo "=== LAST 300 LINES ===" | tee ../ci_logs/last_300_lines.txt
           tail -300 ../ci_logs/buildozer_full.log | tee -a ../ci_logs/last_300_lines.txt
