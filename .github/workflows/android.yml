@@ -64,7 +64,6 @@ jobs:
           mkdir -p ci_logs
           cd apk_stage
           set +e
-
       - name: Prepare fixed debug keystore
         run: |
           mkdir -p ~/.android
@@ -72,7 +71,7 @@ jobs:
           chmod 600 ~/.android/debug.keystore
           keytool -list -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey || true
         # PATCH 13D FIXED DEBUG KEYSTORE
-          buildozer -v android debug 2>&1 | tee ../ci_logs/buildozer_full.log
+buildozer -v android debug 2>&1 | tee ../ci_logs/buildozer_full.log
           CODE=${PIPESTATUS[0]}
           echo "$CODE" > ../ci_logs/buildozer_exit_code.txt
 
