@@ -5653,7 +5653,7 @@ class AppMain(App):
     def build(self):
         Window.clearcolor = (0, 0, 0, 1)
         sm = HistoryScreenManager()
-        safe_add_screen(sm, Main(name="main"))
+        safe_add_screen(sm, MasterMenu(name="main"))
         sm.add_widget(Dashboard("demo", ORANGE, name="demo"))
         sm.add_widget(Dashboard("live", BLUE, name="live"))
         safe_add_screen(sm, Scanner(name="scanner"))

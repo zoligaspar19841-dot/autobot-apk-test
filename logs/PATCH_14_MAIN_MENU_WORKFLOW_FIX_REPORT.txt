@@ -1,0 +1,9 @@
+PATCH 14 OK
+Date: Sun May  3 18:53:14 CEST 2026
+Fixek:
+- main screen: MasterMenu aktiv
+- regi Main grid nem aktiv
+- GitHub workflow tiszta YAML
+- keystore blokk opcionalis
+- APK build nem indult
+- Binance order nem tortent

@@ -1,3 +1,56 @@
+#!/usr/bin/env bash
+set -u
+
+echo "=== PATCH 14: MAIN MENU + GITHUB WORKFLOW FIX - APK BUILD NELKUL ==="
+echo "Nem buildel, nem kuld Binance ordert. Csak main menu es workflow javitas."
+
+cd "${1:-$PWD}"
+
+if [ ! -f main.py ]; then
+  echo "HIBA: main.py nem talalhato. Elobb: cd ~/autobot-apk-test"
+  exit 1
+fi
+
+TS=$(date +%Y%m%d_%H%M%S)
+mkdir -p backups logs .github/workflows
+
+backup_file() {
+  f="$1"
+  if [ -f "$f" ]; then
+    cp "$f" "backups/$(basename "$f").bak_patch14_$TS"
+    echo "BACKUP: $f -> backups/$(basename "$f").bak_patch14_$TS"
+  fi
+}
+
+backup_file main.py
+backup_file apk_stage/main.py
+backup_file .github/workflows/android.yml
+
+patch_main() {
+  f="$1"
+  [ -f "$f" ] || return 0
+  python3 - "$f" <<'PY'
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+s = p.read_text(encoding='utf-8', errors='replace')
+orig = s
+
+s = s.replace('safe_add_screen(sm, Main(name="main"))', 'safe_add_screen(sm, MasterMenu(name="main"))')
+s = s.replace("safe_add_screen(sm, Main(name='main'))", "safe_add_screen(sm, MasterMenu(name='main'))")
+
+if s != orig:
+    p.write_text(s, encoding='utf-8')
+    print('OK patched:', p)
+else:
+    print('NO CHANGE needed:', p)
+PY
+}
+
+patch_main main.py
+patch_main apk_stage/main.py
+
+cat > .github/workflows/android.yml <<'YAML'
 name: Build APK
 
 on:
@@ -88,3 +141,30 @@ jobs:
         with:
           name: build-logs
           path: ci_logs/
+YAML
+
+echo "=== Python compile ellenorzes ==="
+python3 -m py_compile main.py demo_core_engine.py autobot_core.py ai_engine.py auth_manager.py version_manager.py make_apk_stage.py || exit 1
+if [ -f apk_stage/main.py ]; then
+  python3 -m py_compile apk_stage/main.py || exit 1
+fi
+
+echo "=== Gyors route/main ellenorzes ==="
+grep -n "safe_add_screen(sm, MasterMenu(name=\"main\"))\|safe_add_screen(sm, MasterMenu(name='main'))" main.py apk_stage/main.py || true
+grep -n "name: Build APK\|Prepare fixed debug keystore\|Build APK with full log\|Upload APK" .github/workflows/android.yml || true
+
+cat > logs/PATCH_14_MAIN_MENU_WORKFLOW_FIX_REPORT.txt <<EOF
+PATCH 14 OK
+Date: $(date)
+Fixek:
+- main screen: MasterMenu aktiv
+- regi Main grid nem aktiv
+- GitHub workflow tiszta YAML
+- keystore blokk opcionalis
+- APK build nem indult
+- Binance order nem tortent
+EOF
+
+echo "=== PATCH 14 KESZ ==="
+echo "Jelentes: logs/PATCH_14_MAIN_MENU_WORKFLOW_FIX_REPORT.txt"
+echo "APK build NEM indult. Commit NEM tortent."
