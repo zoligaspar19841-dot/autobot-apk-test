@@ -1,4 +1,4 @@
-APP_VERSION = "0.4.7-demo-core"
+APP_VERSION = "0.4.8-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -69,6 +69,14 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+MASTER_STATUS_DEFAULTS = {
+    "master_status_enabled": True,
+    "master_status_show_next_steps": True,
+    "master_status_show_modules": True,
+    "master_status_show_missing": True,
+}
 
 TREND_AUTO_REFRESH_DEFAULTS = {
     "trend_auto_snapshot_enabled": True,
@@ -356,6 +364,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "MASTER_STATUS_DEFAULTS" in globals():
+        for k, v in MASTER_STATUS_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -4961,6 +4975,265 @@ def trend_auto_refresh_status():
         "dashboard_auto_refresh_interval_sec": settings.get("dashboard_auto_refresh_interval_sec", 15),
         "last_trend_snapshot_ts": state.get("last_trend_snapshot_ts", 0),
         "history_points": len(hist),
+        "order_endpoint_used": False,
+    }
+
+
+
+def _safe_call(fn_name, default=None):
+    try:
+        fn = globals().get(fn_name)
+        if callable(fn):
+            return fn()
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    return default if default is not None else {"ok": False, "reason": "missing_" + str(fn_name)}
+
+
+def module_readiness_status():
+    """
+    Fő modulok készültségi állapota.
+    Ez nem futtat ordert, csak meglévő status/cache függvényekből olvas.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    checks = []
+
+    def add(mid, title, ok, detail="", weight=1):
+        checks.append({
+            "id": mid,
+            "title": title,
+            "ok": bool(ok),
+            "detail": detail,
+            "weight": weight,
+        })
+
+    secrets = _safe_call("secrets_status", {})
+    email = _safe_call("email_config_status", {})
+    openai = _safe_call("openai_config_status", {})
+    live = _safe_call("binance_live_status", {})
+    health = _safe_call("healthcheck", {})
+    trend = _safe_call("trend_auto_refresh_status", {})
+    portfolio = _safe_call("spot_portfolio_status", {})
+    live_gate = _safe_call("live_executor_gate_status", {})
+    readonly = _safe_call("binance_readonly_real_status", {})
+    package = _safe_call("apk_reference_status", {})
+
+    add("demo_core", "Demo Core", True, "Core modul aktív")
+    add("settings", "Settings", bool(settings), "settings state létezik")
+    add("logs", "Logs / Audit", bool(globals().get("AUDIT_LOG")), "audit/trade log modul")
+    add("healthcheck", "Healthcheck / Heartbeat", health.get("ok"), str(health.get("status", "")))
+    add("safe_mode", "Panic Stop / Safe Mode", "panic_stop" in globals() and "safe_mode_off" in globals(), "panic + safe mode függvények")
+    add("execution_mode", "Execution Mode", bool(settings.get("execution_mode")), str(settings.get("execution_mode")))
+    add("profit_hold", "Profit Hold / Smart Exit", "hold_profit_minutes" in str(settings), "profit tartás beállítások")
+    add("scanner", "Multi-symbol Scanner", "scan_symbols" in globals(), "scanner függvény")
+    add("fee_tax", "Fee + Tax", "pnl_pct_breakdown" in globals(), "nettó/adó utáni PnL")
+    add("trade_guard", "Trade Screen Guard", "trade_screen_check" in globals(), "BBO/spread/slippage")
+    add("ai_advisor", "AI Advisor", "ai_advisor" in globals(), "offline/API advisor alap")
+    add("secrets", "Encrypted Secrets", secrets.get("encrypted_file") or secrets.get("openai_ok"), "secrets.enc státusz")
+    add("email", "Email Notify", "send_email_notification" in globals(), "email alap modul")
+    add("openai", "OpenAI API", "call_openai_advisor" in globals(), "opcionális API fallback")
+    add("binance_live_check", "Binance Live Check", live.get("ok"), "nem küld ordert")
+    add("readonly_account", "Read-only Account", readonly.get("ok"), str(readonly.get("message", readonly.get("reason", ""))))
+    add("live_gate", "Live Safety Gate", live_gate.get("ok"), "hard-stop gate")
+    add("approval", "Approval / Dry-run", "create_approval_request" in globals() and "execute_latest_approved_dry_run" in globals(), "approval queue")
+    add("portfolio", "Spot Portfolio Sync", portfolio.get("ok"), "total/tradable cache")
+    add("trend", "Trend / Chart / Export", trend.get("ok"), "trend auto snapshot")
+    add("backtest", "Backtest / Diagnostics", "backtest_symbol" in globals() and "diagnostics_status" in globals(), "backtest alap")
+    add("schedules", "Schedules", "run_schedules_once" in globals(), "snapshot/trigger alap")
+    add("launchpool", "Launchpool / Airdrop", "launchpool_scan" in globals(), "watch alap")
+    add("package", "Package / Snapshot", package.get("ok") if isinstance(package, dict) else "export_project_package" in globals(), "APK reference/package")
+    add("sync", "PC / Drive Sync", "sync_status" in globals(), "sync alap")
+    add("first_run", "First-run Safety", "first_run_security_check" in globals(), "startup safety")
+    add("admin", "Admin Security", "admin_status" in globals() and "admin_login" in globals(), "5 perc timeout")
+    add("patch_manager", "Patch Manager", "queue_patch" in globals() or "patch_manager_status" in globals(), "safe queue")
+
+    total_weight = sum(int(x.get("weight", 1)) for x in checks) or 1
+    ok_weight = sum(int(x.get("weight", 1)) for x in checks if x.get("ok"))
+
+    score = round((ok_weight / total_weight) * 100.0, 2)
+
+    return {
+        "ok": True,
+        "score_pct": score,
+        "ok_count": sum(1 for x in checks if x.get("ok")),
+        "total_count": len(checks),
+        "modules": checks,
+        "order_endpoint_used": False,
+    }
+
+
+def missing_setup_status():
+    """
+    Hiányzó vagy még bekapcsolatlan kritikus beállítások.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+    missing = []
+    warnings = []
+
+    sec = _safe_call("load_secrets", {})
+    if not isinstance(sec, dict):
+        sec = {}
+
+    def miss(key, title, level="warning", detail=""):
+        row = {
+            "key": key,
+            "title": title,
+            "level": level,
+            "detail": detail,
+        }
+        if level == "critical":
+            missing.append(row)
+        else:
+            warnings.append(row)
+
+    if not sec.get("binance_api_key"):
+        miss("binance_api_key", "Binance API key nincs megadva", "warning", "Live/read-only teszthez kell.")
+    if not sec.get("binance_api_secret"):
+        miss("binance_api_secret", "Binance API secret nincs megadva", "warning", "Signed read-only ellenőrzéshez kell.")
+    if not sec.get("openai_api_key"):
+        miss("openai_api_key", "OpenAI API key nincs megadva", "warning", "AI API módhoz kell, offline AI ettől még működik.")
+    if not sec.get("email_user") or not sec.get("email_app_password") or not sec.get("email_to"):
+        miss("email_config", "E-mail adatok hiányosak", "warning", "Teszt e-mailhez és riasztáshoz kell.")
+    if not sec.get("google_drive_token"):
+        miss("google_drive_token", "Google Drive token nincs megadva", "warning", "Drive sync teljes működéséhez kell.")
+    if not sec.get("pc_sync_token"):
+        miss("pc_sync_token", "PC sync token nincs megadva", "warning", "PC agent későbbi kapcsolathoz kell.")
+
+    if not bool(settings.get("binance_signed_readonly_enabled", False)):
+        miss("binance_signed_readonly_enabled", "Signed read-only nincs bekapcsolva", "warning", "Első valódi account olvasáshoz külön engedély kell.")
+    if not bool(settings.get("binance_account_read_enabled", False)):
+        miss("binance_account_read_enabled", "Account read nincs bekapcsolva", "warning", "Balance sync valódi Binance olvasáshoz kell.")
+    if not bool(settings.get("binance_real_account_get_enabled", False)):
+        miss("binance_real_account_get_enabled", "Real account GET nincs bekapcsolva", "warning", "Valódi /api/v3/account olvasáshoz kell.")
+
+    if bool(settings.get("live_mode_enabled", False)):
+        live = _safe_call("binance_live_status", {})
+        if not live.get("ready_for_live"):
+            miss("live_not_ready", "Live mód aktív, de nem ready", "critical", "Hiányzó API/jóváhagyás/safety miatt.")
+
+    # Ez szándékosan jó: order endpoint még nincs bekötve
+    if bool(settings.get("live_executor_enabled", False)):
+        miss("live_executor_enabled", "Live executor be van kapcsolva", "critical", "Csak végső hard-confirm után legyen engedve.")
+
+    return {
+        "ok": True,
+        "critical_missing_count": len(missing),
+        "warnings_count": len(warnings),
+        "critical": missing,
+        "warnings": warnings,
+        "safe_note": "Order endpoint továbbra sincs bekötve.",
+        "order_endpoint_used": False,
+    }
+
+
+def next_recommended_steps():
+    """
+    Következő logikus fejlesztési lépések.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+    mod = module_readiness_status()
+    miss = missing_setup_status()
+
+    steps = []
+
+    def add(priority, title, reason, patch=""):
+        steps.append({
+            "priority": priority,
+            "title": title,
+            "reason": reason,
+            "patch": patch,
+        })
+
+    if miss.get("warnings_count", 0) > 0:
+        add(1, "Secrets / Integrációk kitöltése és tesztelése", "API/OpenAI/email/Drive/PC mezők hiányozhatnak.", "PATCH_INTEGRATION_TESTS_UI.sh")
+
+    if "master_status" not in str(settings):
+        add(2, "Master Status UI finomítás", "Áttekintő képernyő után könnyebb fejleszteni.", "PATCH_MASTER_STATUS_UI_POLISH.sh")
+
+    add(3, "Modern Dashboard KPI kártyák", "A dashboard adat már megvan, most UI-kártyákba kell rendezni.", "PATCH_DASHBOARD_MODERN_KPI_CARDS.sh")
+    add(4, "Top coin mini-kártyák", "Scanner + portfolio cache alapján top coin lista kell.", "PATCH_TOP_COIN_CARDS.sh")
+    add(5, "Demo Reset megerősítő popup", "Biztonságosabb reset, csak Demo módban.", "PATCH_DEMO_RESET_CONFIRM_MODAL.sh")
+    add(6, "Trade Simple / Advanced szétválasztás", "Beállítások már vannak, UI-t kell rendezni.", "PATCH_TRADE_SIMPLE_ADVANCED_UI.sh")
+    add(7, "Read-only Binance valós balance teszt", "Order nélkül, csak /api/v3/account olvasás.", "PATCH_READONLY_BALANCE_TEST_FLOW.sh")
+    add(8, "APK build előtti safe full test", "Csak akkor build, ha minden compile és status zöld.", "PATCH_PRE_APK_FULL_SAFE_TEST.sh")
+
+    return {
+        "ok": True,
+        "readiness_score_pct": mod.get("score_pct"),
+        "steps": steps,
+        "order_endpoint_used": False,
+    }
+
+
+def master_status_overview():
+    """
+    Egy helyen minden fontos állapot.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    kpi = _safe_call("dashboard_kpi_snapshot", {})
+    portfolio = _safe_call("spot_portfolio_status", {})
+    trend = _safe_call("trend_auto_refresh_status", {})
+    health = _safe_call("healthcheck", {})
+    secrets = _safe_call("secrets_status", {})
+    email = _safe_call("email_config_status", {})
+    openai = _safe_call("openai_config_status", {})
+    live = _safe_call("binance_live_status", {})
+    live_gate = _safe_call("live_executor_gate_status", {})
+    readonly = _safe_call("binance_readonly_real_status", {})
+    package = _safe_call("apk_reference_status", {})
+    modules = module_readiness_status()
+    missing = missing_setup_status()
+    steps = next_recommended_steps()
+
+    return {
+        "ok": True,
+        "app_version": globals().get("APP_VERSION", "unknown"),
+        "mode": "LIVE" if settings.get("live_mode_enabled") else "DEMO",
+        "running": bool(state.get("running", False)),
+        "safe_mode": bool(state.get("safe_mode", False)),
+        "execution_mode": settings.get("execution_mode", "AUTO"),
+        "last_action": state.get("last_action", ""),
+        "portfolio": {
+            "total_value_usd": kpi.get("total_value_usd", portfolio.get("portfolio_total_value_usd")),
+            "tradable_usd": kpi.get("tradable_usd", portfolio.get("portfolio_tradable_usd")),
+            "open_positions": kpi.get("open_positions"),
+            "usdc_free": kpi.get("usdc_free"),
+            "usdt_free": kpi.get("usdt_free"),
+        },
+        "trend": {
+            "history_points": trend.get("history_points"),
+            "last_trend_snapshot_ts": trend.get("last_trend_snapshot_ts"),
+            "auto_enabled": trend.get("trend_auto_snapshot_enabled"),
+        },
+        "integrations": {
+            "secrets_encrypted": secrets.get("encrypted_file"),
+            "plain_file_exists": secrets.get("plain_file_exists"),
+            "email_ok": email.get("ok") if isinstance(email, dict) else False,
+            "openai_ok": openai.get("has_key") if isinstance(openai, dict) else secrets.get("openai_ok"),
+            "binance_live_ready": live.get("ready_for_live") if isinstance(live, dict) else False,
+            "readonly_ok": readonly.get("ok") if isinstance(readonly, dict) else False,
+        },
+        "safety": {
+            "health_status": health.get("status"),
+            "live_gate_ok": live_gate.get("ok") if isinstance(live_gate, dict) else False,
+            "order_endpoint_used": False,
+            "safe_note": "Valódi Binance order endpoint továbbra sincs bekötve.",
+        },
+        "package": package,
+        "readiness": {
+            "score_pct": modules.get("score_pct"),
+            "ok_count": modules.get("ok_count"),
+            "total_count": modules.get("total_count"),
+        },
+        "missing": missing,
+        "modules": modules.get("modules", []),
+        "next_steps": steps.get("steps", []),
         "order_endpoint_used": False,
     }
 

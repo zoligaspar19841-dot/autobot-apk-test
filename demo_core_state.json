@@ -172,12 +172,16 @@
     "trend_auto_snapshot_interval_sec": 30,
     "trend_auto_snapshot_only_when_running": false,
     "dashboard_auto_refresh_enabled": true,
-    "dashboard_auto_refresh_interval_sec": 15
+    "dashboard_auto_refresh_interval_sec": 15,
+    "master_status_enabled": true,
+    "master_status_show_next_steps": true,
+    "master_status_show_modules": true,
+    "master_status_show_missing": true
   },
   "last_action": "Spot portfolio sync OK",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
-  "last_heartbeat_ts": 1777765531,
+  "last_heartbeat_ts": 1777767075,
   "cooldowns": {},
   "spot_balances_cache": [
     {

@@ -674,6 +674,149 @@ class TrendCanvasWidget(Widget):
 
 
 
+
+class DemoCoreMasterStatusScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]MASTER STATUS / ÁTTEKINTÉS[/b]\n[size=14]Készültség, hiányzó beállítások, következő lépések[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        ))
+
+        self.info = Label(text='Master status...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        buttons = [
+            ('REFRESH', self.refresh),
+            ('MODULES', self.modules),
+            ('MISSING', self.missing),
+            ('NEXT STEPS', self.next_steps),
+            ('HEALTHCHECK', lambda: self.manager.go_to('healthcheck')),
+            ('INTEGRÁCIÓK', lambda: self.manager.go_to('integrations')),
+            ('SPOT PORTFOLIO', lambda: self.manager.go_to('spot_portfolio')),
+            ('TREND', lambda: self.manager.go_to('trend_history')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self):
+        try:
+            st = demo_core.master_status_overview()
+            lines = []
+            lines.append(f"[b]App:[/b] {st.get('app_version')}")
+            lines.append(f"[b]Mode:[/b] {st.get('mode')} | running={st.get('running')} | safe={st.get('safe_mode')} | exec={st.get('execution_mode')}")
+            lines.append(f"[b]Last action:[/b] {st.get('last_action')}")
+            lines.append('')
+            r = st.get('readiness') or {}
+            lines.append(f"[b]Readiness:[/b] {r.get('score_pct')}%  ({r.get('ok_count')}/{r.get('total_count')})")
+            lines.append('')
+            p = st.get('portfolio') or {}
+            lines.append('[b]Portfolio[/b]')
+            lines.append(f"Total value: {p.get('total_value_usd')} USD")
+            lines.append(f"Tradable: {p.get('tradable_usd')} USD")
+            lines.append(f"USDC free: {p.get('usdc_free')} | USDT free: {p.get('usdt_free')}")
+            lines.append(f"Open positions: {p.get('open_positions')}")
+            lines.append('')
+            t = st.get('trend') or {}
+            lines.append('[b]Trend[/b]')
+            lines.append(f"History points: {t.get('history_points')}")
+            lines.append(f"Last snapshot ts: {t.get('last_trend_snapshot_ts')}")
+            lines.append(f"Auto enabled: {t.get('auto_enabled')}")
+            lines.append('')
+            i = st.get('integrations') or {}
+            lines.append('[b]Integrációk[/b]')
+            lines.append(f"Secrets encrypted: {i.get('secrets_encrypted')}")
+            lines.append(f"Email OK: {i.get('email_ok')}")
+            lines.append(f"OpenAI OK: {i.get('openai_ok')}")
+            lines.append(f"Binance live ready: {i.get('binance_live_ready')}")
+            lines.append(f"Read-only OK: {i.get('readonly_ok')}")
+            lines.append('')
+            safe = st.get('safety') or {}
+            lines.append('[b]Safety[/b]')
+            lines.append(f"Health: {safe.get('health_status')}")
+            lines.append(f"Live gate OK: {safe.get('live_gate_ok')}")
+            lines.append(f"Order endpoint used: {safe.get('order_endpoint_used')}")
+            lines.append(f"[size=12]{safe.get('safe_note')}[/size]")
+            lines.append('')
+            m = st.get('missing') or {}
+            lines.append(f"[b]Missing:[/b] critical={m.get('critical_missing_count')} warnings={m.get('warnings_count')}")
+            lines.append('')
+            lines.append('[b]Következő javasolt lépés:[/b]')
+            steps = st.get('next_steps') or []
+            if steps:
+                first = steps[0]
+                lines.append(f"{first.get('priority')}. {first.get('title')}")
+                lines.append(f"{first.get('reason')}")
+                lines.append(f"{first.get('patch')}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Master status hiba: ' + str(e)
+
+    def modules(self):
+        try:
+            res = demo_core.module_readiness_status()
+            lines = [f"[b]Module readiness:[/b] {res.get('score_pct')}% ({res.get('ok_count')}/{res.get('total_count')})", ""]
+            for m in res.get('modules') or []:
+                mark = '✅' if m.get('ok') else '⚠️'
+                lines.append(f"{mark} [b]{m.get('title')}[/b] - {m.get('detail')}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Modules hiba: ' + str(e)
+
+    def missing(self):
+        try:
+            res = demo_core.missing_setup_status()
+            lines = [f"[b]Hiányzó beállítások[/b]", f"Critical: {res.get('critical_missing_count')} | Warnings: {res.get('warnings_count')}", ""]
+            for m in res.get('critical') or []:
+                lines.append(f"🔴 [b]{m.get('title')}[/b] - {m.get('detail')}")
+            for m in res.get('warnings') or []:
+                lines.append(f"🟡 [b]{m.get('title')}[/b] - {m.get('detail')}")
+            lines.append('')
+            lines.append('[size=12]' + str(res.get('safe_note')) + '[/size]')
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Missing hiba: ' + str(e)
+
+    def next_steps(self):
+        try:
+            res = demo_core.next_recommended_steps()
+            lines = [f"[b]Következő javasolt lépések[/b]", f"Readiness: {res.get('readiness_score_pct')}%", ""]
+            for step in res.get('steps') or []:
+                lines.append(f"{step.get('priority')}. [b]{step.get('title')}[/b]")
+                lines.append(f"   {step.get('reason')}")
+                if step.get('patch'):
+                    lines.append(f"   Patch: {step.get('patch')}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Next steps hiba: ' + str(e)
+
+
+
 class DemoCoreTrendHistoryScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -3181,6 +3324,10 @@ class DemoCoreSettingsScreen(Screen):
             ('trend_auto_snapshot_only_when_running', 'Trend auto snapshot only when running true/false'),
             ('dashboard_auto_refresh_enabled', 'Dashboard auto refresh enabled true/false'),
             ('dashboard_auto_refresh_interval_sec', 'Dashboard auto refresh interval sec'),
+            ('master_status_enabled', 'Master status enabled true/false'),
+            ('master_status_show_next_steps', 'Master status show next steps true/false'),
+            ('master_status_show_modules', 'Master status show modules true/false'),
+            ('master_status_show_missing', 'Master status show missing true/false'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -3379,6 +3526,10 @@ class DemoCoreSettingsScreen(Screen):
             cfg['trend_auto_snapshot_only_when_running'] = self.inputs['trend_auto_snapshot_only_when_running'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
             cfg['dashboard_auto_refresh_enabled'] = self.inputs['dashboard_auto_refresh_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['dashboard_auto_refresh_interval_sec'] = int(float(self.inputs['dashboard_auto_refresh_interval_sec'].text.replace(',', '.')))
+            cfg['master_status_enabled'] = self.inputs['master_status_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['master_status_show_next_steps'] = self.inputs['master_status_show_next_steps'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['master_status_show_modules'] = self.inputs['master_status_show_modules'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['master_status_show_missing'] = self.inputs['master_status_show_missing'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -3650,6 +3801,12 @@ class DemoCoreScreen(Screen):
         except Exception as e:
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
+
+    def open_master_status(self):
+        try:
+            self.manager.go_to("master_status")
+        except Exception:
+            self.manager.current = "master_status"
 
     def open_trend_history(self):
         try:
@@ -3943,6 +4100,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreStartupSafetyScreen(name="startup_safety"))
         sm.add_widget(DemoCoreSpotPortfolioScreen(name="spot_portfolio"))
         sm.add_widget(DemoCoreTrendHistoryScreen(name="trend_history"))
+        sm.add_widget(DemoCoreMasterStatusScreen(name="master_status"))
         return sm
 
 if __name__ == "__main__":
