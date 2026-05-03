@@ -1,0 +1,2303 @@
+{
+  "ts": 1777768848,
+  "ok": true,
+  "failed": [],
+  "order_endpoint_used_modules": [],
+  "tested_count": 26,
+  "passed_count": 26,
+  "order_endpoint_used": false,
+  "results": {
+    "load_state": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "state_keys": [
+          "base",
+          "balance",
+          "positions",
+          "realized_pnl",
+          "running",
+          "settings",
+          "last_action",
+          "safe_mode",
+          "last_tick_ts",
+          "last_heartbeat_ts",
+          "cooldowns",
+          "spot_balances_cache",
+          "portfolio_cache",
+          "trend_history",
+          "last_trend_snapshot_ts"
+        ],
+        "order_endpoint_used": false
+      }
+    },
+    "dashboard_modern_overview_data": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "theme": {
+          "ok": true,
+          "theme": "DEMO_GOLD",
+          "live": false,
+          "running": false,
+          "safe_mode": false,
+          "execution_mode": "AUTO",
+          "badges": [
+            {
+              "label": "MODE",
+              "status": "DEMO",
+              "level": "safe"
+            },
+            {
+              "label": "RUNNING",
+              "status": "OFF",
+              "level": "info"
+            },
+            {
+              "label": "SAFE MODE",
+              "status": "OFF",
+              "level": "safe"
+            },
+            {
+              "label": "EXEC",
+              "status": "AUTO",
+              "level": "safe"
+            },
+            {
+              "label": "ORDER",
+              "status": "BLOCKED",
+              "level": "safe"
+            }
+          ],
+          "order_endpoint_used": false
+        },
+        "kpis": {
+          "ok": true,
+          "cards": [
+            {
+              "id": "total_value",
+              "title": "Total Value",
+              "value": 99.88643379,
+              "unit": "USD",
+              "hint": "Spot portfolio becsült összérték."
+            },
+            {
+              "id": "today_pnl",
+              "title": "Today / Realized PnL",
+              "value": 0.0,
+              "unit": "USD",
+              "hint": "Demo/live cache alapján számolt realizált PnL."
+            },
+            {
+              "id": "tradable",
+              "title": "Tradable",
+              "value": 71.0,
+              "unit": "USD",
+              "hint": "Kereskedésre figyelembe vehető szabad összeg."
+            },
+            {
+              "id": "usdc_free",
+              "title": "USDC Free",
+              "value": 81.0,
+              "unit": "USDC",
+              "hint": "Szabad USDC."
+            },
+            {
+              "id": "usdt_free",
+              "title": "USDT Free",
+              "value": 0.0,
+              "unit": "USDT",
+              "hint": "Szabad USDT."
+            },
+            {
+              "id": "open_positions",
+              "title": "Open Positions",
+              "value": 2,
+              "unit": "db",
+              "hint": "Nyitott pozíciók száma."
+            }
+          ],
+          "trend_stats": {
+            "ok": true,
+            "view": "TRADABLE",
+            "value_key": "tradable_usd",
+            "points_count": 8,
+            "first": 71.0,
+            "last": 71.0,
+            "min": 71.0,
+            "max": 71.0,
+            "avg": 71.0,
+            "change": 0.0,
+            "change_pct": 0.0,
+            "first_time": "2026-05-03 01:55:52",
+            "last_time": "2026-05-03 02:02:33"
+          },
+          "order_endpoint_used": false
+        },
+        "top_coins": {
+          "ok": true,
+          "enabled": true,
+          "count": 3,
+          "cards": [
+            {
+              "symbol": "DOGEUSDT",
+              "base": "DOGE",
+              "score": 0.3551,
+              "signal": "WEAK",
+              "price": 0.16869042,
+              "trend_pct": 0.5699,
+              "momentum_pct": 0.2659,
+              "volatility_pct": 0.7424,
+              "has_position": false,
+              "qty": null,
+              "avg": null
+            },
+            {
+              "symbol": "BTCUSDT",
+              "base": "BTC",
+              "score": 0.3,
+              "signal": "WEAK",
+              "price": 78720.05392102,
+              "trend_pct": -0.0919,
+              "momentum_pct": -0.2759,
+              "volatility_pct": 0.5083,
+              "has_position": true,
+              "qty": 0.0001267180989088671,
+              "avg": 78836.41
+            },
+            {
+              "symbol": "ETHUSDT",
+              "base": "ETH",
+              "score": 0.3,
+              "signal": "WEAK",
+              "price": 2315.42796477,
+              "trend_pct": -0.904,
+              "momentum_pct": -0.1469,
+              "volatility_pct": 0.9206,
+              "has_position": true,
+              "qty": 0.0038604882824240655,
+              "avg": 2328.98
+            }
+          ],
+          "order_endpoint_used": false
+        },
+        "trend": {
+          "ok": true,
+          "enabled": true,
+          "view": "PROFIT",
+          "value_key": "pnl_pct_from_100",
+          "sparkline": "██████▁▁",
+          "crosshair_bar": "─────────────────│──────────────────────────────────────────",
+          "points_count": 8,
+          "selected": {
+            "ok": true,
+            "view": "TRADABLE",
+            "selected_index": 2,
+            "ts": 1777766241,
+            "time": "2026-05-03 01:57:21",
+            "value": 71.0,
+            "equity": 99.90920424,
+            "total_value_usd": 99.96609944,
+            "realized_pnl": 0.0,
+            "pnl_pct_from_100": -0.033901,
+            "tradable_usd": 71.0,
+            "quote_free_usd": 81.0,
+            "open_positions": 2,
+            "last_action": "Spot portfolio sync OK",
+            "reason": "chart_test_snapshot",
+            "order_endpoint_used": false
+          },
+          "stats": {
+            "ok": true,
+            "view": "PROFIT",
+            "value_key": "pnl_pct_from_100",
+            "points_count": 8,
+            "first": -0.033901,
+            "last": -0.113566,
+            "min": -0.113566,
+            "max": -0.033901,
+            "avg": -0.05381725,
+            "change": -0.079665,
+            "change_pct": -234.993068,
+            "first_time": "2026-05-03 01:55:52",
+            "last_time": "2026-05-03 02:02:33"
+          },
+          "note": "Dashboard trend widget adat kész.",
+          "order_endpoint_used": false
+        },
+        "readiness": {
+          "score_pct": 92.86,
+          "ok_count": 26,
+          "total_count": 28
+        },
+        "safety": {
+          "health_status": "OK",
+          "live_gate_ok": true,
+          "order_endpoint_used": false,
+          "safe_note": "Valódi Binance order endpoint továbbra sincs bekötve."
+        },
+        "order_endpoint_used": false,
+        "message": "Modern dashboard adatcsomag kész."
+      }
+    },
+    "dashboard_kpi_cards_data": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "cards": [
+          {
+            "id": "total_value",
+            "title": "Total Value",
+            "value": 99.88643379,
+            "unit": "USD",
+            "hint": "Spot portfolio becsült összérték."
+          },
+          {
+            "id": "today_pnl",
+            "title": "Today / Realized PnL",
+            "value": 0.0,
+            "unit": "USD",
+            "hint": "Demo/live cache alapján számolt realizált PnL."
+          },
+          {
+            "id": "tradable",
+            "title": "Tradable",
+            "value": 71.0,
+            "unit": "USD",
+            "hint": "Kereskedésre figyelembe vehető szabad összeg."
+          },
+          {
+            "id": "usdc_free",
+            "title": "USDC Free",
+            "value": 81.0,
+            "unit": "USDC",
+            "hint": "Szabad USDC."
+          },
+          {
+            "id": "usdt_free",
+            "title": "USDT Free",
+            "value": 0.0,
+            "unit": "USDT",
+            "hint": "Szabad USDT."
+          },
+          {
+            "id": "open_positions",
+            "title": "Open Positions",
+            "value": 2,
+            "unit": "db",
+            "hint": "Nyitott pozíciók száma."
+          }
+        ],
+        "trend_stats": {
+          "ok": true,
+          "view": "TRADABLE",
+          "value_key": "tradable_usd",
+          "points_count": 8,
+          "first": 71.0,
+          "last": 71.0,
+          "min": 71.0,
+          "max": 71.0,
+          "avg": 71.0,
+          "change": 0.0,
+          "change_pct": 0.0,
+          "first_time": "2026-05-03 01:55:52",
+          "last_time": "2026-05-03 02:02:33"
+        },
+        "order_endpoint_used": false
+      }
+    },
+    "dashboard_top_coin_cards_data": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "enabled": true,
+        "count": 3,
+        "cards": [
+          {
+            "symbol": "DOGEUSDT",
+            "base": "DOGE",
+            "score": 0.3551,
+            "signal": "WEAK",
+            "price": 0.16869042,
+            "trend_pct": 0.5699,
+            "momentum_pct": 0.2659,
+            "volatility_pct": 0.7424,
+            "has_position": false,
+            "qty": null,
+            "avg": null
+          },
+          {
+            "symbol": "BTCUSDT",
+            "base": "BTC",
+            "score": 0.3,
+            "signal": "WEAK",
+            "price": 78720.05392102,
+            "trend_pct": -0.0919,
+            "momentum_pct": -0.2759,
+            "volatility_pct": 0.5083,
+            "has_position": true,
+            "qty": 0.0001267180989088671,
+            "avg": 78836.41
+          },
+          {
+            "symbol": "ETHUSDT",
+            "base": "ETH",
+            "score": 0.3,
+            "signal": "WEAK",
+            "price": 2315.42796477,
+            "trend_pct": -0.904,
+            "momentum_pct": -0.1469,
+            "volatility_pct": 0.9206,
+            "has_position": true,
+            "qty": 0.0038604882824240655,
+            "avg": 2328.98
+          }
+        ],
+        "order_endpoint_used": false
+      }
+    },
+    "dashboard_theme_status": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "theme": "DEMO_GOLD",
+        "live": false,
+        "running": false,
+        "safe_mode": false,
+        "execution_mode": "AUTO",
+        "badges": [
+          {
+            "label": "MODE",
+            "status": "DEMO",
+            "level": "safe"
+          },
+          {
+            "label": "RUNNING",
+            "status": "OFF",
+            "level": "info"
+          },
+          {
+            "label": "SAFE MODE",
+            "status": "OFF",
+            "level": "safe"
+          },
+          {
+            "label": "EXEC",
+            "status": "AUTO",
+            "level": "safe"
+          },
+          {
+            "label": "ORDER",
+            "status": "BLOCKED",
+            "level": "safe"
+          }
+        ],
+        "order_endpoint_used": false
+      }
+    },
+    "trade_simple_ui_status": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "enabled": true,
+        "symbol": "BTCUSDT",
+        "side": "BUY",
+        "quote_amount": 10.0,
+        "risk_pct": 10.0,
+        "max_positions": 3,
+        "min_profit_pct": 10.0,
+        "min_after_tax_profit_pct": 0.1,
+        "execution_mode": "AUTO",
+        "order_type": "LIMIT_BBO",
+        "use_bbo": true,
+        "guard": {
+          "ok": true,
+          "allowed": true,
+          "side": "BUY",
+          "symbol": "BTCUSDT",
+          "bbo_price": 78735.58437627,
+          "limit_price": 78814.31996065,
+          "spread_pct": 0.046135,
+          "bid_ratio": 0.4869,
+          "ask_ratio": 0.5131,
+          "reasons": [
+            "BBO/spread/orderbook OK"
+          ],
+          "orderbook": {
+            "symbol": "BTCUSDT",
+            "mid": 78717.42604068,
+            "best_bid": 78699.2677051,
+            "best_ask": 78735.58437627,
+            "spread_pct": 0.046135,
+            "bid_ratio": 0.4869,
+            "ask_ratio": 0.5131,
+            "momentum_pct": -0.2626
+          }
+        },
+        "ai": {
+          "ok": true,
+          "symbol": "BTCUSDT",
+          "recommendation": "HOLD",
+          "confidence": 0.3,
+          "ai_mode": "OFFLINE",
+          "execution_mode": "AUTO",
+          "safe_mode": false,
+          "running": false,
+          "scanner": {
+            "symbol": "BTCUSDT",
+            "score": 0.3,
+            "signal": "WEAK",
+            "price": 78720.05392102,
+            "trend_pct": -0.0919,
+            "momentum_pct": -0.2759,
+            "volatility_pct": 0.5083
+          },
+          "trade_guard": {
+            "ok": true,
+            "allowed": true,
+            "side": "BUY",
+            "symbol": "BTCUSDT",
+            "bbo_price": 78735.58437627,
+            "limit_price": 78814.31996065,
+            "spread_pct": 0.046135,
+            "bid_ratio": 0.4869,
+            "ask_ratio": 0.5131,
+            "reasons": [
+              "BBO/spread/orderbook OK"
+            ],
+            "orderbook": {
+              "symbol": "BTCUSDT",
+              "mid": 78717.42604068,
+              "best_bid": 78699.2677051,
+              "best_ask": 78735.58437627,
+              "spread_pct": 0.046135,
+              "bid_ratio": 0.4869,
+              "ask_ratio": 0.5131,
+              "momentum_pct": -0.2626
+            }
+          },
+          "fee_tax_example_1pct": {
+            "gross_profit_pct": 1.0,
+            "roundtrip_fee_pct": 0.2,
+            "net_before_tax_pct": 0.8,
+            "tax_cut_pct": 0.12,
+            "after_tax_pct": 0.68,
+            "positive_after_tax": true
+          },
+          "health_status": "OK",
+          "reasons": [
+            "Scanner score: 0.3",
+            "Scanner signal: WEAK",
+            "Spread: 0.046135%",
+            "BBO allowed: True",
+            "Execution mode: AUTO",
+            "Safe mode: False",
+            "Health: OK",
+            "Nincs elég erős edge a vételhez."
+          ],
+          "openai_api": {
+            "ok": false,
+            "used_api": false,
+            "reason": "not_requested"
+          }
+        },
+        "tax_preview": {
+          "gross_profit_pct": 0.1,
+          "roundtrip_fee_pct": 0.2,
+          "net_before_tax_pct": -0.1,
+          "tax_cut_pct": 0.0,
+          "after_tax_pct": -0.1,
+          "positive_after_tax": false
+        },
+        "order_endpoint_used": false
+      }
+    },
+    "strategy_advanced_ui_status": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "enabled": true,
+        "settings": {
+          "sma_fast": 9,
+          "sma_slow": 21,
+          "rsi_len": null,
+          "atr_len": null,
+          "atr_mult": null,
+          "stop_loss_pct": 2.0,
+          "trailing_drop_pct": 1.2,
+          "hold_profit_minutes": 30,
+          "trailing_take_profit_pct": null,
+          "time_in_trend_minutes_max": 240,
+          "cooldown_after_exit_min": 10,
+          "profit_erosion_guard_pct": 1.5,
+          "scanner_enabled": true,
+          "scanner_top_n": 5,
+          "min_edge_score_open": 0.55,
+          "min_edge_score_keep": 0.5,
+          "max_scan_symbols": 20,
+          "maker_fee_pct": 0.1,
+          "taker_fee_pct": 0.1,
+          "tax_pct": 15.0,
+          "min_after_tax_profit_pct": 0.1
+        },
+        "order_endpoint_used": false
+      }
+    },
+    "validate_strategy_settings": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "errors": [],
+        "warnings": [],
+        "valid": true,
+        "order_endpoint_used": false
+      }
+    },
+    "strategy_safety_preview": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "symbol": "BTCUSDT",
+        "side": "BUY",
+        "quote_amount": 10.0,
+        "validation": {
+          "ok": true,
+          "errors": [],
+          "warnings": [],
+          "valid": true,
+          "order_endpoint_used": false
+        },
+        "guard": {
+          "ok": true,
+          "allowed": true,
+          "side": "BUY",
+          "symbol": "BTCUSDT",
+          "bbo_price": 78735.58437627,
+          "limit_price": 78814.31996065,
+          "spread_pct": 0.046135,
+          "bid_ratio": 0.4869,
+          "ask_ratio": 0.5131,
+          "reasons": [
+            "BBO/spread/orderbook OK"
+          ],
+          "orderbook": {
+            "symbol": "BTCUSDT",
+            "mid": 78717.42604068,
+            "best_bid": 78699.2677051,
+            "best_ask": 78735.58437627,
+            "spread_pct": 0.046135,
+            "bid_ratio": 0.4869,
+            "ask_ratio": 0.5131,
+            "momentum_pct": -0.2626
+          }
+        },
+        "ai": {
+          "ok": true,
+          "symbol": "BTCUSDT",
+          "recommendation": "HOLD",
+          "confidence": 0.3,
+          "ai_mode": "OFFLINE",
+          "execution_mode": "AUTO",
+          "safe_mode": false,
+          "running": false,
+          "scanner": {
+            "symbol": "BTCUSDT",
+            "score": 0.3,
+            "signal": "WEAK",
+            "price": 78720.05392102,
+            "trend_pct": -0.0919,
+            "momentum_pct": -0.2759,
+            "volatility_pct": 0.5083
+          },
+          "trade_guard": {
+            "ok": true,
+            "allowed": true,
+            "side": "BUY",
+            "symbol": "BTCUSDT",
+            "bbo_price": 78735.58437627,
+            "limit_price": 78814.31996065,
+            "spread_pct": 0.046135,
+            "bid_ratio": 0.4869,
+            "ask_ratio": 0.5131,
+            "reasons": [
+              "BBO/spread/orderbook OK"
+            ],
+            "orderbook": {
+              "symbol": "BTCUSDT",
+              "mid": 78717.42604068,
+              "best_bid": 78699.2677051,
+              "best_ask": 78735.58437627,
+              "spread_pct": 0.046135,
+              "bid_ratio": 0.4869,
+              "ask_ratio": 0.5131,
+              "momentum_pct": -0.2626
+            }
+          },
+          "fee_tax_example_1pct": {
+            "gross_profit_pct": 1.0,
+            "roundtrip_fee_pct": 0.2,
+            "net_before_tax_pct": 0.8,
+            "tax_cut_pct": 0.12,
+            "after_tax_pct": 0.68,
+            "positive_after_tax": true
+          },
+          "health_status": "OK",
+          "reasons": [
+            "Scanner score: 0.3",
+            "Scanner signal: WEAK",
+            "Spread: 0.046135%",
+            "BBO allowed: True",
+            "Execution mode: AUTO",
+            "Safe mode: False",
+            "Health: OK",
+            "Nincs elég erős edge a vételhez."
+          ],
+          "openai_api": {
+            "ok": false,
+            "used_api": false,
+            "reason": "not_requested"
+          }
+        },
+        "after_tax_preview": {
+          "gross_profit_pct": 10.0,
+          "roundtrip_fee_pct": 0.2,
+          "net_before_tax_pct": 9.8,
+          "tax_cut_pct": 1.47,
+          "after_tax_pct": 8.33,
+          "positive_after_tax": true
+        },
+        "after_tax_ok": true,
+        "blockers": [
+          "ai_hold"
+        ],
+        "would_allow_demo_signal": false,
+        "would_send_live_order": false,
+        "order_endpoint_used": false,
+        "message": "Strategy safety preview kész. Valódi order nincs."
+      }
+    },
+    "readonly_balance_test_gate": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "ready_for_readonly_network_test": false,
+        "network_allowed": false,
+        "has_api_key": false,
+        "has_api_secret": false,
+        "signed_readonly_enabled": false,
+        "account_read_enabled": false,
+        "real_account_get_enabled": false,
+        "blockers": [
+          "Binance API key hiányzik",
+          "Binance API secret hiányzik",
+          "binance_signed_readonly_enabled false",
+          "binance_account_read_enabled false",
+          "binance_real_account_get_enabled false"
+        ],
+        "warnings": [
+          "Hálózati read-only teszt tiltva: readonly_balance_allow_network vagy integration_test_allow_network false"
+        ],
+        "binance_order_allowed": false,
+        "order_endpoint_used": false,
+        "message": "Read-only balance gate kész. Order nincs."
+      }
+    },
+    "readonly_balance_test_plan": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "gate": {
+          "ok": true,
+          "ready_for_readonly_network_test": false,
+          "network_allowed": false,
+          "has_api_key": false,
+          "has_api_secret": false,
+          "signed_readonly_enabled": false,
+          "account_read_enabled": false,
+          "real_account_get_enabled": false,
+          "blockers": [
+            "Binance API key hiányzik",
+            "Binance API secret hiányzik",
+            "binance_signed_readonly_enabled false",
+            "binance_account_read_enabled false",
+            "binance_real_account_get_enabled false"
+          ],
+          "warnings": [
+            "Hálózati read-only teszt tiltva: readonly_balance_allow_network vagy integration_test_allow_network false"
+          ],
+          "binance_order_allowed": false,
+          "order_endpoint_used": false,
+          "message": "Read-only balance gate kész. Order nincs."
+        },
+        "steps": [
+          "1. Secrets menüben Binance API key + API secret megadása.",
+          "2. Binance API kulcsnál csak olvasási jogosultság javasolt első teszthez.",
+          "3. Settings: binance_signed_readonly_enabled = true.",
+          "4. Settings: binance_account_read_enabled = true.",
+          "5. Settings: binance_real_account_get_enabled = true.",
+          "6. Settings: integration_test_allow_network = true.",
+          "7. Settings: readonly_balance_allow_network = true.",
+          "8. READONLY BALANCE menüben RUN READONLY TEST."
+        ],
+        "danger_note": "Ez csak /api/v3/account olvasásra készül. Order endpoint továbbra sincs engedve.",
+        "order_endpoint_used": false
+      }
+    },
+    "spot_balance_sync_preview": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "gate": {
+          "ok": true,
+          "ready_for_readonly_network_test": false,
+          "network_allowed": false,
+          "has_api_key": false,
+          "has_api_secret": false,
+          "signed_readonly_enabled": false,
+          "account_read_enabled": false,
+          "real_account_get_enabled": false,
+          "blockers": [
+            "Binance API key hiányzik",
+            "Binance API secret hiányzik",
+            "binance_signed_readonly_enabled false",
+            "binance_account_read_enabled false",
+            "binance_real_account_get_enabled false"
+          ],
+          "warnings": [
+            "Hálózati read-only teszt tiltva: readonly_balance_allow_network vagy integration_test_allow_network false"
+          ],
+          "binance_order_allowed": false,
+          "order_endpoint_used": false,
+          "message": "Read-only balance gate kész. Order nincs."
+        },
+        "portfolio_status": {
+          "ok": true,
+          "spot_sync_enabled": true,
+          "spot_base_asset": "USDC",
+          "spot_quote_assets": "USDC,USDT",
+          "spot_safety_reserve": 10.0,
+          "spot_max_tradeable_pct": 90.0,
+          "spot_last_sync_ts": 1777766552,
+          "portfolio_total_value_usd": 99.88643379,
+          "portfolio_tradable_usd": 71.0,
+          "assets_count": 3,
+          "top_assets": [
+            {
+              "asset": "USDC",
+              "free": 81.0,
+              "locked": 0.0,
+              "total": 81.0,
+              "price_usd": 1.0,
+              "value_usd": 81.0,
+              "source": "demo"
+            },
+            {
+              "asset": "BTC",
+              "free": 0.0001267180989088671,
+              "locked": 0.0,
+              "total": 0.0001267180989088671,
+              "price_usd": 78527.3385158,
+              "value_usd": 9.95083505,
+              "source": "demo_position"
+            },
+            {
+              "asset": "ETH",
+              "free": 0.0038604882824240655,
+              "locked": 0.0,
+              "total": 0.0038604882824240655,
+              "price_usd": 2314.62915817,
+              "value_usd": 8.93559874,
+              "source": "demo_position"
+            }
+          ],
+          "order_endpoint_used": false
+        },
+        "valuation_preview": {
+          "ok": true,
+          "base_asset": "USDC",
+          "quote_assets": [
+            "USDC",
+            "USDT"
+          ],
+          "total_value_usd": 99.90697841,
+          "quote_free_usd": 81.0,
+          "safety_reserve_usd": 10.0,
+          "tradable_usd": 71.0,
+          "assets_count": 3,
+          "assets": [
+            {
+              "asset": "USDC",
+              "free": 81.0,
+              "locked": 0.0,
+              "total": 81.0,
+              "price_usd": 1.0,
+              "value_usd": 81.0,
+              "source": "demo"
+            },
+            {
+              "asset": "BTC",
+              "free": 0.0001267180989088671,
+              "locked": 0.0,
+              "total": 0.0001267180989088671,
+              "price_usd": 78691.14723735,
+              "value_usd": 9.97159258,
+              "source": "demo_position"
+            },
+            {
+              "asset": "ETH",
+              "free": 0.0038604882824240655,
+              "locked": 0.0,
+              "total": 0.0038604882824240655,
+              "price_usd": 2314.57400543,
+              "value_usd": 8.93538583,
+              "source": "demo_position"
+            }
+          ],
+          "source": "portfolio_valuation"
+        },
+        "will_use_real_binance": false,
+        "sync_note": "Ha read-only gate zöld, valódi Binance spot balance olvasás jöhet. Order nincs.",
+        "order_endpoint_used": false
+      }
+    },
+    "run_readonly_balance_test": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "called": false,
+        "ready": false,
+        "gate": {
+          "ok": true,
+          "ready_for_readonly_network_test": false,
+          "network_allowed": false,
+          "has_api_key": false,
+          "has_api_secret": false,
+          "signed_readonly_enabled": false,
+          "account_read_enabled": false,
+          "real_account_get_enabled": false,
+          "blockers": [
+            "Binance API key hiányzik",
+            "Binance API secret hiányzik",
+            "binance_signed_readonly_enabled false",
+            "binance_account_read_enabled false",
+            "binance_real_account_get_enabled false"
+          ],
+          "warnings": [
+            "Hálózati read-only teszt tiltva: readonly_balance_allow_network vagy integration_test_allow_network false"
+          ],
+          "binance_order_allowed": false,
+          "order_endpoint_used": false,
+          "message": "Read-only balance gate kész. Order nincs."
+        },
+        "result": null,
+        "message": "Read-only hálózati teszt nem futott, gate tiltja.",
+        "order_endpoint_used": false
+      }
+    },
+    "trades_report_center_status": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "enabled": true,
+        "trade_log": "logs/demo_core_trades.csv",
+        "trade_log_exists": true,
+        "audit_log": "logs/demo_core_audit.csv",
+        "audit_log_exists": true,
+        "json_report": "logs/profit_report.json",
+        "csv_report": "logs/profit_report.csv",
+        "include_tax": true,
+        "tax_pct": 15.0,
+        "order_endpoint_used": false
+      }
+    },
+    "profit_report_summary": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "realized_pnl": 0.0,
+        "net_before_tax_pnl": 0.0,
+        "estimated_tax_pct": 15.0,
+        "estimated_tax_value": 0.0,
+        "after_tax_pnl": 0.0,
+        "balance": 81.0,
+        "equity": 99.9040651,
+        "fee_pct_reference": 0.1,
+        "trade_count": 2,
+        "buy_count": 2,
+        "sell_count": 0,
+        "open_positions": 2,
+        "note": "Adózás utáni érték csak tájékoztató becslés, nem adótanácsadás.",
+        "order_endpoint_used": false
+      }
+    },
+    "position_trade_audit_link": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "positions_count": 2,
+        "positions": [
+          {
+            "symbol": "BTCUSDT",
+            "qty": 0.0001267180989088671,
+            "avg": 78836.41,
+            "peak": 78836.41,
+            "opened_ts": 1777758378
+          },
+          {
+            "symbol": "ETHUSDT",
+            "qty": 0.0038604882824240655,
+            "avg": 2328.98,
+            "peak": 2328.98,
+            "opened_ts": 1777758380
+          }
+        ],
+        "audit_log_exists": true,
+        "audit_rows_seen": 213,
+        "last_audit": [
+          {
+            "ts": "1777768638",
+            "event": "BINANCE_LIVE_STATUS",
+            "detail": "Live státusz ellenőrzés",
+            "data": "{\"ok\": true, \"has_api_key\": false, \"has_api_secret\": false, \"live_mode_enabled\": false, \"live_require_confirm\": true, \"live_warning_ack\": false, \"live_allow_buy\": false, \"live_allow_sell\": false, \"live_max_order_usdt\": 10.0, \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"ready_for_live\": false, \"warnings\": [\"Binance API key hiányzik.\", \"Binance API secret hiányzik.\"]}"
+          },
+          {
+            "ts": "1777768638",
+            "event": "BINANCE_LIVE_STATUS",
+            "detail": "Live státusz ellenőrzés",
+            "data": "{\"ok\": true, \"has_api_key\": false, \"has_api_secret\": false, \"live_mode_enabled\": false, \"live_require_confirm\": true, \"live_warning_ack\": false, \"live_allow_buy\": false, \"live_allow_sell\": false, \"live_max_order_usdt\": 10.0, \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"ready_for_live\": false, \"warnings\": [\"Binance API key hiányzik.\", \"Binance API secret hiányzik.\"]}"
+          },
+          {
+            "ts": "1777768638",
+            "event": "HEALTHCHECK",
+            "detail": "OK",
+            "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
+          },
+          {
+            "ts": "1777768639",
+            "event": "BINANCE_LIVE_STATUS",
+            "detail": "Live státusz ellenőrzés",
+            "data": "{\"ok\": true, \"has_api_key\": false, \"has_api_secret\": false, \"live_mode_enabled\": false, \"live_require_confirm\": true, \"live_warning_ack\": false, \"live_allow_buy\": false, \"live_allow_sell\": false, \"live_max_order_usdt\": 10.0, \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"ready_for_live\": false, \"warnings\": [\"Binance API key hiányzik.\", \"Binance API secret hiányzik.\"]}"
+          },
+          {
+            "ts": "1777768639",
+            "event": "HEALTHCHECK",
+            "detail": "OK",
+            "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
+          },
+          {
+            "ts": "1777768640",
+            "event": "HEALTH_REPORT_EXPORT",
+            "detail": "Health report export",
+            "data": "{\"path\": \"logs/health_report.json\", \"order_endpoint_used\": false}"
+          },
+          {
+            "ts": "1777768816",
+            "event": "SCAN_SYMBOLS",
+            "detail": "Multi-symbol scanner",
+            "data": "{\"symbols_count\": 3, \"top\": [\"DOGEUSDT\", \"BTCUSDT\", \"ETHUSDT\"]}"
+          },
+          {
+            "ts": "1777768817",
+            "event": "HEALTHCHECK",
+            "detail": "OK",
+            "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
+          },
+          {
+            "ts": "1777768817",
+            "event": "BINANCE_LIVE_STATUS",
+            "detail": "Live státusz ellenőrzés",
+            "data": "{\"ok\": true, \"has_api_key\": false, \"has_api_secret\": false, \"live_mode_enabled\": false, \"live_require_confirm\": true, \"live_warning_ack\": false, \"live_allow_buy\": false, \"live_allow_sell\": false, \"live_max_order_usdt\": 10.0, \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"ready_for_live\": false, \"warnings\": [\"Binance API key hiányzik.\", \"Binance API secret hiányzik.\"]}"
+          },
+          {
+            "ts": "1777768817",
+            "event": "BINANCE_LIVE_STATUS",
+            "detail": "Live státusz ellenőrzés",
+            "data": "{\"ok\": true, \"has_api_key\": false, \"has_api_secret\": false, \"live_mode_enabled\": false, \"live_require_confirm\": true, \"live_warning_ack\": false, \"live_allow_buy\": false, \"live_allow_sell\": false, \"live_max_order_usdt\": 10.0, \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"ready_for_live\": false, \"warnings\": [\"Binance API key hiányzik.\", \"Binance API secret hiányzik.\"]}"
+          },
+          {
+            "ts": "1777768817",
+            "event": "HEALTHCHECK",
+            "detail": "OK",
+            "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
+          },
+          {
+            "ts": "1777768818",
+            "event": "BINANCE_LIVE_STATUS",
+            "detail": "Live státusz ellenőrzés",
+            "data": "{\"ok\": true, \"has_api_key\": false, \"has_api_secret\": false, \"live_mode_enabled\": false, \"live_require_confirm\": true, \"live_warning_ack\": false, \"live_allow_buy\": false, \"live_allow_sell\": false, \"live_max_order_usdt\": 10.0, \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"ready_for_live\": false, \"warnings\": [\"Binance API key hiányzik.\", \"Binance API secret hiányzik.\"]}"
+          },
+          {
+            "ts": "1777768818",
+            "event": "HEALTHCHECK",
+            "detail": "OK",
+            "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
+          },
+          {
+            "ts": "1777768820",
+            "event": "SCAN_SYMBOLS",
+            "detail": "Multi-symbol scanner",
+            "data": "{\"symbols_count\": 3, \"top\": [\"DOGEUSDT\", \"BTCUSDT\", \"ETHUSDT\"]}"
+          },
+          {
+            "ts": "1777768820",
+            "event": "HEALTHCHECK",
+            "detail": "OK",
+            "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
+          },
+          {
+            "ts": "1777768822",
+            "event": "SCAN_SYMBOLS",
+            "detail": "Multi-symbol scanner",
+            "data": "{\"symbols_count\": 3, \"top\": [\"DOGEUSDT\", \"BTCUSDT\", \"ETHUSDT\"]}"
+          },
+          {
+            "ts": "1777768822",
+            "event": "AI_ADVISOR",
+            "detail": "HOLD",
+            "data": "{\"ok\": true, \"symbol\": \"BTCUSDT\", \"recommendation\": \"HOLD\", \"confidence\": 0.3, \"ai_mode\": \"OFFLINE\", \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"running\": false, \"scanner\": {\"symbol\": \"BTCUSDT\", \"score\": 0.3, \"signal\": \"WEAK\", \"price\": 78720.05392102, \"trend_pct\": -0.0919, \"momentum_pct\": -0.2759, \"volatility_pct\": 0.5083}, \"trade_guard\": {\"ok\": true, \"allowed\": true, \"side\": \"BUY\", \"symbol\": \"BTCUSDT\", \"bbo_price\": 78735.58437627, \"limit_price\": 78814.31996065, \"spread_pct\": 0.046135, \"bid_ratio\": 0.4869, \"ask_ratio\": 0.5131, \"reasons\": [\"BBO/spread/orderbook OK\"], \"orderbook\": {\"symbol\": \"BTCUSDT\", \"mid\": 78717.42604068, \"best_bid\": 78699.2677051, \"best_ask\": 78735.58437627, \"spread_pct\": 0.046135, \"bid_ratio\": 0.4869, \"ask_ratio\": 0.5131, \"momentum_pct\": -0.2626}}, \"fee_tax_example_1pct\": {\"gross_profit_pct\": 1.0, \"roundtrip_fee_pct\": 0.2, \"net_before_tax_pct\": 0.8, \"tax_cut_pct\": 0.12, \"after_tax_pct\": 0.68, \"positive_after_tax\": true}, \"health_status\": \"OK\", \"reasons\": [\"Scanner score: 0.3\", \"Scanner signal: WEAK\", \"Spread: 0.046135%\", \"BBO allowed: True\", \"Execution mode: AUTO\", \"Safe mode: False\", \"Health: OK\", \"Nincs elég erős edge a vételhez.\"], \"openai_api\": {\"ok\": false, \"used_api\": false, \"reason\": \"not_requested\"}}"
+          },
+          {
+            "ts": "1777768822",
+            "event": "HEALTHCHECK",
+            "detail": "OK",
+            "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
+          },
+          {
+            "ts": "1777768824",
+            "event": "SCAN_SYMBOLS",
+            "detail": "Multi-symbol scanner",
+            "data": "{\"symbols_count\": 3, \"top\": [\"DOGEUSDT\", \"BTCUSDT\", \"ETHUSDT\"]}"
+          },
+          {
+            "ts": "1777768824",
+            "event": "AI_ADVISOR",
+            "detail": "HOLD",
+            "data": "{\"ok\": true, \"symbol\": \"BTCUSDT\", \"recommendation\": \"HOLD\", \"confidence\": 0.3, \"ai_mode\": \"OFFLINE\", \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"running\": false, \"scanner\": {\"symbol\": \"BTCUSDT\", \"score\": 0.3, \"signal\": \"WEAK\", \"price\": 78720.05392102, \"trend_pct\": -0.0919, \"momentum_pct\": -0.2759, \"volatility_pct\": 0.5083}, \"trade_guard\": {\"ok\": true, \"allowed\": true, \"side\": \"BUY\", \"symbol\": \"BTCUSDT\", \"bbo_price\": 78735.58437627, \"limit_price\": 78814.31996065, \"spread_pct\": 0.046135, \"bid_ratio\": 0.4869, \"ask_ratio\": 0.5131, \"reasons\": [\"BBO/spread/orderbook OK\"], \"orderbook\": {\"symbol\": \"BTCUSDT\", \"mid\": 78717.42604068, \"best_bid\": 78699.2677051, \"best_ask\": 78735.58437627, \"spread_pct\": 0.046135, \"bid_ratio\": 0.4869, \"ask_ratio\": 0.5131, \"momentum_pct\": -0.2626}}, \"fee_tax_example_1pct\": {\"gross_profit_pct\": 1.0, \"roundtrip_fee_pct\": 0.2, \"net_before_tax_pct\": 0.8, \"tax_cut_pct\": 0.12, \"after_tax_pct\": 0.68, \"positive_after_tax\": true}, \"health_status\": \"OK\", \"reasons\": [\"Scanner score: 0.3\", \"Scanner signal: WEAK\", \"Spread: 0.046135%\", \"BBO allowed: True\", \"Execution mode: AUTO\", \"Safe mode: False\", \"Health: OK\", \"Nincs elég erős edge a vételhez.\"], \"openai_api\": {\"ok\": false, \"used_api\": false, \"reason\": \"not_requested\"}}"
+          }
+        ],
+        "order_endpoint_used": false
+      }
+    },
+    "profit_report_full_export": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "json": {
+          "ok": true,
+          "path": "logs/profit_report.json",
+          "order_endpoint_used": false,
+          "message": "Profit report JSON export kész."
+        },
+        "csv": {
+          "ok": true,
+          "path": "logs/profit_report.csv",
+          "order_endpoint_used": false,
+          "message": "Profit report CSV export kész."
+        },
+        "summary": {
+          "ok": true,
+          "realized_pnl": 0.0,
+          "net_before_tax_pnl": 0.0,
+          "estimated_tax_pct": 15.0,
+          "estimated_tax_value": 0.0,
+          "after_tax_pnl": 0.0,
+          "balance": 81.0,
+          "equity": 99.90406384,
+          "fee_pct_reference": 0.1,
+          "trade_count": 2,
+          "buy_count": 2,
+          "sell_count": 0,
+          "open_positions": 2,
+          "note": "Adózás utáni érték csak tájékoztató becslés, nem adótanácsadás.",
+          "order_endpoint_used": false
+        },
+        "order_endpoint_used": false,
+        "message": "Profit report full export kész."
+      }
+    },
+    "heartbeat_status": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "now": 1777768827,
+        "running": false,
+        "last_heartbeat_ts": 1777768818,
+        "last_tick_ts": 1777759959,
+        "heartbeat_age_sec": 9,
+        "tick_age_sec": 8868,
+        "stale_after_sec": 120,
+        "heartbeat_ok": true,
+        "tick_ok": false,
+        "last_action": "AI advisor: HOLD BTCUSDT",
+        "order_endpoint_used": false
+      }
+    },
+    "update_heartbeat": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "now": 1777768827,
+        "running": false,
+        "last_heartbeat_ts": 1777768827,
+        "last_tick_ts": 1777759959,
+        "heartbeat_age_sec": 0,
+        "tick_age_sec": 8868,
+        "stale_after_sec": 120,
+        "heartbeat_ok": true,
+        "tick_ok": false,
+        "last_action": "Heartbeat update: full_system_check",
+        "order_endpoint_used": false
+      }
+    },
+    "error_alert_summary": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "enabled": true,
+        "alert_count": 1,
+        "alerts": [
+          {
+            "level": "info",
+            "title": "Read-only gate nem ready",
+            "detail": "['Binance API key hiányzik', 'Binance API secret hiányzik', 'binance_signed_readonly_enabled false', 'binance_account_read_enabled false', 'binance_real_account_get_enabled false']"
+          }
+        ],
+        "health": {
+          "ok": true,
+          "status": "OK",
+          "warnings": [],
+          "running": false,
+          "safe_mode": false,
+          "positions_count": 2,
+          "balance": 81.0,
+          "realized_pnl": 0.0,
+          "equity": 99.90402523260293,
+          "trade_log_exists": true,
+          "trade_log_path": "logs/demo_core_trades.csv",
+          "last_tick_ts": 1777759959,
+          "last_heartbeat_ts": 1777768827,
+          "last_tick_age_sec": 8868,
+          "last_heartbeat_age_sec": 0,
+          "last_action": "Heartbeat update: full_system_check"
+        },
+        "heartbeat": {
+          "ok": true,
+          "now": 1777768828,
+          "running": false,
+          "last_heartbeat_ts": 1777768827,
+          "last_tick_ts": 1777759959,
+          "heartbeat_age_sec": 1,
+          "tick_age_sec": 8869,
+          "stale_after_sec": 120,
+          "heartbeat_ok": true,
+          "tick_ok": false,
+          "last_action": "Heartbeat update: full_system_check",
+          "order_endpoint_used": false
+        },
+        "order_endpoint_used": false
+      }
+    },
+    "crash_recovery_status": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "crash_recovery_enabled": true,
+        "resume_after_restart_enabled": true,
+        "can_resume": true,
+        "running": false,
+        "safe_mode": false,
+        "open_positions": 2,
+        "blockers": [],
+        "recommended_actions": [
+          "2 nyitott pozíció állapotból visszaolvasható.",
+          "Bot stopped flag, újraindítás kézi START után."
+        ],
+        "order_endpoint_used": false,
+        "message": "Crash recovery státusz kész. Nem indít ordert."
+      }
+    },
+    "health_alert_center_status": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "heartbeat": {
+          "ok": true,
+          "now": 1777768828,
+          "running": false,
+          "last_heartbeat_ts": 1777768827,
+          "last_tick_ts": 1777759959,
+          "heartbeat_age_sec": 1,
+          "tick_age_sec": 8869,
+          "stale_after_sec": 120,
+          "heartbeat_ok": true,
+          "tick_ok": false,
+          "last_action": "Heartbeat update: full_system_check",
+          "order_endpoint_used": false
+        },
+        "alerts": {
+          "ok": true,
+          "enabled": true,
+          "alert_count": 1,
+          "alerts": [
+            {
+              "level": "info",
+              "title": "Read-only gate nem ready",
+              "detail": "['Binance API key hiányzik', 'Binance API secret hiányzik', 'binance_signed_readonly_enabled false', 'binance_account_read_enabled false', 'binance_real_account_get_enabled false']"
+            }
+          ],
+          "health": {
+            "ok": true,
+            "status": "OK",
+            "warnings": [],
+            "running": false,
+            "safe_mode": false,
+            "positions_count": 2,
+            "balance": 81.0,
+            "realized_pnl": 0.0,
+            "equity": 99.90402649978392,
+            "trade_log_exists": true,
+            "trade_log_path": "logs/demo_core_trades.csv",
+            "last_tick_ts": 1777759959,
+            "last_heartbeat_ts": 1777768828,
+            "last_tick_age_sec": 8869,
+            "last_heartbeat_age_sec": 1,
+            "last_action": "Heartbeat update: full_system_check"
+          },
+          "heartbeat": {
+            "ok": true,
+            "now": 1777768828,
+            "running": false,
+            "last_heartbeat_ts": 1777768828,
+            "last_tick_ts": 1777759959,
+            "heartbeat_age_sec": 0,
+            "tick_age_sec": 8869,
+            "stale_after_sec": 120,
+            "heartbeat_ok": true,
+            "tick_ok": false,
+            "last_action": "Heartbeat update: full_system_check",
+            "order_endpoint_used": false
+          },
+          "order_endpoint_used": false
+        },
+        "recovery": {
+          "ok": true,
+          "crash_recovery_enabled": true,
+          "resume_after_restart_enabled": true,
+          "can_resume": true,
+          "running": false,
+          "safe_mode": false,
+          "open_positions": 2,
+          "blockers": [],
+          "recommended_actions": [
+            "2 nyitott pozíció állapotból visszaolvasható.",
+            "Bot stopped flag, újraindítás kézi START után."
+          ],
+          "order_endpoint_used": false,
+          "message": "Crash recovery státusz kész. Nem indít ordert."
+        },
+        "integration": {
+          "ok": true,
+          "enabled": true,
+          "allow_network": false,
+          "allow_email_send": false,
+          "ok_count": 5,
+          "total_count": 8,
+          "score_pct": 62.5,
+          "rows": [
+            {
+              "key": "secrets",
+              "title": "Titkosított secrets",
+              "ok": false,
+              "detail": "secrets.enc / key státusz",
+              "safe": true
+            },
+            {
+              "key": "email_config",
+              "title": "E-mail config",
+              "ok": false,
+              "detail": "{'ok': False, 'smtp_host': 'smtp.gmail.com', 'smtp_port': '587', 'email_user': '', 'email_to': '', 'has_password': False}",
+              "safe": true
+            },
+            {
+              "key": "openai_config",
+              "title": "OpenAI config",
+              "ok": false,
+              "detail": "{'ok': True, 'has_key': False, 'api_enabled': False, 'ai_mode': 'OFFLINE', 'model': 'gpt-5-mini', 'ready': False}",
+              "safe": true
+            },
+            {
+              "key": "binance_live_check",
+              "title": "Binance live readiness",
+              "ok": true,
+              "detail": "csak státusz, nem order",
+              "safe": true
+            },
+            {
+              "key": "binance_readonly",
+              "title": "Binance read-only",
+              "ok": true,
+              "detail": "",
+              "safe": true
+            },
+            {
+              "key": "sync",
+              "title": "PC / Drive sync",
+              "ok": true,
+              "detail": "{'ok': True, 'sync_enabled': True, 'primary_device': 'PHONE', 'drive_sync_folder': 'AutobotBackups', 'pc_sync_folder': 'PCSync', 'drive_files_count': 1, 'pc_files_count': 0, 'last_drive_files': ['AutobotBackups/autobot_sync_drive_1777763617.zip'], 'last_pc_files': [], 'last_sync_export_ts': 1777763617, 'last_sync_import_ts': 0}",
+              "safe": true
+            },
+            {
+              "key": "first_run",
+              "title": "First-run wizard státusz",
+              "ok": true,
+              "detail": "{'ok': True, 'first_run_done': False, 'missing_count': 3, 'ready': False, 'checklist': [{'id': 'secrets_file', 'label': 'Titkosított secrets fájl', 'ok': True}, {'id': 'binance_api', 'label': 'Binance API key/secret megadva', 'ok': False}, {'id': 'email', 'label': 'E-mail értesítés beállítva', 'ok': False}, {'id': 'openai', 'label': 'OpenAI API kulcs megadva', 'ok': False}, {'id': 'sync_dirs', 'label': 'Drive/PC sync mappák létrehozva', 'ok': True}, {'id': 'live_safe', 'label': 'Live mód biztonsági állapot ellenőrizve', 'ok': True}]}",
+              "safe": true
+            },
+            {
+              "key": "health",
+              "title": "Healthcheck",
+              "ok": true,
+              "detail": "OK",
+              "safe": true
+            }
+          ],
+          "order_endpoint_used": false,
+          "message": "Integration Test Center státusz kész. Alapból nincs hálózati hívás."
+        },
+        "master": {
+          "ok": true,
+          "app_version": "0.5.5-demo-core",
+          "mode": "DEMO",
+          "running": false,
+          "safe_mode": false,
+          "execution_mode": "AUTO",
+          "last_action": "Heartbeat update: full_system_check",
+          "portfolio": {
+            "total_value_usd": 99.88643379,
+            "tradable_usd": 71.0,
+            "open_positions": 2,
+            "usdc_free": 81.0,
+            "usdt_free": 0.0
+          },
+          "trend": {
+            "history_points": 8,
+            "last_trend_snapshot_ts": 1777766553,
+            "auto_enabled": true
+          },
+          "integrations": {
+            "secrets_encrypted": null,
+            "plain_file_exists": null,
+            "email_ok": false,
+            "openai_ok": false,
+            "binance_live_ready": false,
+            "readonly_ok": true
+          },
+          "safety": {
+            "health_status": "OK",
+            "live_gate_ok": true,
+            "order_endpoint_used": false,
+            "safe_note": "Valódi Binance order endpoint továbbra sincs bekötve."
+          },
+          "package": {
+            "ok": true,
+            "working_apk_reference": "APK 0.2.5 - utolsó ismert működő referencia",
+            "app_version": "0.5.5-demo-core",
+            "build_policy": "APK buildhez csak külön stabil build-lépésben nyúlunk.",
+            "current_dev_mode": "code_patch_only"
+          },
+          "readiness": {
+            "score_pct": 92.86,
+            "ok_count": 26,
+            "total_count": 28
+          },
+          "missing": {
+            "ok": true,
+            "critical_missing_count": 0,
+            "warnings_count": 9,
+            "critical": [],
+            "warnings": [
+              {
+                "key": "binance_api_key",
+                "title": "Binance API key nincs megadva",
+                "level": "warning",
+                "detail": "Live/read-only teszthez kell."
+              },
+              {
+                "key": "binance_api_secret",
+                "title": "Binance API secret nincs megadva",
+                "level": "warning",
+                "detail": "Signed read-only ellenőrzéshez kell."
+              },
+              {
+                "key": "openai_api_key",
+                "title": "OpenAI API key nincs megadva",
+                "level": "warning",
+                "detail": "AI API módhoz kell, offline AI ettől még működik."
+              },
+              {
+                "key": "email_config",
+                "title": "E-mail adatok hiányosak",
+                "level": "warning",
+                "detail": "Teszt e-mailhez és riasztáshoz kell."
+              },
+              {
+                "key": "google_drive_token",
+                "title": "Google Drive token nincs megadva",
+                "level": "warning",
+                "detail": "Drive sync teljes működéséhez kell."
+              },
+              {
+                "key": "pc_sync_token",
+                "title": "PC sync token nincs megadva",
+                "level": "warning",
+                "detail": "PC agent későbbi kapcsolathoz kell."
+              },
+              {
+                "key": "binance_signed_readonly_enabled",
+                "title": "Signed read-only nincs bekapcsolva",
+                "level": "warning",
+                "detail": "Első valódi account olvasáshoz külön engedély kell."
+              },
+              {
+                "key": "binance_account_read_enabled",
+                "title": "Account read nincs bekapcsolva",
+                "level": "warning",
+                "detail": "Balance sync valódi Binance olvasáshoz kell."
+              },
+              {
+                "key": "binance_real_account_get_enabled",
+                "title": "Real account GET nincs bekapcsolva",
+                "level": "warning",
+                "detail": "Valódi /api/v3/account olvasáshoz kell."
+              }
+            ],
+            "safe_note": "Order endpoint továbbra sincs bekötve.",
+            "order_endpoint_used": false
+          },
+          "modules": [
+            {
+              "id": "demo_core",
+              "title": "Demo Core",
+              "ok": true,
+              "detail": "Core modul aktív",
+              "weight": 1
+            },
+            {
+              "id": "settings",
+              "title": "Settings",
+              "ok": true,
+              "detail": "settings state létezik",
+              "weight": 1
+            },
+            {
+              "id": "logs",
+              "title": "Logs / Audit",
+              "ok": true,
+              "detail": "audit/trade log modul",
+              "weight": 1
+            },
+            {
+              "id": "healthcheck",
+              "title": "Healthcheck / Heartbeat",
+              "ok": true,
+              "detail": "OK",
+              "weight": 1
+            },
+            {
+              "id": "safe_mode",
+              "title": "Panic Stop / Safe Mode",
+              "ok": true,
+              "detail": "panic + safe mode függvények",
+              "weight": 1
+            },
+            {
+              "id": "execution_mode",
+              "title": "Execution Mode",
+              "ok": true,
+              "detail": "AUTO",
+              "weight": 1
+            },
+            {
+              "id": "profit_hold",
+              "title": "Profit Hold / Smart Exit",
+              "ok": true,
+              "detail": "profit tartás beállítások",
+              "weight": 1
+            },
+            {
+              "id": "scanner",
+              "title": "Multi-symbol Scanner",
+              "ok": true,
+              "detail": "scanner függvény",
+              "weight": 1
+            },
+            {
+              "id": "fee_tax",
+              "title": "Fee + Tax",
+              "ok": false,
+              "detail": "nettó/adó utáni PnL",
+              "weight": 1
+            },
+            {
+              "id": "trade_guard",
+              "title": "Trade Screen Guard",
+              "ok": true,
+              "detail": "BBO/spread/slippage",
+              "weight": 1
+            },
+            {
+              "id": "ai_advisor",
+              "title": "AI Advisor",
+              "ok": true,
+              "detail": "offline/API advisor alap",
+              "weight": 1
+            },
+            {
+              "id": "secrets",
+              "title": "Encrypted Secrets",
+              "ok": false,
+              "detail": "secrets.enc státusz",
+              "weight": 1
+            },
+            {
+              "id": "email",
+              "title": "Email Notify",
+              "ok": true,
+              "detail": "email alap modul",
+              "weight": 1
+            },
+            {
+              "id": "openai",
+              "title": "OpenAI API",
+              "ok": true,
+              "detail": "opcionális API fallback",
+              "weight": 1
+            },
+            {
+              "id": "binance_live_check",
+              "title": "Binance Live Check",
+              "ok": true,
+              "detail": "nem küld ordert",
+              "weight": 1
+            },
+            {
+              "id": "readonly_account",
+              "title": "Read-only Account",
+              "ok": true,
+              "detail": "",
+              "weight": 1
+            },
+            {
+              "id": "live_gate",
+              "title": "Live Safety Gate",
+              "ok": true,
+              "detail": "hard-stop gate",
+              "weight": 1
+            },
+            {
+              "id": "approval",
+              "title": "Approval / Dry-run",
+              "ok": true,
+              "detail": "approval queue",
+              "weight": 1
+            },
+            {
+              "id": "portfolio",
+              "title": "Spot Portfolio Sync",
+              "ok": true,
+              "detail": "total/tradable cache",
+              "weight": 1
+            },
+            {
+              "id": "trend",
+              "title": "Trend / Chart / Export",
+              "ok": true,
+              "detail": "trend auto snapshot",
+              "weight": 1
+            },
+            {
+              "id": "backtest",
+              "title": "Backtest / Diagnostics",
+              "ok": true,
+              "detail": "backtest alap",
+              "weight": 1
+            },
+            {
+              "id": "schedules",
+              "title": "Schedules",
+              "ok": true,
+              "detail": "snapshot/trigger alap",
+              "weight": 1
+            },
+            {
+              "id": "launchpool",
+              "title": "Launchpool / Airdrop",
+              "ok": true,
+              "detail": "watch alap",
+              "weight": 1
+            },
+            {
+              "id": "package",
+              "title": "Package / Snapshot",
+              "ok": true,
+              "detail": "APK reference/package",
+              "weight": 1
+            },
+            {
+              "id": "sync",
+              "title": "PC / Drive Sync",
+              "ok": true,
+              "detail": "sync alap",
+              "weight": 1
+            },
+            {
+              "id": "first_run",
+              "title": "First-run Safety",
+              "ok": true,
+              "detail": "startup safety",
+              "weight": 1
+            },
+            {
+              "id": "admin",
+              "title": "Admin Security",
+              "ok": true,
+              "detail": "5 perc timeout",
+              "weight": 1
+            },
+            {
+              "id": "patch_manager",
+              "title": "Patch Manager",
+              "ok": true,
+              "detail": "safe queue",
+              "weight": 1
+            }
+          ],
+          "next_steps": [
+            {
+              "priority": 1,
+              "title": "Secrets / Integrációk kitöltése és tesztelése",
+              "reason": "API/OpenAI/email/Drive/PC mezők hiányozhatnak.",
+              "patch": "PATCH_INTEGRATION_TESTS_UI.sh"
+            },
+            {
+              "priority": 3,
+              "title": "Modern Dashboard KPI kártyák",
+              "reason": "A dashboard adat már megvan, most UI-kártyákba kell rendezni.",
+              "patch": "PATCH_DASHBOARD_MODERN_KPI_CARDS.sh"
+            },
+            {
+              "priority": 4,
+              "title": "Top coin mini-kártyák",
+              "reason": "Scanner + portfolio cache alapján top coin lista kell.",
+              "patch": "PATCH_TOP_COIN_CARDS.sh"
+            },
+            {
+              "priority": 5,
+              "title": "Demo Reset megerősítő popup",
+              "reason": "Biztonságosabb reset, csak Demo módban.",
+              "patch": "PATCH_DEMO_RESET_CONFIRM_MODAL.sh"
+            },
+            {
+              "priority": 6,
+              "title": "Trade Simple / Advanced szétválasztás",
+              "reason": "Beállítások már vannak, UI-t kell rendezni.",
+              "patch": "PATCH_TRADE_SIMPLE_ADVANCED_UI.sh"
+            },
+            {
+              "priority": 7,
+              "title": "Read-only Binance valós balance teszt",
+              "reason": "Order nélkül, csak /api/v3/account olvasás.",
+              "patch": "PATCH_READONLY_BALANCE_TEST_FLOW.sh"
+            },
+            {
+              "priority": 8,
+              "title": "APK build előtti safe full test",
+              "reason": "Csak akkor build, ha minden compile és status zöld.",
+              "patch": "PATCH_PRE_APK_FULL_SAFE_TEST.sh"
+            }
+          ],
+          "order_endpoint_used": false
+        },
+        "order_endpoint_used": false,
+        "message": "Health Alert Recovery Center státusz kész."
+      }
+    },
+    "export_health_report": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "path": "logs/health_report.json",
+        "order_endpoint_used": false,
+        "message": "Health report export kész."
+      }
+    },
+    "master_status_overview": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "app_version": "0.5.5-demo-core",
+        "mode": "DEMO",
+        "running": false,
+        "safe_mode": false,
+        "execution_mode": "AUTO",
+        "last_action": "Heartbeat update: full_system_check",
+        "portfolio": {
+          "total_value_usd": 99.88643379,
+          "tradable_usd": 71.0,
+          "open_positions": 2,
+          "usdc_free": 81.0,
+          "usdt_free": 0.0
+        },
+        "trend": {
+          "history_points": 8,
+          "last_trend_snapshot_ts": 1777766553,
+          "auto_enabled": true
+        },
+        "integrations": {
+          "secrets_encrypted": null,
+          "plain_file_exists": null,
+          "email_ok": false,
+          "openai_ok": false,
+          "binance_live_ready": false,
+          "readonly_ok": true
+        },
+        "safety": {
+          "health_status": "OK",
+          "live_gate_ok": true,
+          "order_endpoint_used": false,
+          "safe_note": "Valódi Binance order endpoint továbbra sincs bekötve."
+        },
+        "package": {
+          "ok": true,
+          "working_apk_reference": "APK 0.2.5 - utolsó ismert működő referencia",
+          "app_version": "0.5.5-demo-core",
+          "build_policy": "APK buildhez csak külön stabil build-lépésben nyúlunk.",
+          "current_dev_mode": "code_patch_only"
+        },
+        "readiness": {
+          "score_pct": 92.86,
+          "ok_count": 26,
+          "total_count": 28
+        },
+        "missing": {
+          "ok": true,
+          "critical_missing_count": 0,
+          "warnings_count": 9,
+          "critical": [],
+          "warnings": [
+            {
+              "key": "binance_api_key",
+              "title": "Binance API key nincs megadva",
+              "level": "warning",
+              "detail": "Live/read-only teszthez kell."
+            },
+            {
+              "key": "binance_api_secret",
+              "title": "Binance API secret nincs megadva",
+              "level": "warning",
+              "detail": "Signed read-only ellenőrzéshez kell."
+            },
+            {
+              "key": "openai_api_key",
+              "title": "OpenAI API key nincs megadva",
+              "level": "warning",
+              "detail": "AI API módhoz kell, offline AI ettől még működik."
+            },
+            {
+              "key": "email_config",
+              "title": "E-mail adatok hiányosak",
+              "level": "warning",
+              "detail": "Teszt e-mailhez és riasztáshoz kell."
+            },
+            {
+              "key": "google_drive_token",
+              "title": "Google Drive token nincs megadva",
+              "level": "warning",
+              "detail": "Drive sync teljes működéséhez kell."
+            },
+            {
+              "key": "pc_sync_token",
+              "title": "PC sync token nincs megadva",
+              "level": "warning",
+              "detail": "PC agent későbbi kapcsolathoz kell."
+            },
+            {
+              "key": "binance_signed_readonly_enabled",
+              "title": "Signed read-only nincs bekapcsolva",
+              "level": "warning",
+              "detail": "Első valódi account olvasáshoz külön engedély kell."
+            },
+            {
+              "key": "binance_account_read_enabled",
+              "title": "Account read nincs bekapcsolva",
+              "level": "warning",
+              "detail": "Balance sync valódi Binance olvasáshoz kell."
+            },
+            {
+              "key": "binance_real_account_get_enabled",
+              "title": "Real account GET nincs bekapcsolva",
+              "level": "warning",
+              "detail": "Valódi /api/v3/account olvasáshoz kell."
+            }
+          ],
+          "safe_note": "Order endpoint továbbra sincs bekötve.",
+          "order_endpoint_used": false
+        },
+        "modules": [
+          {
+            "id": "demo_core",
+            "title": "Demo Core",
+            "ok": true,
+            "detail": "Core modul aktív",
+            "weight": 1
+          },
+          {
+            "id": "settings",
+            "title": "Settings",
+            "ok": true,
+            "detail": "settings state létezik",
+            "weight": 1
+          },
+          {
+            "id": "logs",
+            "title": "Logs / Audit",
+            "ok": true,
+            "detail": "audit/trade log modul",
+            "weight": 1
+          },
+          {
+            "id": "healthcheck",
+            "title": "Healthcheck / Heartbeat",
+            "ok": true,
+            "detail": "OK",
+            "weight": 1
+          },
+          {
+            "id": "safe_mode",
+            "title": "Panic Stop / Safe Mode",
+            "ok": true,
+            "detail": "panic + safe mode függvények",
+            "weight": 1
+          },
+          {
+            "id": "execution_mode",
+            "title": "Execution Mode",
+            "ok": true,
+            "detail": "AUTO",
+            "weight": 1
+          },
+          {
+            "id": "profit_hold",
+            "title": "Profit Hold / Smart Exit",
+            "ok": true,
+            "detail": "profit tartás beállítások",
+            "weight": 1
+          },
+          {
+            "id": "scanner",
+            "title": "Multi-symbol Scanner",
+            "ok": true,
+            "detail": "scanner függvény",
+            "weight": 1
+          },
+          {
+            "id": "fee_tax",
+            "title": "Fee + Tax",
+            "ok": false,
+            "detail": "nettó/adó utáni PnL",
+            "weight": 1
+          },
+          {
+            "id": "trade_guard",
+            "title": "Trade Screen Guard",
+            "ok": true,
+            "detail": "BBO/spread/slippage",
+            "weight": 1
+          },
+          {
+            "id": "ai_advisor",
+            "title": "AI Advisor",
+            "ok": true,
+            "detail": "offline/API advisor alap",
+            "weight": 1
+          },
+          {
+            "id": "secrets",
+            "title": "Encrypted Secrets",
+            "ok": false,
+            "detail": "secrets.enc státusz",
+            "weight": 1
+          },
+          {
+            "id": "email",
+            "title": "Email Notify",
+            "ok": true,
+            "detail": "email alap modul",
+            "weight": 1
+          },
+          {
+            "id": "openai",
+            "title": "OpenAI API",
+            "ok": true,
+            "detail": "opcionális API fallback",
+            "weight": 1
+          },
+          {
+            "id": "binance_live_check",
+            "title": "Binance Live Check",
+            "ok": true,
+            "detail": "nem küld ordert",
+            "weight": 1
+          },
+          {
+            "id": "readonly_account",
+            "title": "Read-only Account",
+            "ok": true,
+            "detail": "",
+            "weight": 1
+          },
+          {
+            "id": "live_gate",
+            "title": "Live Safety Gate",
+            "ok": true,
+            "detail": "hard-stop gate",
+            "weight": 1
+          },
+          {
+            "id": "approval",
+            "title": "Approval / Dry-run",
+            "ok": true,
+            "detail": "approval queue",
+            "weight": 1
+          },
+          {
+            "id": "portfolio",
+            "title": "Spot Portfolio Sync",
+            "ok": true,
+            "detail": "total/tradable cache",
+            "weight": 1
+          },
+          {
+            "id": "trend",
+            "title": "Trend / Chart / Export",
+            "ok": true,
+            "detail": "trend auto snapshot",
+            "weight": 1
+          },
+          {
+            "id": "backtest",
+            "title": "Backtest / Diagnostics",
+            "ok": true,
+            "detail": "backtest alap",
+            "weight": 1
+          },
+          {
+            "id": "schedules",
+            "title": "Schedules",
+            "ok": true,
+            "detail": "snapshot/trigger alap",
+            "weight": 1
+          },
+          {
+            "id": "launchpool",
+            "title": "Launchpool / Airdrop",
+            "ok": true,
+            "detail": "watch alap",
+            "weight": 1
+          },
+          {
+            "id": "package",
+            "title": "Package / Snapshot",
+            "ok": true,
+            "detail": "APK reference/package",
+            "weight": 1
+          },
+          {
+            "id": "sync",
+            "title": "PC / Drive Sync",
+            "ok": true,
+            "detail": "sync alap",
+            "weight": 1
+          },
+          {
+            "id": "first_run",
+            "title": "First-run Safety",
+            "ok": true,
+            "detail": "startup safety",
+            "weight": 1
+          },
+          {
+            "id": "admin",
+            "title": "Admin Security",
+            "ok": true,
+            "detail": "5 perc timeout",
+            "weight": 1
+          },
+          {
+            "id": "patch_manager",
+            "title": "Patch Manager",
+            "ok": true,
+            "detail": "safe queue",
+            "weight": 1
+          }
+        ],
+        "next_steps": [
+          {
+            "priority": 1,
+            "title": "Secrets / Integrációk kitöltése és tesztelése",
+            "reason": "API/OpenAI/email/Drive/PC mezők hiányozhatnak.",
+            "patch": "PATCH_INTEGRATION_TESTS_UI.sh"
+          },
+          {
+            "priority": 3,
+            "title": "Modern Dashboard KPI kártyák",
+            "reason": "A dashboard adat már megvan, most UI-kártyákba kell rendezni.",
+            "patch": "PATCH_DASHBOARD_MODERN_KPI_CARDS.sh"
+          },
+          {
+            "priority": 4,
+            "title": "Top coin mini-kártyák",
+            "reason": "Scanner + portfolio cache alapján top coin lista kell.",
+            "patch": "PATCH_TOP_COIN_CARDS.sh"
+          },
+          {
+            "priority": 5,
+            "title": "Demo Reset megerősítő popup",
+            "reason": "Biztonságosabb reset, csak Demo módban.",
+            "patch": "PATCH_DEMO_RESET_CONFIRM_MODAL.sh"
+          },
+          {
+            "priority": 6,
+            "title": "Trade Simple / Advanced szétválasztás",
+            "reason": "Beállítások már vannak, UI-t kell rendezni.",
+            "patch": "PATCH_TRADE_SIMPLE_ADVANCED_UI.sh"
+          },
+          {
+            "priority": 7,
+            "title": "Read-only Binance valós balance teszt",
+            "reason": "Order nélkül, csak /api/v3/account olvasás.",
+            "patch": "PATCH_READONLY_BALANCE_TEST_FLOW.sh"
+          },
+          {
+            "priority": 8,
+            "title": "APK build előtti safe full test",
+            "reason": "Csak akkor build, ha minden compile és status zöld.",
+            "patch": "PATCH_PRE_APK_FULL_SAFE_TEST.sh"
+          }
+        ],
+        "order_endpoint_used": false
+      }
+    },
+    "pre_apk_full_safe_test": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "ready_for_apk_test_build": false,
+        "blockers": [
+          "order endpoint suspicious hard block found"
+        ],
+        "warnings": [],
+        "compile": {
+          "ok": true,
+          "missing": [],
+          "checked": [
+            "master_status_overview",
+            "module_readiness_status",
+            "missing_setup_status",
+            "next_recommended_steps",
+            "healthcheck",
+            "trend_auto_refresh_status",
+            "spot_portfolio_status"
+          ],
+          "order_endpoint_used": false
+        },
+        "order_scan": {
+          "ok": true,
+          "safe": false,
+          "suspicious_count": 7,
+          "hard_block_count": 6,
+          "suspicious": [
+            {
+              "file": "demo_core_engine.py",
+              "pattern": "api/v3/order",
+              "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+            },
+            {
+              "file": "demo_core_engine.py",
+              "pattern": "/api/v3/order",
+              "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+            },
+            {
+              "file": "demo_core_engine.py",
+              "pattern": "create_order",
+              "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+            },
+            {
+              "file": "demo_core_engine.py",
+              "pattern": "new_order",
+              "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+            },
+            {
+              "file": "demo_core_engine.py",
+              "pattern": "order/test",
+              "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+            },
+            {
+              "file": "demo_core_engine.py",
+              "pattern": "signed_order",
+              "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+            },
+            {
+              "file": "demo_core_engine.py",
+              "pattern": "LIVE ORDER SENT",
+              "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+            }
+          ],
+          "hard_blocks": [
+            {
+              "file": "demo_core_engine.py",
+              "pattern": "api/v3/order",
+              "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+            },
+            {
+              "file": "demo_core_engine.py",
+              "pattern": "/api/v3/order",
+              "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+            },
+            {
+              "file": "demo_core_engine.py",
+              "pattern": "create_order",
+              "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+            },
+            {
+              "file": "demo_core_engine.py",
+              "pattern": "new_order",
+              "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+            },
+            {
+              "file": "demo_core_engine.py",
+              "pattern": "signed_order",
+              "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+            },
+            {
+              "file": "demo_core_engine.py",
+              "pattern": "LIVE ORDER SENT",
+              "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+            }
+          ],
+          "order_endpoint_used": false,
+          "message": "Order endpoint safety scan lefutott."
+        },
+        "readiness_score_pct": 92.86,
+        "min_required_score_pct": 70.0,
+        "report": {
+          "ok": true,
+          "path": "logs/pre_apk_safe_report.json",
+          "order_endpoint_used": false,
+          "message": "Module status report export kész."
+        },
+        "apk_build_touched": false,
+        "order_endpoint_used": false,
+        "message": "Pre-APK full safe test lefutott. Ez még nem APK build."
+      }
+    },
+    "integration_test_center_status": {
+      "ok": true,
+      "order_endpoint_used": false,
+      "result": {
+        "ok": true,
+        "enabled": true,
+        "allow_network": false,
+        "allow_email_send": false,
+        "ok_count": 5,
+        "total_count": 8,
+        "score_pct": 62.5,
+        "rows": [
+          {
+            "key": "secrets",
+            "title": "Titkosított secrets",
+            "ok": false,
+            "detail": "secrets.enc / key státusz",
+            "safe": true
+          },
+          {
+            "key": "email_config",
+            "title": "E-mail config",
+            "ok": false,
+            "detail": "{'ok': False, 'smtp_host': 'smtp.gmail.com', 'smtp_port': '587', 'email_user': '', 'email_to': '', 'has_password': False}",
+            "safe": true
+          },
+          {
+            "key": "openai_config",
+            "title": "OpenAI config",
+            "ok": false,
+            "detail": "{'ok': True, 'has_key': False, 'api_enabled': False, 'ai_mode': 'OFFLINE', 'model': 'gpt-5-mini', 'ready': False}",
+            "safe": true
+          },
+          {
+            "key": "binance_live_check",
+            "title": "Binance live readiness",
+            "ok": true,
+            "detail": "csak státusz, nem order",
+            "safe": true
+          },
+          {
+            "key": "binance_readonly",
+            "title": "Binance read-only",
+            "ok": true,
+            "detail": "",
+            "safe": true
+          },
+          {
+            "key": "sync",
+            "title": "PC / Drive sync",
+            "ok": true,
+            "detail": "{'ok': True, 'sync_enabled': True, 'primary_device': 'PHONE', 'drive_sync_folder': 'AutobotBackups', 'pc_sync_folder': 'PCSync', 'drive_files_count': 1, 'pc_files_count': 0, 'last_drive_files': ['AutobotBackups/autobot_sync_drive_1777763617.zip'], 'last_pc_files': [], 'last_sync_export_ts': 1777763617, 'last_sync_import_ts': 0}",
+            "safe": true
+          },
+          {
+            "key": "first_run",
+            "title": "First-run wizard státusz",
+            "ok": true,
+            "detail": "{'ok': True, 'first_run_done': False, 'missing_count': 3, 'ready': False, 'checklist': [{'id': 'secrets_file', 'label': 'Titkosított secrets fájl', 'ok': True}, {'id': 'binance_api', 'label': 'Binance API key/secret megadva', 'ok': False}, {'id': 'email', 'label': 'E-mail értesítés beállítva', 'ok': False}, {'id': 'openai', 'label': 'OpenAI API kulcs megadva', 'ok': False}, {'id': 'sync_dirs', 'label': 'Drive/PC sync mappák létrehozva', 'ok': True}, {'id': 'live_safe', 'label': 'Live mód biztonsági állapot ellenőrizve', 'ok': True}]}",
+            "safe": true
+          },
+          {
+            "key": "health",
+            "title": "Healthcheck",
+            "ok": true,
+            "detail": "OK",
+            "safe": true
+          }
+        ],
+        "order_endpoint_used": false,
+        "message": "Integration Test Center státusz kész. Alapból nincs hálózati hívás."
+      }
+    }
+  }
+}

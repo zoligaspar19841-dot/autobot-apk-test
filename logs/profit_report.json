@@ -1,6 +1,6 @@
 {
-  "ts": 1777768549,
-  "app_version": "0.5.4-demo-core",
+  "ts": 1777768825,
+  "app_version": "0.5.5-demo-core",
   "status": {
     "ok": true,
     "enabled": true,
@@ -22,7 +22,7 @@
     "estimated_tax_value": 0.0,
     "after_tax_pnl": 0.0,
     "balance": 81.0,
-    "equity": 99.91143534,
+    "equity": 99.9040651,
     "fee_pct_reference": 0.1,
     "trade_count": 2,
     "buy_count": 2,
@@ -51,127 +51,127 @@
       }
     ],
     "audit_log_exists": true,
-    "audit_rows_seen": 172,
+    "audit_rows_seen": 213,
     "last_audit": [
       {
-        "ts": "1777767432",
-        "event": "SCAN_SYMBOLS",
-        "detail": "Multi-symbol scanner",
-        "data": "{\"symbols_count\": 3, \"top\": [\"ETHUSDT\", \"BTCUSDT\", \"DOGEUSDT\"]}"
-      },
-      {
-        "ts": "1777767433",
-        "event": "HEALTHCHECK",
-        "detail": "OK",
-        "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
-      },
-      {
-        "ts": "1777767433",
+        "ts": "1777768638",
         "event": "BINANCE_LIVE_STATUS",
         "detail": "Live státusz ellenőrzés",
         "data": "{\"ok\": true, \"has_api_key\": false, \"has_api_secret\": false, \"live_mode_enabled\": false, \"live_require_confirm\": true, \"live_warning_ack\": false, \"live_allow_buy\": false, \"live_allow_sell\": false, \"live_max_order_usdt\": 10.0, \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"ready_for_live\": false, \"warnings\": [\"Binance API key hiányzik.\", \"Binance API secret hiányzik.\"]}"
       },
       {
-        "ts": "1777767433",
+        "ts": "1777768638",
         "event": "BINANCE_LIVE_STATUS",
         "detail": "Live státusz ellenőrzés",
         "data": "{\"ok\": true, \"has_api_key\": false, \"has_api_secret\": false, \"live_mode_enabled\": false, \"live_require_confirm\": true, \"live_warning_ack\": false, \"live_allow_buy\": false, \"live_allow_sell\": false, \"live_max_order_usdt\": 10.0, \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"ready_for_live\": false, \"warnings\": [\"Binance API key hiányzik.\", \"Binance API secret hiányzik.\"]}"
       },
       {
-        "ts": "1777767433",
+        "ts": "1777768638",
         "event": "HEALTHCHECK",
         "detail": "OK",
         "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
       },
       {
-        "ts": "1777767434",
+        "ts": "1777768639",
         "event": "BINANCE_LIVE_STATUS",
         "detail": "Live státusz ellenőrzés",
         "data": "{\"ok\": true, \"has_api_key\": false, \"has_api_secret\": false, \"live_mode_enabled\": false, \"live_require_confirm\": true, \"live_warning_ack\": false, \"live_allow_buy\": false, \"live_allow_sell\": false, \"live_max_order_usdt\": 10.0, \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"ready_for_live\": false, \"warnings\": [\"Binance API key hiányzik.\", \"Binance API secret hiányzik.\"]}"
       },
       {
-        "ts": "1777767434",
+        "ts": "1777768639",
         "event": "HEALTHCHECK",
         "detail": "OK",
         "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
       },
       {
-        "ts": "1777768285",
-        "event": "HEALTHCHECK",
-        "detail": "OK",
-        "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
+        "ts": "1777768640",
+        "event": "HEALTH_REPORT_EXPORT",
+        "detail": "Health report export",
+        "data": "{\"path\": \"logs/health_report.json\", \"order_endpoint_used\": false}"
       },
       {
-        "ts": "1777768287",
+        "ts": "1777768816",
         "event": "SCAN_SYMBOLS",
         "detail": "Multi-symbol scanner",
-        "data": "{\"symbols_count\": 3, \"top\": [\"BTCUSDT\", \"DOGEUSDT\", \"ETHUSDT\"]}"
+        "data": "{\"symbols_count\": 3, \"top\": [\"DOGEUSDT\", \"BTCUSDT\", \"ETHUSDT\"]}"
       },
       {
-        "ts": "1777768287",
-        "event": "AI_ADVISOR",
-        "detail": "HOLD",
-        "data": "{\"ok\": true, \"symbol\": \"BTCUSDT\", \"recommendation\": \"HOLD\", \"confidence\": 0.351, \"ai_mode\": \"OFFLINE\", \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"running\": false, \"scanner\": {\"symbol\": \"BTCUSDT\", \"score\": 0.351, \"signal\": \"WEAK\", \"price\": 79130.52247866, \"trend_pct\": 0.9994, \"momentum_pct\": 0.0106, \"volatility_pct\": 1.0064}, \"trade_guard\": {\"ok\": true, \"allowed\": true, \"side\": \"BUY\", \"symbol\": \"BTCUSDT\", \"bbo_price\": 79139.47888853, \"limit_price\": 79218.61836742, \"spread_pct\": 0.02928, \"bid_ratio\": 0.5012, \"ask_ratio\": 0.4988, \"reasons\": [\"BBO/spread/orderbook OK\"], \"orderbook\": {\"symbol\": \"BTCUSDT\", \"mid\": 79127.89459833, \"best_bid\": 79116.31030813, \"best_ask\": 79139.47888853, \"spread_pct\": 0.02928, \"bid_ratio\": 0.5012, \"ask_ratio\": 0.4988, \"momentum_pct\": 0.0239}}, \"fee_tax_example_1pct\": {\"gross_profit_pct\": 1.0, \"roundtrip_fee_pct\": 0.2, \"net_before_tax_pct\": 0.8, \"tax_cut_pct\": 0.12, \"after_tax_pct\": 0.68, \"positive_after_tax\": true}, \"health_status\": \"OK\", \"reasons\": [\"Scanner score: 0.351\", \"Scanner signal: WEAK\", \"Spread: 0.02928%\", \"BBO allowed: True\", \"Execution mode: AUTO\", \"Safe mode: False\", \"Health: OK\", \"Nincs elég erős edge a vételhez.\"], \"openai_api\": {\"ok\": false, \"used_api\": false, \"reason\": \"not_requested\"}}"
-      },
-      {
-        "ts": "1777768287",
+        "ts": "1777768817",
         "event": "HEALTHCHECK",
         "detail": "OK",
         "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
       },
       {
-        "ts": "1777768289",
-        "event": "SCAN_SYMBOLS",
-        "detail": "Multi-symbol scanner",
-        "data": "{\"symbols_count\": 3, \"top\": [\"BTCUSDT\", \"DOGEUSDT\", \"ETHUSDT\"]}"
+        "ts": "1777768817",
+        "event": "BINANCE_LIVE_STATUS",
+        "detail": "Live státusz ellenőrzés",
+        "data": "{\"ok\": true, \"has_api_key\": false, \"has_api_secret\": false, \"live_mode_enabled\": false, \"live_require_confirm\": true, \"live_warning_ack\": false, \"live_allow_buy\": false, \"live_allow_sell\": false, \"live_max_order_usdt\": 10.0, \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"ready_for_live\": false, \"warnings\": [\"Binance API key hiányzik.\", \"Binance API secret hiányzik.\"]}"
       },
       {
-        "ts": "1777768289",
-        "event": "AI_ADVISOR",
-        "detail": "HOLD",
-        "data": "{\"ok\": true, \"symbol\": \"BTCUSDT\", \"recommendation\": \"HOLD\", \"confidence\": 0.351, \"ai_mode\": \"OFFLINE\", \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"running\": false, \"scanner\": {\"symbol\": \"BTCUSDT\", \"score\": 0.351, \"signal\": \"WEAK\", \"price\": 79130.52247866, \"trend_pct\": 0.9994, \"momentum_pct\": 0.0106, \"volatility_pct\": 1.0064}, \"trade_guard\": {\"ok\": true, \"allowed\": true, \"side\": \"BUY\", \"symbol\": \"BTCUSDT\", \"bbo_price\": 79139.47888853, \"limit_price\": 79218.61836742, \"spread_pct\": 0.02928, \"bid_ratio\": 0.5012, \"ask_ratio\": 0.4988, \"reasons\": [\"BBO/spread/orderbook OK\"], \"orderbook\": {\"symbol\": \"BTCUSDT\", \"mid\": 79127.89459833, \"best_bid\": 79116.31030813, \"best_ask\": 79139.47888853, \"spread_pct\": 0.02928, \"bid_ratio\": 0.5012, \"ask_ratio\": 0.4988, \"momentum_pct\": 0.0239}}, \"fee_tax_example_1pct\": {\"gross_profit_pct\": 1.0, \"roundtrip_fee_pct\": 0.2, \"net_before_tax_pct\": 0.8, \"tax_cut_pct\": 0.12, \"after_tax_pct\": 0.68, \"positive_after_tax\": true}, \"health_status\": \"OK\", \"reasons\": [\"Scanner score: 0.351\", \"Scanner signal: WEAK\", \"Spread: 0.02928%\", \"BBO allowed: True\", \"Execution mode: AUTO\", \"Safe mode: False\", \"Health: OK\", \"Nincs elég erős edge a vételhez.\"], \"openai_api\": {\"ok\": false, \"used_api\": false, \"reason\": \"not_requested\"}}"
+        "ts": "1777768817",
+        "event": "BINANCE_LIVE_STATUS",
+        "detail": "Live státusz ellenőrzés",
+        "data": "{\"ok\": true, \"has_api_key\": false, \"has_api_secret\": false, \"live_mode_enabled\": false, \"live_require_confirm\": true, \"live_warning_ack\": false, \"live_allow_buy\": false, \"live_allow_sell\": false, \"live_max_order_usdt\": 10.0, \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"ready_for_live\": false, \"warnings\": [\"Binance API key hiányzik.\", \"Binance API secret hiányzik.\"]}"
       },
       {
-        "ts": "1777768289",
-        "event": "TRADE_SIMPLE_SAVE",
-        "detail": "Trade Simple settings mentve",
-        "data": "{\"symbol\": \"BTCUSDT\", \"side\": \"BUY\", \"quote_amount\": 10.0, \"order_endpoint_used\": false}"
-      },
-      {
-        "ts": "1777768289",
+        "ts": "1777768817",
         "event": "HEALTHCHECK",
         "detail": "OK",
         "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
       },
       {
-        "ts": "1777768291",
+        "ts": "1777768818",
+        "event": "BINANCE_LIVE_STATUS",
+        "detail": "Live státusz ellenőrzés",
+        "data": "{\"ok\": true, \"has_api_key\": false, \"has_api_secret\": false, \"live_mode_enabled\": false, \"live_require_confirm\": true, \"live_warning_ack\": false, \"live_allow_buy\": false, \"live_allow_sell\": false, \"live_max_order_usdt\": 10.0, \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"ready_for_live\": false, \"warnings\": [\"Binance API key hiányzik.\", \"Binance API secret hiányzik.\"]}"
+      },
+      {
+        "ts": "1777768818",
+        "event": "HEALTHCHECK",
+        "detail": "OK",
+        "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
+      },
+      {
+        "ts": "1777768820",
         "event": "SCAN_SYMBOLS",
         "detail": "Multi-symbol scanner",
-        "data": "{\"symbols_count\": 3, \"top\": [\"BTCUSDT\", \"DOGEUSDT\", \"ETHUSDT\"]}"
+        "data": "{\"symbols_count\": 3, \"top\": [\"DOGEUSDT\", \"BTCUSDT\", \"ETHUSDT\"]}"
       },
       {
-        "ts": "1777768291",
+        "ts": "1777768820",
+        "event": "HEALTHCHECK",
+        "detail": "OK",
+        "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
+      },
+      {
+        "ts": "1777768822",
+        "event": "SCAN_SYMBOLS",
+        "detail": "Multi-symbol scanner",
+        "data": "{\"symbols_count\": 3, \"top\": [\"DOGEUSDT\", \"BTCUSDT\", \"ETHUSDT\"]}"
+      },
+      {
+        "ts": "1777768822",
         "event": "AI_ADVISOR",
         "detail": "HOLD",
-        "data": "{\"ok\": true, \"symbol\": \"BTCUSDT\", \"recommendation\": \"HOLD\", \"confidence\": 0.351, \"ai_mode\": \"OFFLINE\", \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"running\": false, \"scanner\": {\"symbol\": \"BTCUSDT\", \"score\": 0.351, \"signal\": \"WEAK\", \"price\": 79130.52247866, \"trend_pct\": 0.9994, \"momentum_pct\": 0.0106, \"volatility_pct\": 1.0064}, \"trade_guard\": {\"ok\": true, \"allowed\": true, \"side\": \"BUY\", \"symbol\": \"BTCUSDT\", \"bbo_price\": 79139.47888853, \"limit_price\": 79218.61836742, \"spread_pct\": 0.02928, \"bid_ratio\": 0.5012, \"ask_ratio\": 0.4988, \"reasons\": [\"BBO/spread/orderbook OK\"], \"orderbook\": {\"symbol\": \"BTCUSDT\", \"mid\": 79127.89459833, \"best_bid\": 79116.31030813, \"best_ask\": 79139.47888853, \"spread_pct\": 0.02928, \"bid_ratio\": 0.5012, \"ask_ratio\": 0.4988, \"momentum_pct\": 0.0239}}, \"fee_tax_example_1pct\": {\"gross_profit_pct\": 1.0, \"roundtrip_fee_pct\": 0.2, \"net_before_tax_pct\": 0.8, \"tax_cut_pct\": 0.12, \"after_tax_pct\": 0.68, \"positive_after_tax\": true}, \"health_status\": \"OK\", \"reasons\": [\"Scanner score: 0.351\", \"Scanner signal: WEAK\", \"Spread: 0.02928%\", \"BBO allowed: True\", \"Execution mode: AUTO\", \"Safe mode: False\", \"Health: OK\", \"Nincs elég erős edge a vételhez.\"], \"openai_api\": {\"ok\": false, \"used_api\": false, \"reason\": \"not_requested\"}}"
+        "data": "{\"ok\": true, \"symbol\": \"BTCUSDT\", \"recommendation\": \"HOLD\", \"confidence\": 0.3, \"ai_mode\": \"OFFLINE\", \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"running\": false, \"scanner\": {\"symbol\": \"BTCUSDT\", \"score\": 0.3, \"signal\": \"WEAK\", \"price\": 78720.05392102, \"trend_pct\": -0.0919, \"momentum_pct\": -0.2759, \"volatility_pct\": 0.5083}, \"trade_guard\": {\"ok\": true, \"allowed\": true, \"side\": \"BUY\", \"symbol\": \"BTCUSDT\", \"bbo_price\": 78735.58437627, \"limit_price\": 78814.31996065, \"spread_pct\": 0.046135, \"bid_ratio\": 0.4869, \"ask_ratio\": 0.5131, \"reasons\": [\"BBO/spread/orderbook OK\"], \"orderbook\": {\"symbol\": \"BTCUSDT\", \"mid\": 78717.42604068, \"best_bid\": 78699.2677051, \"best_ask\": 78735.58437627, \"spread_pct\": 0.046135, \"bid_ratio\": 0.4869, \"ask_ratio\": 0.5131, \"momentum_pct\": -0.2626}}, \"fee_tax_example_1pct\": {\"gross_profit_pct\": 1.0, \"roundtrip_fee_pct\": 0.2, \"net_before_tax_pct\": 0.8, \"tax_cut_pct\": 0.12, \"after_tax_pct\": 0.68, \"positive_after_tax\": true}, \"health_status\": \"OK\", \"reasons\": [\"Scanner score: 0.3\", \"Scanner signal: WEAK\", \"Spread: 0.046135%\", \"BBO allowed: True\", \"Execution mode: AUTO\", \"Safe mode: False\", \"Health: OK\", \"Nincs elég erős edge a vételhez.\"], \"openai_api\": {\"ok\": false, \"used_api\": false, \"reason\": \"not_requested\"}}"
       },
       {
-        "ts": "1777768457",
-        "event": "READONLY_BALANCE_REPORT_EXPORT",
-        "detail": "Read-only balance report export",
-        "data": "{\"path\": \"logs/readonly_balance_report.json\", \"order_endpoint_used\": false}"
+        "ts": "1777768822",
+        "event": "HEALTHCHECK",
+        "detail": "OK",
+        "data": "{\"warnings\": [], \"running\": false, \"safe_mode\": false}"
       },
       {
-        "ts": "1777768549",
-        "event": "PROFIT_REPORT_JSON_EXPORT",
-        "detail": "Profit report JSON export",
-        "data": "{\"path\": \"logs/profit_report.json\", \"order_endpoint_used\": false}"
+        "ts": "1777768824",
+        "event": "SCAN_SYMBOLS",
+        "detail": "Multi-symbol scanner",
+        "data": "{\"symbols_count\": 3, \"top\": [\"DOGEUSDT\", \"BTCUSDT\", \"ETHUSDT\"]}"
       },
       {
-        "ts": "1777768549",
-        "event": "PROFIT_REPORT_CSV_EXPORT",
-        "detail": "Profit report CSV export",
-        "data": "{\"path\": \"logs/profit_report.csv\", \"order_endpoint_used\": false}"
+        "ts": "1777768824",
+        "event": "AI_ADVISOR",
+        "detail": "HOLD",
+        "data": "{\"ok\": true, \"symbol\": \"BTCUSDT\", \"recommendation\": \"HOLD\", \"confidence\": 0.3, \"ai_mode\": \"OFFLINE\", \"execution_mode\": \"AUTO\", \"safe_mode\": false, \"running\": false, \"scanner\": {\"symbol\": \"BTCUSDT\", \"score\": 0.3, \"signal\": \"WEAK\", \"price\": 78720.05392102, \"trend_pct\": -0.0919, \"momentum_pct\": -0.2759, \"volatility_pct\": 0.5083}, \"trade_guard\": {\"ok\": true, \"allowed\": true, \"side\": \"BUY\", \"symbol\": \"BTCUSDT\", \"bbo_price\": 78735.58437627, \"limit_price\": 78814.31996065, \"spread_pct\": 0.046135, \"bid_ratio\": 0.4869, \"ask_ratio\": 0.5131, \"reasons\": [\"BBO/spread/orderbook OK\"], \"orderbook\": {\"symbol\": \"BTCUSDT\", \"mid\": 78717.42604068, \"best_bid\": 78699.2677051, \"best_ask\": 78735.58437627, \"spread_pct\": 0.046135, \"bid_ratio\": 0.4869, \"ask_ratio\": 0.5131, \"momentum_pct\": -0.2626}}, \"fee_tax_example_1pct\": {\"gross_profit_pct\": 1.0, \"roundtrip_fee_pct\": 0.2, \"net_before_tax_pct\": 0.8, \"tax_cut_pct\": 0.12, \"after_tax_pct\": 0.68, \"positive_after_tax\": true}, \"health_status\": \"OK\", \"reasons\": [\"Scanner score: 0.3\", \"Scanner signal: WEAK\", \"Spread: 0.046135%\", \"BBO allowed: True\", \"Execution mode: AUTO\", \"Safe mode: False\", \"Health: OK\", \"Nincs elég erős edge a vételhez.\"], \"openai_api\": {\"ok\": false, \"used_api\": false, \"reason\": \"not_requested\"}}"
       }
     ],
     "order_endpoint_used": false

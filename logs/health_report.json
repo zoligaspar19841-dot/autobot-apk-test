@@ -1,20 +1,20 @@
 {
-  "ts": 1777768635,
+  "ts": 1777768832,
   "app_version": "0.5.5-demo-core",
   "health_alert_center": {
     "ok": true,
     "heartbeat": {
       "ok": true,
-      "now": 1777768635,
+      "now": 1777768832,
       "running": false,
-      "last_heartbeat_ts": 1777768635,
+      "last_heartbeat_ts": 1777768832,
       "last_tick_ts": 1777759959,
       "heartbeat_age_sec": 0,
-      "tick_age_sec": 8676,
+      "tick_age_sec": 8873,
       "stale_after_sec": 120,
       "heartbeat_ok": true,
       "tick_ok": false,
-      "last_action": "Heartbeat update: test",
+      "last_action": "Heartbeat update: full_system_check",
       "order_endpoint_used": false
     },
     "alerts": {
@@ -37,27 +37,27 @@
         "positions_count": 2,
         "balance": 81.0,
         "realized_pnl": 0.0,
-        "equity": 99.90932132020164,
+        "equity": 99.90271682409434,
         "trade_log_exists": true,
         "trade_log_path": "logs/demo_core_trades.csv",
         "last_tick_ts": 1777759959,
-        "last_heartbeat_ts": 1777768635,
-        "last_tick_age_sec": 8676,
+        "last_heartbeat_ts": 1777768832,
+        "last_tick_age_sec": 8873,
         "last_heartbeat_age_sec": 0,
-        "last_action": "Heartbeat update: test"
+        "last_action": "Heartbeat update: full_system_check"
       },
       "heartbeat": {
         "ok": true,
-        "now": 1777768636,
+        "now": 1777768833,
         "running": false,
-        "last_heartbeat_ts": 1777768635,
+        "last_heartbeat_ts": 1777768832,
         "last_tick_ts": 1777759959,
         "heartbeat_age_sec": 1,
-        "tick_age_sec": 8677,
+        "tick_age_sec": 8874,
         "stale_after_sec": 120,
         "heartbeat_ok": true,
         "tick_ok": false,
-        "last_action": "Heartbeat update: test",
+        "last_action": "Heartbeat update: full_system_check",
         "order_endpoint_used": false
       },
       "order_endpoint_used": false
@@ -154,7 +154,7 @@
       "running": false,
       "safe_mode": false,
       "execution_mode": "AUTO",
-      "last_action": "Heartbeat update: test",
+      "last_action": "Heartbeat update: full_system_check",
       "portfolio": {
         "total_value_usd": 99.88643379,
         "tradable_usd": 71.0,
