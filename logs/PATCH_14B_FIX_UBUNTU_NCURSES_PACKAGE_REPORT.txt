@@ -1,0 +1,6 @@
+PATCH 14B OK
+Date: Sun May  3 19:00:28 CEST 2026
+Fix:
+- GitHub Actions Ubuntu csomaghiba javítva
+- libncurses5 -> libncurses6
+- APK build helyben nem indult
