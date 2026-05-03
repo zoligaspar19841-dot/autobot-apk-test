@@ -706,6 +706,8 @@ class DemoCoreTrendHistoryScreen(Screen):
             ('NEXT POINT', self.next_point),
             ('EXPORT CSV', self.export_csv),
             ('STATS', self.stats),
+            ('AUTO STATUS', self.auto_status),
+            ('AUTO SNAPSHOT', self.auto_snapshot),
             ('SPOT SYNC', self.spot_sync),
             ('DASHBOARD', lambda: self.manager.go_to('demo_core')),
             ('SETTINGS', lambda: self.manager.go_to('demo_settings')),
@@ -721,6 +723,7 @@ class DemoCoreTrendHistoryScreen(Screen):
         self.add_widget(root)
 
     def on_pre_enter(self):
+        self.start_dashboard_auto_refresh()
         self.refresh()
 
     def go_back(self):
@@ -833,6 +836,24 @@ class DemoCoreTrendHistoryScreen(Screen):
             self.refresh()
         except Exception as e:
             self.info.text = 'Select latest hiba: ' + str(e)
+
+    def auto_status(self):
+        try:
+            res = demo_core.trend_auto_refresh_status()
+            lines = ['[b]Trend Auto Refresh státusz[/b]', '']
+            for k, v in res.items():
+                lines.append(f"{k}: {v}")
+            self.info.text = '\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Auto status hiba: ' + str(e)
+
+    def auto_snapshot(self):
+        try:
+            res = demo_core.trend_auto_snapshot_tick('ui_auto_snapshot_button')
+            self.refresh()
+            self.info.text += '\n\n[b]Auto snapshot:[/b]\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Auto snapshot hiba: ' + str(e)
 
     def export_csv(self):
         try:
@@ -3155,6 +3176,11 @@ class DemoCoreSettingsScreen(Screen):
             ('dashboard_trend_widget_view', 'Dashboard trend widget view'),
             ('dashboard_trend_widget_points', 'Dashboard trend widget points'),
             ('dashboard_show_selected_trend_point', 'Dashboard show selected trend point true/false'),
+            ('trend_auto_snapshot_enabled', 'Trend auto snapshot enabled true/false'),
+            ('trend_auto_snapshot_interval_sec', 'Trend auto snapshot interval sec'),
+            ('trend_auto_snapshot_only_when_running', 'Trend auto snapshot only when running true/false'),
+            ('dashboard_auto_refresh_enabled', 'Dashboard auto refresh enabled true/false'),
+            ('dashboard_auto_refresh_interval_sec', 'Dashboard auto refresh interval sec'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -3348,6 +3374,11 @@ class DemoCoreSettingsScreen(Screen):
             cfg['dashboard_trend_widget_view'] = self.inputs['dashboard_trend_widget_view'].text.strip().upper() or 'PROFIT'
             cfg['dashboard_trend_widget_points'] = int(float(self.inputs['dashboard_trend_widget_points'].text.replace(',', '.')))
             cfg['dashboard_show_selected_trend_point'] = self.inputs['dashboard_show_selected_trend_point'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['trend_auto_snapshot_enabled'] = self.inputs['trend_auto_snapshot_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['trend_auto_snapshot_interval_sec'] = int(float(self.inputs['trend_auto_snapshot_interval_sec'].text.replace(',', '.')))
+            cfg['trend_auto_snapshot_only_when_running'] = self.inputs['trend_auto_snapshot_only_when_running'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['dashboard_auto_refresh_enabled'] = self.inputs['dashboard_auto_refresh_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['dashboard_auto_refresh_interval_sec'] = int(float(self.inputs['dashboard_auto_refresh_interval_sec'].text.replace(',', '.')))
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -3372,6 +3403,38 @@ class DemoCoreSettingsScreen(Screen):
 
 
 class DemoCoreScreen(Screen):
+    _dashboard_auto_event = None
+
+    def start_dashboard_auto_refresh(self):
+        try:
+            st = demo_core.load_state()
+            cfg = st.get("settings", {})
+            if not bool(cfg.get("dashboard_auto_refresh_enabled", True)):
+                return
+            interval = int(cfg.get("dashboard_auto_refresh_interval_sec", 15) or 15)
+            if self._dashboard_auto_event is None:
+                self._dashboard_auto_event = Clock.schedule_interval(self.dashboard_auto_tick, interval)
+        except Exception:
+            pass
+
+    def stop_dashboard_auto_refresh(self):
+        try:
+            if self._dashboard_auto_event is not None:
+                self._dashboard_auto_event.cancel()
+                self._dashboard_auto_event = None
+        except Exception:
+            pass
+
+    def dashboard_auto_tick(self, dt):
+        try:
+            demo_core.trend_auto_snapshot_tick("dashboard_auto_tick")
+        except Exception:
+            pass
+        try:
+            self.refresh(None)
+        except Exception:
+            pass
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._demo_core_auto_event = None

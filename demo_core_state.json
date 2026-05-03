@@ -149,8 +149,8 @@
     "spot_safety_reserve": 10.0,
     "spot_max_tradeable_pct": 90.0,
     "spot_min_asset_value_usd": 0.01,
-    "spot_last_sync_ts": 1777766151,
-    "portfolio_total_value_usd": 99.96609944,
+    "spot_last_sync_ts": 1777766552,
+    "portfolio_total_value_usd": 99.88643379,
     "portfolio_tradable_usd": 71.0,
     "dashboard_use_portfolio_cache": true,
     "trend_history_enabled": true,
@@ -167,7 +167,12 @@
     "dashboard_trend_widget_enabled": true,
     "dashboard_trend_widget_view": "PROFIT",
     "dashboard_trend_widget_points": 80,
-    "dashboard_show_selected_trend_point": true
+    "dashboard_show_selected_trend_point": true,
+    "trend_auto_snapshot_enabled": true,
+    "trend_auto_snapshot_interval_sec": 30,
+    "trend_auto_snapshot_only_when_running": false,
+    "dashboard_auto_refresh_enabled": true,
+    "dashboard_auto_refresh_interval_sec": 15
   },
   "last_action": "Spot portfolio sync OK",
   "safe_mode": false,
@@ -206,7 +211,7 @@
       "USDC",
       "USDT"
     ],
-    "total_value_usd": 99.96609944,
+    "total_value_usd": 99.88643379,
     "quote_free_usd": 81.0,
     "safety_reserve_usd": 10.0,
     "tradable_usd": 71.0,
@@ -226,8 +231,8 @@
         "free": 0.0001267180989088671,
         "locked": 0.0,
         "total": 0.0001267180989088671,
-        "price_usd": 79045.57351577,
-        "value_usd": 10.0165048,
+        "price_usd": 78527.3385158,
+        "value_usd": 9.95083505,
         "source": "demo_position"
       },
       {
@@ -235,8 +240,8 @@
         "free": 0.0038604882824240655,
         "locked": 0.0,
         "total": 0.0038604882824240655,
-        "price_usd": 2318.25457981,
-        "value_usd": 8.94959464,
+        "price_usd": 2314.62915817,
+        "value_usd": 8.93559874,
         "source": "demo_position"
       }
     ],
@@ -314,7 +319,31 @@
       "quote_free_usd": 81.0,
       "open_positions": 2,
       "last_action": "Spot portfolio sync OK"
+    },
+    {
+      "ts": 1777766553,
+      "reason": "spot_portfolio_sync",
+      "equity": 99.92047756,
+      "total_value_usd": 99.88643379,
+      "realized_pnl": 0.0,
+      "pnl_pct_from_100": -0.113566,
+      "tradable_usd": 71.0,
+      "quote_free_usd": 81.0,
+      "open_positions": 2,
+      "last_action": "Spot portfolio sync OK"
+    },
+    {
+      "ts": 1777766553,
+      "reason": "test_auto_tick",
+      "equity": 99.92047883,
+      "total_value_usd": 99.88643379,
+      "realized_pnl": 0.0,
+      "pnl_pct_from_100": -0.113566,
+      "tradable_usd": 71.0,
+      "quote_free_usd": 81.0,
+      "open_positions": 2,
+      "last_action": "Spot portfolio sync OK"
     }
   ],
-  "last_trend_snapshot_ts": 1777766478
+  "last_trend_snapshot_ts": 1777766553
 }

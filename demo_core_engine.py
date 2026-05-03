@@ -1,4 +1,4 @@
-APP_VERSION = "0.4.6-demo-core"
+APP_VERSION = "0.4.7-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -68,6 +68,15 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+TREND_AUTO_REFRESH_DEFAULTS = {
+    "trend_auto_snapshot_enabled": True,
+    "trend_auto_snapshot_interval_sec": 30,
+    "trend_auto_snapshot_only_when_running": False,
+    "dashboard_auto_refresh_enabled": True,
+    "dashboard_auto_refresh_interval_sec": 15,
+}
 
 TREND_DASHBOARD_WIDGET_DEFAULTS = {
     "dashboard_trend_widget_enabled": True,
@@ -347,6 +356,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "TREND_AUTO_REFRESH_DEFAULTS" in globals():
+        for k, v in TREND_AUTO_REFRESH_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -4884,6 +4899,68 @@ def dashboard_trend_widget_data():
         "selected": detail,
         "stats": stats,
         "note": "Dashboard trend widget adat kész.",
+        "order_endpoint_used": False,
+    }
+
+
+
+def trend_auto_snapshot_tick(reason="auto_timer"):
+    """
+    Automata trend snapshot tick.
+    UI Clock hívhatja.
+    Order nincs.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if not bool(settings.get("trend_auto_snapshot_enabled", True)):
+        return {
+            "ok": False,
+            "saved": False,
+            "reason": "trend_auto_snapshot_enabled false",
+            "order_endpoint_used": False,
+        }
+
+    if bool(settings.get("trend_auto_snapshot_only_when_running", False)) and not bool(state.get("running", False)):
+        return {
+            "ok": False,
+            "saved": False,
+            "reason": "bot_not_running",
+            "order_endpoint_used": False,
+        }
+
+    try:
+        # Portfolio cache frissítés, order nélkül.
+        if bool(settings.get("spot_sync_enabled", True)):
+            sync_spot_portfolio()
+    except Exception:
+        pass
+
+    res = append_trend_history(reason)
+
+    return {
+        "ok": bool(res.get("ok")),
+        "saved": bool(res.get("saved")),
+        "points": res.get("points"),
+        "row": res.get("row"),
+        "order_endpoint_used": False,
+    }
+
+
+def trend_auto_refresh_status():
+    state = load_state()
+    settings = state.get("settings", {})
+    hist = state.get("trend_history") or []
+
+    return {
+        "ok": True,
+        "trend_auto_snapshot_enabled": settings.get("trend_auto_snapshot_enabled", True),
+        "trend_auto_snapshot_interval_sec": settings.get("trend_auto_snapshot_interval_sec", 30),
+        "trend_auto_snapshot_only_when_running": settings.get("trend_auto_snapshot_only_when_running", False),
+        "dashboard_auto_refresh_enabled": settings.get("dashboard_auto_refresh_enabled", True),
+        "dashboard_auto_refresh_interval_sec": settings.get("dashboard_auto_refresh_interval_sec", 15),
+        "last_trend_snapshot_ts": state.get("last_trend_snapshot_ts", 0),
+        "history_points": len(hist),
         "order_endpoint_used": False,
     }
 
