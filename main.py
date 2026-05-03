@@ -4829,536 +4829,356 @@ class DemoCoreSettingsScreen(Screen):
 
 
 
-class DemoCoreScreen(Screen):
-    _dashboard_auto_event = None
 
-    def start_dashboard_auto_refresh(self):
-        try:
-            st = demo_core.load_state()
-            cfg = st.get("settings", {})
-            if not bool(cfg.get("dashboard_auto_refresh_enabled", True)):
-                return
-            interval = int(cfg.get("dashboard_auto_refresh_interval_sec", 15) or 15)
-            if self._dashboard_auto_event is None:
-                self._dashboard_auto_event = Clock.schedule_interval(self.dashboard_auto_tick, interval)
-        except Exception:
-            pass
-
-    def stop_dashboard_auto_refresh(self):
-        try:
-            if self._dashboard_auto_event is not None:
-                self._dashboard_auto_event.cancel()
-                self._dashboard_auto_event = None
-        except Exception:
-            pass
-
-    def dashboard_auto_tick(self, dt):
-        try:
-            demo_core.trend_auto_snapshot_tick("dashboard_auto_tick")
-        except Exception:
-            pass
-        try:
-            self.refresh(None)
-        except Exception:
-            pass
-
+class TrendMiniChart(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._demo_core_auto_event = None
-        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
+        self.values = [100.0]
+        self.bind(pos=lambda *_: self.redraw(), size=lambda *_: self.redraw())
 
-        title = Label(text='[b]DEMO CORE ENGINE[/b]\n[size=14]Demo motor / pozíciók / PnL[/size]', markup=True, size_hint_y=None, height=72)
+    def set_values(self, values):
+        try:
+            vals = [float(v) for v in values if v is not None]
+            if len(vals) < 2:
+                vals = [100.0, 100.0]
+            self.values = vals[-40:]
+        except Exception:
+            self.values = [100.0, 100.0]
+        self.redraw()
+
+    def redraw(self):
+        self.canvas.clear()
+        with self.canvas:
+            Color(0.04, 0.04, 0.04, 1)
+            Rectangle(pos=self.pos, size=self.size)
+
+            x, y = self.pos
+            w, h = self.size
+
+            Color(0.22, 0.22, 0.22, 1)
+            for i in range(1, 4):
+                yy = y + h * i / 4
+                Line(points=[x, yy, x + w, yy], width=1)
+
+            vals = self.values or [100.0, 100.0]
+            mn, mx = min(vals), max(vals)
+            if mx - mn < 0.00001:
+                mx = mn + 1.0
+
+            pts = []
+            for i, v in enumerate(vals):
+                px = x + (w * i / max(1, len(vals) - 1))
+                py = y + 8 + ((v - mn) / (mx - mn)) * max(1, h - 16)
+                pts.extend([px, py])
+
+            Color(1.0, 0.78, 0.10, 1)
+            if len(pts) >= 4:
+                Line(points=pts, width=2)
+
+            # utolsó pont jelölés
+            if len(pts) >= 2:
+                Color(0.0, 0.85, 0.35, 1)
+                px, py = pts[-2], pts[-1]
+                Line(circle=(px, py, 4), width=2)
+
+
+class DemoCoreScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.chart = TrendMiniChart(size_hint_y=None, height=145)
+        self.kpi_labels = {}
+        self.info_labels = {}
+
+        root = BoxLayout(orientation="vertical", padding=10, spacing=8)
+
+        title = Label(
+            text="[b]DEMO CORE ENGINE[/b]\n[size=13]Dashboard / KPI / trend[/size]",
+            markup=True,
+            size_hint_y=None,
+            height=64,
+            halign="center"
+        )
         root.add_widget(title)
 
-        self.kpi = GridLayout(cols=2, spacing=8, size_hint_y=None, height=140)
-        self.lbl_balance = Label(text='[b]Balance[/b]\n-', markup=True)
-        self.lbl_equity = Label(text='[b]Equity[/b]\n-', markup=True)
-        self.lbl_pnl = Label(text='[b]Realized PnL[/b]\n-', markup=True)
-        self.lbl_positions = Label(text='[b]Open Positions[/b]\n-', markup=True)
-        for w in [self.lbl_balance, self.lbl_equity, self.lbl_pnl, self.lbl_positions]:
-            self.kpi.add_widget(w)
-        root.add_widget(self.kpi)
+        kpi = GridLayout(cols=2, spacing=6, size_hint_y=None, height=132)
+        for key, title_text in [
+            ("balance", "Balance"),
+            ("equity", "Equity"),
+            ("realized_pnl", "Realized PnL"),
+            ("open_positions", "Open Positions"),
+        ]:
+            box = BoxLayout(orientation="vertical", padding=6, spacing=2)
+            lab1 = Label(
+                text="[b]" + title_text + "[/b]",
+                markup=True,
+                font_size=18,
+                halign="left",
+                valign="middle",
+                size_hint_y=None,
+                height=34
+            )
+            lab1.bind(size=lambda inst, val: setattr(inst, "text_size", val))
+            lab2 = Label(
+                text="-",
+                font_size=18,
+                halign="left",
+                valign="middle"
+            )
+            lab2.bind(size=lambda inst, val: setattr(inst, "text_size", val))
+            box.add_widget(lab1)
+            box.add_widget(lab2)
+            self.kpi_labels[key] = lab2
+            kpi.add_widget(box)
+        root.add_widget(kpi)
 
-        self.info = Label(text='Betöltés...', halign='left', valign='top', markup=True)
-        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
-        scroll = ScrollView()
-        scroll.add_widget(self.info)
-        root.add_widget(scroll)
+        root.add_widget(Label(
+            text="[b]Trend[/b]  Equity / profit trend mini-grafikon",
+            markup=True,
+            color=(1, 0.82, 0.18, 1),
+            size_hint_y=None,
+            height=32,
+            halign="left"
+        ))
+        root.add_widget(self.chart)
 
-        btns = GridLayout(cols=2, size_hint_y=None, height=520, spacing=8)
+        status_box = BoxLayout(orientation="vertical", size_hint_y=None, height=150, spacing=2)
+        for key in ["state", "safe", "execution", "market_trend", "last_action"]:
+            lab = Label(
+                text="-",
+                markup=True,
+                font_size=16,
+                halign="left",
+                valign="middle",
+                size_hint_y=None,
+                height=28
+            )
+            lab.bind(size=lambda inst, val: setattr(inst, "text_size", val))
+            self.info_labels[key] = lab
+            status_box.add_widget(lab)
+        root.add_widget(status_box)
+
+        pos_title = Label(
+            text="[b]Nyitott pozíciók[/b]",
+            markup=True,
+            size_hint_y=None,
+            height=32,
+            halign="left"
+        )
+        pos_title.bind(size=lambda inst, val: setattr(inst, "text_size", val))
+        root.add_widget(pos_title)
+
+        self.positions_text = Label(
+            text="Nincs nyitott pozíció.",
+            markup=True,
+            halign="left",
+            valign="top",
+            size_hint_y=None,
+            height=72
+        )
+        self.positions_text.bind(size=lambda inst, val: setattr(inst, "text_size", val))
+        root.add_widget(self.positions_text)
+
+        btns = GridLayout(cols=2, spacing=6, size_hint_y=None, height=210)
+
         buttons = [
-            ('FRISSÍTÉS', self.refresh),
-            ('TICK / KÉZI FUTTATÁS', self.do_tick),
-            ('START', self.do_start),
-            ('STOP', self.do_stop),
-            ('DEMO RESET 100 USDC', self.do_reset),
-            ('PANIC STOP / SAFE MODE', self.do_panic_stop),
-            ('SAFE MODE KI', self.do_safe_mode_off),
-            ('VISSZA', self.go_back),
+            ("FRISSÍTÉS", self.refresh),
+            ("TICK / KÉZI FUTTATÁS", self.run_tick),
+            ("START", self.start_bot),
+            ("STOP", self.stop_bot),
+            ("DEMO RESET 100 USDC", self.demo_reset),
+            ("PANIC STOP / SAFE MODE", self.panic_safe),
+            ("BEÁLLÍTÁSOK", self.open_settings),
+            ("VISSZA", self.go_back),
         ]
-        for txt, fn in buttons:
-            b = Button(text=txt)
-            b.bind(on_press=lambda x, f=fn: f())
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda btn, f=fn: f())
             btns.add_widget(b)
+
         root.add_widget(btns)
         self.add_widget(root)
 
-    def on_pre_enter(self):
+    def on_pre_enter(self, *args):
         self.refresh()
 
-    def go_back(self):
-        self.manager.go_back()
-
-    def update_kpi(self, st):
+    def _load_state(self):
         try:
-            k = demo_core.dashboard_kpi_snapshot()
-            if hasattr(self, 'lbl_balance'):
-                self.lbl_balance.text = f"[b]Balance / Free[/b]\nUSDC {k.get('usdc_free', 0):.4f} | USDT {k.get('usdt_free', 0):.4f}"
-            if hasattr(self, 'lbl_equity'):
-                self.lbl_equity.text = f"[b]Total Value[/b]\n{k.get('total_value_usd', 0):.4f} USD"
-            if hasattr(self, 'lbl_pnl'):
-                self.lbl_pnl.text = f"[b]PnL / Profit[/b]\n{k.get('realized_pnl', 0):.4f} | {k.get('pnl_pct_from_100', 0):.2f}%"
-            if hasattr(self, 'lbl_positions'):
-                self.lbl_positions.text = f"[b]Open / Tradable[/b]\n{k.get('open_positions', 0)} pos | {k.get('tradable_usd', 0):.4f} USD"
+            return demo_core.load_state()
+        except Exception:
+            return {}
+
+    def _save_state(self, st):
+        try:
+            demo_core.save_state(st)
         except Exception:
             pass
 
-        try:
-            eq = demo_core.equity(st)
-        except Exception:
-            eq = 0.0
-        bal = float(st.get('balance', 0.0))
-        pnl = float(st.get('realized_pnl', 0.0))
-        positions = st.get('positions', {})
-        base = st.get('base', 'USDC')
-        self.lbl_balance.text = f'[b]Balance[/b]\n{bal:.4f} {base}'
-        self.lbl_equity.text = f'[b]Equity[/b]\n{eq:.4f} {base}'
-        self.lbl_pnl.text = f'[b]Realized PnL[/b]\n{pnl:.4f}'
-        self.lbl_positions.text = f'[b]Open Positions[/b]\n{len(positions)}'
+    def _get_equity_history(self, st):
+        candidates = []
+        for key in ("equity_history", "profit_history", "history"):
+            val = st.get(key)
+            if isinstance(val, list):
+                candidates = val
+                break
 
-    def fmt_state(self, st, extra=''):
-        lines = []
-        lines.append(f'[b]Állapot:[/b] {"FUT" if st.get("running") else "ÁLL"}')
-        lines.append(f'[b]Safe mode:[/b] {"AKTÍV" if st.get("safe_mode") else "KI"}')
-        lines.append(f'[b]Execution mode:[/b] {st.get("settings", {}).get("execution_mode", "AUTO")}')
-        lines.append(f'[b]Utolsó művelet:[/b] {st.get("last_action", "-")}')
-        lines.append('')
-        lines.append('[b]Nyitott pozíciók:[/b]')
-        positions = st.get('positions', {})
-        if not positions:
-            lines.append('Nincs nyitott pozíció.')
-        else:
-            for sym, pos in positions.items():
-                qty = float(pos.get('qty', 0))
-                avg = float(pos.get('avg', 0))
-                peak = float(pos.get('peak', 0))
+        vals = []
+        for item in candidates:
+            if isinstance(item, dict):
+                for k in ("equity", "balance", "value", "pnl"):
+                    if k in item:
+                        try:
+                            vals.append(float(item[k]))
+                            break
+                        except Exception:
+                            pass
+            else:
                 try:
-                    now = demo_core.price(sym)
-                    pnl_pct = ((now - avg) / avg) * 100 if avg else 0
-                    lines.append(f'[b]{sym}[/b] qty={qty:.8f} avg={avg:.4f} now={now:.4f} peak={peak:.4f} PnL={pnl_pct:.2f}%')
+                    vals.append(float(item))
                 except Exception:
-                    lines.append(f'[b]{sym}[/b] qty={qty:.8f} avg={avg:.4f} peak={peak:.4f}')
-        settings = st.get('settings', {})
-        lines.append('')
-        lines.append('[b]Beállítások:[/b]')
-        lines.append(f'Risk/trade: {settings.get("risk_pct")}%')
-        lines.append(f'Max positions: {settings.get("max_positions")}')
-        lines.append(f'Min profit: {settings.get("min_profit_pct")}%')
-        lines.append(f'Watchlist: {", ".join(settings.get("watchlist", []))}')
-        lines.append(f'Hold profit: {settings.get("hold_profit_minutes")} min')
-        lines.append(f'Max trend time: {settings.get("time_in_trend_minutes_max")} min')
-        lines.append(f'Exit cooldown: {settings.get("cooldown_after_exit_min")} min')
-        lines.append(f'Profit erosion guard: {settings.get("profit_erosion_guard_pct")}%')
-        if extra:
-            lines.append('')
-            lines.append('[b]Most futott:[/b]')
-            lines.append(str(extra))
-        return '\n'.join(lines)
+                    pass
+
+        if not vals:
+            eq = st.get("equity", st.get("balance", 100.0))
+            try:
+                eq = float(eq)
+            except Exception:
+                eq = 100.0
+            vals = [eq, eq]
+
+        return vals[-40:]
+
+    def _market_trend_text(self, st):
+        # Hely a későbbi SMA9/21 trendhez.
+        trend = st.get("market_trend") or st.get("trend") or {}
+        if isinstance(trend, dict):
+            label = trend.get("label") or trend.get("status") or "Nincs élő trend adat"
+            sma = trend.get("sma") or trend.get("sma_signal") or "-"
+            return f"[b]Piaci trend:[/b] {label} | SMA: {sma}"
+        if isinstance(trend, str):
+            return f"[b]Piaci trend:[/b] {trend}"
+        return "[b]Piaci trend:[/b] előkészítve / SMA9-21 később"
 
     def refresh(self):
+        st = self._load_state()
+
+        balance = st.get("balance", 100.0)
+        equity = st.get("equity", balance)
+        realized = st.get("realized_pnl", st.get("pnl", 0.0))
+        positions = st.get("positions", [])
+        settings = st.get("settings", {})
+
         try:
-            st = demo_core.load_state()
-            self.update_kpi(st)
-            self.info.text = self.fmt_state(st)
-        except Exception as e:
-            self.info.text = 'Demo core hiba: ' + str(e)
-
-
-    def on_leave(self):
-        self.stop_auto_tick()
-
-    def stop_auto_tick(self):
-        try:
-            if self._demo_core_auto_event is not None:
-                self._demo_core_auto_event.cancel()
+            open_pos = len(positions) if isinstance(positions, list) else int(st.get("open_positions", 0))
         except Exception:
-            pass
-        self._demo_core_auto_event = None
+            open_pos = 0
 
-    def auto_tick(self, dt):
-        try:
-            st = demo_core.load_state()
-            if not st.get("running"):
-                self.stop_auto_tick()
-                return False
-            res = demo_core.tick()
-            st = demo_core.load_state()
-            self.update_kpi(st)
-            tw = demo_core.dashboard_trend_widget_data()
-            extra = ''
-            if tw.get('ok'):
-                sel = tw.get('selected') or {}
-                extra = '\n\n[b]Trend:[/b] ' + str(tw.get('view')) + '\n' + str(tw.get('sparkline')) + '\n' + str(tw.get('crosshair_bar')) + '\nselected: ' + str(sel.get('time', sel.get('ts', ''))) + ' | value=' + str(sel.get('value', ''))
-            self.info.text = self.fmt_state(st, res.get("action", res))
-            return True
-        except Exception as e:
-            self.info.text = "Auto tick hiba: " + str(e)
-            self.stop_auto_tick()
-            return False
+        self.kpi_labels["balance"].text = f"{float(balance):.4f} USDC" if str(balance).replace(".","",1).isdigit() else str(balance)
+        self.kpi_labels["equity"].text = f"{float(equity):.4f} USDC" if str(equity).replace(".","",1).isdigit() else str(equity)
+        self.kpi_labels["realized_pnl"].text = f"{float(realized):.4f}" if str(realized).replace(".","",1).replace("-","",1).isdigit() else str(realized)
+        self.kpi_labels["open_positions"].text = str(open_pos)
 
-    def do_tick(self):
-        try:
-            res = demo_core.tick()
-            st = demo_core.load_state()
-            self.update_kpi(st)
-            self.info.text = self.fmt_state(st, res.get('action', res))
-        except Exception as e:
-            self.info.text = 'Tick hiba: ' + str(e)
+        running = st.get("running", False)
+        safe = st.get("safe_mode", False)
+        execution = settings.get("execution_mode", st.get("execution_mode", "AUTO"))
+        last_action = st.get("last_action", "-")
 
+        self.info_labels["state"].text = "[b]Állapot:[/b] " + ("FUT" if running else "ÁLL")
+        self.info_labels["safe"].text = "[b]Safe mode:[/b] " + ("BE" if safe else "KI")
+        self.info_labels["execution"].text = "[b]Execution mode:[/b] " + str(execution)
+        self.info_labels["market_trend"].text = self._market_trend_text(st)
+        self.info_labels["last_action"].text = "[b]Utolsó művelet:[/b] " + str(last_action)
 
-    def do_start(self):
-        try:
-            st = demo_core.load_state()
-            st["running"] = True
-            st["last_action"] = "Demo core START - auto tick aktív"
-            demo_core.save_state(st)
+        vals = self._get_equity_history(st)
+        self.chart.set_values(vals)
 
-            self.stop_auto_tick()
-            self._demo_core_auto_event = Clock.schedule_interval(self.auto_tick, 15)
-
-            self.update_kpi(st)
-            self.info.text = self.fmt_state(st, "START - automatikus tick 15 mp") + extra
-        except Exception as e:
-            self.info.text = "Start hiba: " + str(e)
-
-
-
-    def do_stop(self):
-        try:
-            self.stop_auto_tick()
-            st = demo_core.load_state()
-            st["running"] = False
-            st["last_action"] = "Demo core STOP - auto tick leállítva"
-            demo_core.save_state(st)
-            self.update_kpi(st)
-            self.info.text = self.fmt_state(st, "STOP")
-        except Exception as e:
-            self.info.text = "Stop hiba: " + str(e)
-
-
-
-    def do_panic_stop(self):
-        try:
-            self.stop_auto_tick()
-            res = demo_core.panic_stop()
-            st = demo_core.load_state()
-            self.update_kpi(st)
-            self.info.text = self.fmt_state(st, res.get("action", "PANIC STOP"))
-        except Exception as e:
-            self.info.text = "Panic stop hiba: " + str(e)
-
-
-    def do_safe_mode_off(self):
-        try:
-            res = demo_core.safe_mode_off()
-            st = demo_core.load_state()
-            self.update_kpi(st)
-            self.info.text = self.fmt_state(st, res.get("action", "Safe mode kikapcsolva"))
-        except Exception as e:
-            self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
-
-
-    def open_integration_tests(self):
-        try:
-            self.manager.go_to("integration_tests")
-        except Exception:
-            self.manager.current = "integration_tests"
-
-    def open_pre_apk_safe(self):
-        try:
-            self.manager.go_to("pre_apk_safe")
-        except Exception:
-            self.manager.current = "pre_apk_safe"
-
-    def open_final_prebuild_audit(self):
-        try:
-            self.manager.go_to("final_prebuild_audit")
-        except Exception:
-            self.manager.current = "final_prebuild_audit"
-
-    def open_apk_build_gate(self):
-        try:
-            self.manager.go_to("apk_build_gate")
-        except Exception:
-            self.manager.current = "apk_build_gate"
-
-    def open_ui_route_check(self):
-        try:
-            self.manager.go_to("ui_route_check")
-        except Exception:
-            self.manager.current = "ui_route_check"
-
-    def open_release_candidate(self):
-        try:
-            self.manager.go_to("release_candidate")
-        except Exception:
-            self.manager.current = "release_candidate"
-
-    def open_firstrun_readiness(self):
-        try:
-            self.manager.go_to("firstrun_readiness")
-        except Exception:
-            self.manager.current = "firstrun_readiness"
-
-    def open_health_alert(self):
-        try:
-            self.manager.go_to("health_alert")
-        except Exception:
-            self.manager.current = "health_alert"
-
-    def open_profit_report(self):
-        try:
-            self.manager.go_to("profit_report")
-        except Exception:
-            self.manager.current = "profit_report"
-
-    def open_readonly_balance(self):
-        try:
-            self.manager.go_to("readonly_balance")
-        except Exception:
-            self.manager.current = "readonly_balance"
-
-    def open_trade_simple_advanced(self):
-        try:
-            self.manager.go_to("trade_simple_advanced")
-        except Exception:
-            self.manager.current = "trade_simple_advanced"
-
-    def open_modern_dashboard(self):
-        try:
-            self.manager.go_to("modern_dashboard")
-        except Exception:
-            self.manager.current = "modern_dashboard"
-
-    def open_master_status(self):
-        try:
-            self.manager.go_to("master_status")
-        except Exception:
-            self.manager.current = "master_status"
-
-    def open_trend_history(self):
-        try:
-            self.manager.go_to("trend_history")
-        except Exception:
-            self.manager.current = "trend_history"
-
-    def open_spot_portfolio(self):
-        try:
-            self.manager.go_to("spot_portfolio")
-        except Exception:
-            self.manager.current = "spot_portfolio"
-
-    def open_startup_safety(self):
-        try:
-            self.manager.go_to("startup_safety")
-        except Exception:
-            self.manager.current = "startup_safety"
-
-    def open_integrations(self):
-        try:
-            self.manager.go_to("integrations")
-        except Exception:
-            self.manager.current = "integrations"
-
-    def open_binance_readonly_real(self):
-        try:
-            self.manager.go_to("binance_readonly_real")
-        except Exception:
-            self.manager.current = "binance_readonly_real"
-
-    def open_binance_signed(self):
-        try:
-            self.manager.go_to("binance_signed")
-        except Exception:
-            self.manager.current = "binance_signed"
-
-    def open_binance_account(self):
-        try:
-            self.manager.go_to("binance_account")
-        except Exception:
-            self.manager.current = "binance_account"
-
-    def open_live_gate(self):
-        try:
-            self.manager.go_to("live_gate")
-        except Exception:
-            self.manager.current = "live_gate"
-
-    def open_approval_executor(self):
-        try:
-            self.manager.go_to("approval_executor")
-        except Exception:
-            self.manager.current = "approval_executor"
-
-    def open_admin(self):
-        try:
-            self.manager.go_to("admin")
-        except Exception:
-            self.manager.current = "admin"
-
-    def open_patch_manager(self):
-        try:
-            self.manager.go_to("patch_manager")
-        except Exception:
-            self.manager.current = "patch_manager"
-
-    def open_first_run(self):
-        try:
-            self.manager.go_to("first_run")
-        except Exception:
-            self.manager.current = "first_run"
-
-    def open_sync(self):
-        try:
-            self.manager.go_to("sync")
-        except Exception:
-            self.manager.current = "sync"
-
-    def open_package(self):
-        try:
-            self.manager.go_to("package")
-        except Exception:
-            self.manager.current = "package"
-
-    def open_schedules(self):
-        try:
-            self.manager.go_to("schedules")
-        except Exception:
-            self.manager.current = "schedules"
-
-    def open_launchpool(self):
-        try:
-            self.manager.go_to("launchpool")
-        except Exception:
-            self.manager.current = "launchpool"
-
-    def open_backtest(self):
-        try:
-            self.manager.go_to("backtest")
-        except Exception:
-            self.manager.current = "backtest"
-
-    def open_diagnostics(self):
-        try:
-            self.manager.go_to("diagnostics")
-        except Exception:
-            self.manager.current = "diagnostics"
-
-    def open_binance_live(self):
-        try:
-            self.manager.go_to("binance_live")
-        except Exception:
-            self.manager.current = "binance_live"
-
-    def open_secrets(self):
-        try:
-            self.manager.go_to("secrets")
-        except Exception:
-            self.manager.current = "secrets"
-
-    def open_ai_advisor(self):
-        try:
-            self.manager.go_to("ai_advisor")
-        except Exception:
-            self.manager.current = "ai_advisor"
-
-    def open_trade_logic(self):
-        try:
-            self.manager.go_to("trade_logic")
-        except Exception:
-            self.manager.current = "trade_logic"
-
-    def open_fee_tax(self):
-        try:
-            self.manager.go_to("fee_tax")
-        except Exception:
-            self.manager.current = "fee_tax"
-
-    def open_scanner(self):
-        try:
-            self.manager.go_to("scanner")
-        except Exception:
-            self.manager.current = "scanner"
-
-    def do_healthcheck(self):
-        try:
-            res = demo_core.healthcheck()
+        if isinstance(positions, list) and positions:
             lines = []
-            lines.append("[b]HEALTHCHECK / HEARTBEAT[/b]")
-            lines.append("")
-            lines.append(f"[b]Status:[/b] {res.get('status')}")
-            lines.append(f"[b]Running:[/b] {res.get('running')}")
-            lines.append(f"[b]Safe mode:[/b] {res.get('safe_mode')}")
-            lines.append(f"[b]Positions:[/b] {res.get('positions_count')}")
-            lines.append(f"[b]Balance:[/b] {res.get('balance')}")
-            lines.append(f"[b]Equity:[/b] {res.get('equity'):.4f}")
-            lines.append(f"[b]Realized PnL:[/b] {res.get('realized_pnl')}")
-            lines.append(f"[b]Trade log:[/b] {'van' if res.get('trade_log_exists') else 'nincs'}")
-            lines.append(f"[b]Last tick age sec:[/b] {res.get('last_tick_age_sec')}")
-            lines.append(f"[b]Last action:[/b] {res.get('last_action')}")
+            for p in positions[:5]:
+                if isinstance(p, dict):
+                    sym = p.get("symbol", "?")
+                    qty = p.get("qty", p.get("amount", "?"))
+                    entry = p.get("entry", p.get("entry_price", "?"))
+                    pnl = p.get("pnl", p.get("unrealized_pnl", "?"))
+                    lines.append(f"{sym} | qty: {qty} | entry: {entry} | pnl: {pnl}")
+                else:
+                    lines.append(str(p))
+            self.positions_text.text = "\n".join(lines)
+        else:
+            self.positions_text.text = "Nincs nyitott pozíció."
 
-            warns = res.get("warnings") or []
-            if warns:
-                lines.append("")
-                lines.append("[b]Figyelmeztetések:[/b]")
-                for w in warns:
-                    lines.append("- " + str(w))
+    def run_tick(self):
+        try:
+            if hasattr(demo_core, "tick"):
+                demo_core.tick()
+            elif hasattr(demo_core, "run_tick"):
+                demo_core.run_tick()
             else:
-                lines.append("")
-                lines.append("[b]Nincs aktív figyelmeztetés.[/b]")
-
-            st = demo_core.load_state()
-            self.update_kpi(st)
-            self.info.text = "\n".join(lines)
+                st = self._load_state()
+                st["last_action"] = "Demo tick előkészítve"
+                self._save_state(st)
         except Exception as e:
-            self.info.text = "Healthcheck hiba: " + str(e)
+            st = self._load_state()
+            st["last_action"] = "Tick hiba: " + str(e)
+            self._save_state(st)
+        self.refresh()
 
+    def start_bot(self):
+        st = self._load_state()
+        st["running"] = True
+        st["last_action"] = "Demo bot start"
+        self._save_state(st)
+        self.refresh()
 
-    def set_mode_ui(self, mode):
+    def stop_bot(self):
+        st = self._load_state()
+        st["running"] = False
+        st["last_action"] = "Demo bot stop"
+        self._save_state(st)
+        self.refresh()
+
+    def demo_reset(self):
         try:
-            res = demo_core.set_execution_mode(mode)
-            st = demo_core.load_state()
-            self.update_kpi(st)
-            self.info.text = self.fmt_state(st, "Execution mode: " + res.get("mode", mode))
+            if hasattr(demo_core, "demo_reset"):
+                demo_core.demo_reset()
+            elif hasattr(demo_core, "reset_demo"):
+                demo_core.reset_demo()
+            else:
+                st = self._load_state()
+                st["balance"] = 100.0
+                st["equity"] = 100.0
+                st["realized_pnl"] = 0.0
+                st["positions"] = []
+                st["running"] = False
+                st["last_action"] = "Demo reset 100 USDC"
+                self._save_state(st)
         except Exception as e:
-            self.info.text = "Mode hiba: " + str(e)
+            st = self._load_state()
+            st["last_action"] = "Reset hiba: " + str(e)
+            self._save_state(st)
+        self.refresh()
 
-    def mode_auto(self):
-        self.set_mode_ui("AUTO")
+    def panic_safe(self):
+        st = self._load_state()
+        st["running"] = False
+        st["safe_mode"] = True
+        st["last_action"] = "Panic Stop / Safe Mode bekapcsolva"
+        self._save_state(st)
+        self.refresh()
 
-    def mode_manual(self):
-        self.set_mode_ui("MANUAL")
-
-    def mode_off(self):
-        self.set_mode_ui("OFF")
-
-    def do_reset(self):
+    def open_settings(self):
         try:
-            st = demo_core.reset_demo(100.0)
-            self.update_kpi(st)
-            self.info.text = self.fmt_state(st, 'RESET 100 USDC')
-        except Exception as e:
-            self.info.text = 'Reset hiba: ' + str(e)
+            safe_go_to(self.manager, "demo_settings")
+        except Exception:
+            try:
+                self.manager.current = "demo_settings"
+            except Exception:
+                pass
+
+    def go_back(self):
+        safe_go_back(self.manager, "main")
+
 
 
 class TextScreen(Screen):
