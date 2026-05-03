@@ -25,13 +25,7 @@ CARD = (0.16, 0.16, 0.17, 1)
 NAV_STACK = []
 
 def go_to(sm, screen):
-    try:
-        cur = sm.current
-        if cur and cur != screen:
-            NAV_STACK.append(cur)
-        sm.current = screen
-    except Exception:
-        sm.current = screen
+    return safe_go_to(sm, screen)
 
 def go_back(sm, fallback="main"):
     try:
@@ -41,6 +35,57 @@ def go_back(sm, fallback="main"):
             sm.current = fallback
     except Exception:
         sm.current = fallback
+
+
+
+
+# === PATCH 02 BACK NAVIGATION HELPERS ===
+def safe_go_back(sm, fallback="main"):
+    """
+    Egységes vissza navigáció.
+    - Ha van NAV_STACK: oda megy vissza.
+    - Ha nincs stack: fallback/main.
+    - Nem engedi, hogy hibára kifusson.
+    """
+    try:
+        if sm is None:
+            return False
+        if "NAV_STACK" in globals() and NAV_STACK:
+            target = NAV_STACK.pop()
+            if target and target != getattr(sm, "current", None):
+                sm.current = target
+                return True
+        if getattr(sm, "current", None) != fallback:
+            sm.current = fallback
+            return True
+        return False
+    except Exception:
+        try:
+            sm.current = fallback
+            return True
+        except Exception:
+            return False
+
+
+def safe_go_to(sm, screen):
+    """
+    Egységes előre navigáció stack mentéssel.
+    """
+    try:
+        if sm is None:
+            return False
+        cur = getattr(sm, "current", None)
+        if cur and cur != screen and "NAV_STACK" in globals():
+            NAV_STACK.append(cur)
+        sm.current = screen
+        return True
+    except Exception:
+        try:
+            sm.current = screen
+            return True
+        except Exception:
+            return False
+# === END PATCH 02 BACK NAVIGATION HELPERS ===
 
 
 def load_json(path, default):
@@ -5641,6 +5686,29 @@ class TextScreen(Screen):
 
 class AppMain(App):
     title = "Binance Autobot"
+
+    def _android_back_button(self, window, key, *args):
+        # Android BACK gomb: 27 / 1001
+        if key in (27, 1001):
+            try:
+                handled = safe_go_back(self.root, "main")
+                return True if handled else False
+            except Exception:
+                return False
+        return False
+
+    def on_start(self):
+        try:
+            Window.bind(on_keyboard=self._android_back_button)
+        except Exception:
+            pass
+
+    def on_stop(self):
+        try:
+            Window.unbind(on_keyboard=self._android_back_button)
+        except Exception:
+            pass
+
     def build(self):
         Window.clearcolor = (0, 0, 0, 1)
         sm = HistoryScreenManager()
