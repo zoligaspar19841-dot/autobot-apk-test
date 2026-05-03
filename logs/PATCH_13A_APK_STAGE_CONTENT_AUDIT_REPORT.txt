@@ -1,0 +1,93 @@
+PATCH 13A APK STAGE CONTENT AUDIT
+APK build: NEM indult
+Commit: NEM történt
+Idő: Sun May  3 16:38:01 CEST 2026
+
+============================================================
+1) apk_stage fájlok
+============================================================
+apk_stage/FIX_BUILDOZER_ANDROID_INDENT_AFTER_ZLIB.sh
+apk_stage/FIX_BUILDOZER_ZLIB_DISABLE_CHECK.sh
+apk_stage/FIX_BUILDOZER_ZLIB_TERMUX_STRONG.sh
+apk_stage/FIX_TERMINUX_BUILDOZER_ZLIB_CHECK.sh
+apk_stage/__pycache__/demo_core_engine.cpython-313.pyc
+apk_stage/__pycache__/main.cpython-313.pyc
+apk_stage/buildozer.spec
+apk_stage/buildozer.spec.bak_buildtools_20260503_050350
+apk_stage/buildozer.spec.bak_patch01_20260503_153406
+apk_stage/buildozer.spec.bak_patch07_20260503_155427
+apk_stage/demo_core_engine.py
+apk_stage/icon.png
+apk_stage/main.py
+apk_stage/main.py.bak_patch01_20260503_153406
+apk_stage/main.py.bak_patch02_back_20260503_154012
+apk_stage/main.py.bak_patch03_settings_20260503_154219
+apk_stage/main.py.bak_patch04_dashboard_20260503_154429
+apk_stage/main.py.bak_patch05_style_20260503_154615
+apk_stage/main.py.bak_patch06b_routes_20260503_154921
+apk_stage/main.py.bak_patch06c_safe_screen_20260503_155233
+apk_stage/main.py.bak_patch10b_settings_mobile_20260503_160826
+apk_stage/main.py.bak_patch11c_trend_minichart_20260503_161404
+
+============================================================
+2) root fő fájlok
+============================================================
+./ai_engine.py
+./apk_build_dry_run_plan.py
+./auth_manager.py
+./autobot_core.py
+./demo_core_engine.py
+./demo_core_state.json
+./export_project_for_chatgpt.py
+./fix_no_network_mini.py
+./icon.png
+./main.py
+./make_apk_stage.py
+./test_demo_core_engine.py
+./version_manager.py
+
+============================================================
+3) Import audit main.py / apk_stage/main.py
+============================================================
+FILE: main.py
+Local imports: ['demo_core_engine']
+Missing in apk_stage: nincs
+
+FILE: apk_stage/main.py
+Local imports: ['demo_core_engine']
+Missing in apk_stage: nincs
+
+ROOT_PY: ['ai_engine', 'apk_build_dry_run_plan', 'auth_manager', 'autobot_core', 'demo_core_engine', 'export_project_for_chatgpt', 'fix_no_network_mini', 'main', 'make_apk_stage', 'test_demo_core_engine', 'version_manager']
+STAGE_PY: ['demo_core_engine', 'main']
+
+============================================================
+4) buildozer source.include_exts
+============================================================
+buildozer.spec:3:package.name = binanceautobot
+buildozer.spec:4:package.domain = org.autobot
+buildozer.spec:6:source.include_exts = py,png,jpg,jpeg,kv,atlas,json,txt,csv
+buildozer.spec:10:version = 0.7.2
+buildozer.spec:11:requirements = python3,kivy
+buildozer.spec:15:android.api = 35
+buildozer.spec:16:android.minapi = 23
+buildozer.spec:22:icon.filename = icon.png
+apk_stage/buildozer.spec:3:package.name = binanceautobot
+apk_stage/buildozer.spec:4:package.domain = org.autobot
+apk_stage/buildozer.spec:6:source.include_exts = py,png,jpg,jpeg,kv,atlas,json,txt,csv
+apk_stage/buildozer.spec:10:version = 0.7.2
+apk_stage/buildozer.spec:11:requirements = python3,kivy
+apk_stage/buildozer.spec:15:android.api = 35
+apk_stage/buildozer.spec:16:android.minapi = 23
+apk_stage/buildozer.spec:22:icon.filename = icon.png
+
+============================================================
+5) Python compile
+============================================================
+OK: compile jó
+
+============================================================
+SUMMARY
+============================================================
+APK_STAGE_AUDIT: kész
+APK build NEM indult.
+Commit NEM történt.
