@@ -1,4 +1,4 @@
-APP_VERSION = "0.5.5-demo-core"
+APP_VERSION = "0.5.6-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -77,6 +77,16 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+FIRSTRUN_READY_DEFAULTS = {
+    "firstrun_ready_enabled": True,
+    "firstrun_require_admin_password_change": True,
+    "firstrun_require_secrets_check": True,
+    "firstrun_require_safety_check": True,
+    "firstrun_require_full_system_check": True,
+    "firstrun_report_file": "logs/firstrun_readiness_report.json",
+}
 
 HEALTH_ALERT_DEFAULTS = {
     "health_alert_center_enabled": True,
@@ -433,6 +443,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "FIRSTRUN_READY_DEFAULTS" in globals():
+        for k, v in FIRSTRUN_READY_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -6797,6 +6813,177 @@ def export_health_report(path=None):
         "path": path,
         "order_endpoint_used": False,
         "message": "Health report export kész.",
+    }
+
+
+
+def firstrun_readiness_check():
+    """
+    First-run readiness ellenőrzés.
+    Nem küld ordert, nem buildel APK-t.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    checks = []
+
+    def add_check(key, title, required, ok, detail):
+        checks.append({
+            "key": key,
+            "title": title,
+            "required": bool(required),
+            "ok": bool(ok),
+            "detail": detail,
+        })
+
+    secrets = _safe_call("secrets_status", {})
+    startup = _safe_call("startup_safety_summary", {})
+    master = _safe_call("master_status_overview", {})
+    preapk = _safe_call("pre_apk_full_safe_test", {})
+    health = _safe_call("health_alert_center_status", {})
+    readonly = _safe_call("readonly_balance_test_gate", {})
+    livegate = _safe_call("live_executor_gate_status", {})
+    full_report_exists = os.path.exists("logs/full_system_status_report.json")
+
+    add_check(
+        "secrets_storage",
+        "Titkosított secrets tárolás",
+        settings.get("firstrun_require_secrets_check", True),
+        bool(secrets.get("encrypted_file") or secrets.get("ok", False)),
+        secrets,
+    )
+
+    add_check(
+        "startup_safety",
+        "Startup Safety Summary",
+        settings.get("firstrun_require_safety_check", True),
+        bool(startup.get("ok", False)),
+        startup,
+    )
+
+    add_check(
+        "pre_apk_safe",
+        "Pre-APK safety test",
+        True,
+        bool(preapk.get("ok", False)) and not bool(preapk.get("order_endpoint_used", False)),
+        preapk,
+    )
+
+    add_check(
+        "full_system_check_report",
+        "Full system check report",
+        settings.get("firstrun_require_full_system_check", True),
+        full_report_exists,
+        {"path": "logs/full_system_status_report.json", "exists": full_report_exists},
+    )
+
+    add_check(
+        "health_center",
+        "Health / Alert / Recovery",
+        True,
+        bool(health.get("ok", False)) and not bool(health.get("order_endpoint_used", False)),
+        health,
+    )
+
+    add_check(
+        "readonly_gate",
+        "Read-only Binance gate",
+        False,
+        bool(readonly.get("ok", False)) and not bool(readonly.get("order_endpoint_used", False)),
+        readonly,
+    )
+
+    add_check(
+        "live_gate_safe",
+        "Live gate safety",
+        True,
+        bool(livegate.get("ok", False)) and not bool(livegate.get("order_endpoint_used", False)),
+        livegate,
+    )
+
+    add_check(
+        "master_status",
+        "Master status overview",
+        True,
+        bool(master.get("ok", False)) and not bool(master.get("order_endpoint_used", False)),
+        master,
+    )
+
+    required = [c for c in checks if c.get("required")]
+    missing = [c for c in required if not c.get("ok")]
+    optional_missing = [c for c in checks if not c.get("required") and not c.get("ok")]
+
+    return {
+        "ok": len(missing) == 0,
+        "complete": len(missing) == 0,
+        "required_count": len(required),
+        "required_ok_count": len(required) - len(missing),
+        "missing_required": missing,
+        "optional_missing": optional_missing,
+        "checks": checks,
+        "order_endpoint_used": False,
+        "message": "First-run readiness check kész.",
+    }
+
+
+def firstrun_next_actions():
+    """
+    Következő szükséges lépések.
+    """
+    r = firstrun_readiness_check()
+    actions = []
+
+    if r.get("complete"):
+        actions.append("A rendszer fejlesztési oldalról egyben működőképes.")
+        actions.append("Következő: UI kézi átnézés vagy APK build előtti final safe test.")
+    else:
+        for c in r.get("missing_required", []):
+            actions.append("Javítandó: " + str(c.get("title")))
+
+    actions.append("Live order továbbra sincs engedve.")
+    actions.append("Valódi Binance kereskedés csak külön live executor kapcsolóval, jóváhagyással és safety gate után lehet később.")
+
+    return {
+        "ok": True,
+        "complete": r.get("complete"),
+        "actions": actions,
+        "order_endpoint_used": False,
+    }
+
+
+def export_firstrun_readiness_report(path=None):
+    """
+    First-run readiness report export.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if path is None:
+        path = settings.get("firstrun_report_file", "logs/firstrun_readiness_report.json") or "logs/firstrun_readiness_report.json"
+
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    report = {
+        "ts": int(time.time()),
+        "app_version": globals().get("APP_VERSION", "unknown"),
+        "readiness": firstrun_readiness_check(),
+        "next_actions": firstrun_next_actions(),
+        "order_endpoint_used": False,
+    }
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    audit_event("FIRSTRUN_READINESS_EXPORT", "First-run readiness report export", {
+        "path": path,
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "path": path,
+        "order_endpoint_used": False,
+        "message": "First-run readiness report export kész.",
     }
 
 

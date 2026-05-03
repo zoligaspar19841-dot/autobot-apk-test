@@ -217,12 +217,18 @@
     "error_alert_enabled": true,
     "crash_recovery_enabled": true,
     "resume_after_restart_enabled": true,
-    "health_report_file": "logs/health_report.json"
+    "health_report_file": "logs/health_report.json",
+    "firstrun_ready_enabled": true,
+    "firstrun_require_admin_password_change": true,
+    "firstrun_require_secrets_check": true,
+    "firstrun_require_safety_check": true,
+    "firstrun_require_full_system_check": true,
+    "firstrun_report_file": "logs/firstrun_readiness_report.json"
   },
   "last_action": "Heartbeat update: full_system_check",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
-  "last_heartbeat_ts": 1777768847,
+  "last_heartbeat_ts": 1777769041,
   "cooldowns": {},
   "spot_balances_cache": [
     {

@@ -682,6 +682,93 @@ class TrendCanvasWidget(Widget):
 
 
 
+
+class DemoCoreFirstRunReadinessScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]FIRST-RUN / SETUP READINESS[/b]\n[size=14]Kötelező beállítások, biztonság, APK előtti readiness. Order nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=82
+        ))
+
+        self.info = Label(text='First-run readiness...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        buttons = [
+            ('READINESS CHECK', self.readiness),
+            ('NEXT ACTIONS', self.actions),
+            ('EXPORT REPORT', self.export_report),
+            ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+            ('PRE-APK TEST', lambda: self.manager.go_to('pre_apk_safe')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.readiness()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def readiness(self):
+        try:
+            res = demo_core.firstrun_readiness_check()
+            lines = ['[b]First-Run Readiness[/b]', '']
+            lines.append(f"Complete: [b]{res.get('complete')}[/b]")
+            lines.append(f"Required OK: {res.get('required_ok_count')}/{res.get('required_count')}")
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append('')
+            lines.append('[b]Checks[/b]')
+            for c in res.get('checks') or []:
+                mark = '✅' if c.get('ok') else '🔴' if c.get('required') else '🟡'
+                lines.append(f"{mark} {c.get('title')} | required={c.get('required')}")
+            lines.append('')
+            if res.get('missing_required'):
+                lines.append('[b]Missing required[/b]')
+                for c in res.get('missing_required'):
+                    lines.append('🔴 ' + str(c.get('title')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Readiness hiba: ' + str(e)
+
+    def actions(self):
+        try:
+            res = demo_core.firstrun_next_actions()
+            lines = ['[b]Next Actions[/b]', '']
+            for a in res.get('actions') or []:
+                lines.append('- ' + str(a))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Actions hiba: ' + str(e)
+
+    def export_report(self):
+        try:
+            res = demo_core.export_firstrun_readiness_report()
+            self.info.text = '[b]First-run report export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Export hiba: ' + str(e)
+
+
+
 class DemoCoreHealthAlertRecoveryScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -4264,6 +4351,12 @@ class DemoCoreSettingsScreen(Screen):
             ('crash_recovery_enabled', 'Crash recovery enabled true/false'),
             ('resume_after_restart_enabled', 'Resume after restart enabled true/false'),
             ('health_report_file', 'Health report file'),
+            ('firstrun_ready_enabled', 'First-run ready enabled true/false'),
+            ('firstrun_require_admin_password_change', 'First-run require admin password change true/false'),
+            ('firstrun_require_secrets_check', 'First-run require secrets check true/false'),
+            ('firstrun_require_safety_check', 'First-run require safety check true/false'),
+            ('firstrun_require_full_system_check', 'First-run require full system check true/false'),
+            ('firstrun_report_file', 'First-run report file'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -4509,6 +4602,12 @@ class DemoCoreSettingsScreen(Screen):
             cfg['crash_recovery_enabled'] = self.inputs['crash_recovery_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['resume_after_restart_enabled'] = self.inputs['resume_after_restart_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['health_report_file'] = self.inputs['health_report_file'].text.strip() or 'logs/health_report.json'
+            cfg['firstrun_ready_enabled'] = self.inputs['firstrun_ready_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['firstrun_require_admin_password_change'] = self.inputs['firstrun_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['firstrun_require_secrets_check'] = self.inputs['firstrun_require_secrets_check'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['firstrun_require_safety_check'] = self.inputs['firstrun_require_safety_check'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['firstrun_require_full_system_check'] = self.inputs['firstrun_require_full_system_check'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['firstrun_report_file'] = self.inputs['firstrun_report_file'].text.strip() or 'logs/firstrun_readiness_report.json'
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -4792,6 +4891,12 @@ class DemoCoreScreen(Screen):
             self.manager.go_to("pre_apk_safe")
         except Exception:
             self.manager.current = "pre_apk_safe"
+
+    def open_firstrun_readiness(self):
+        try:
+            self.manager.go_to("firstrun_readiness")
+        except Exception:
+            self.manager.current = "firstrun_readiness"
 
     def open_health_alert(self):
         try:
@@ -5129,6 +5234,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreReadonlyBalanceScreen(name="readonly_balance"))
         sm.add_widget(DemoCoreProfitReportScreen(name="profit_report"))
         sm.add_widget(DemoCoreHealthAlertRecoveryScreen(name="health_alert"))
+        sm.add_widget(DemoCoreFirstRunReadinessScreen(name="firstrun_readiness"))
         return sm
 
 if __name__ == "__main__":
