@@ -1,0 +1,6 @@
+PATCH 14C OK
+Date: Sun May  3 19:10:15 CEST 2026
+Fix:
+- Buildozer / python-for-android autoreconf hiba javítás
+- LT_SYS_SYMBOL_USCORE macro miatt libtool-bin, automake, autotools-dev, m4, gettext, autopoint hozzáadva
+- APK build helyben nem indult
