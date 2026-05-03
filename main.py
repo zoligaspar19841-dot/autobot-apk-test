@@ -677,6 +677,128 @@ class TrendCanvasWidget(Widget):
 
 
 
+
+class DemoCoreModernDashboardScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]MODERN DASHBOARD[/b]\n[size=14]KPI kártyák, trend, top coinok, safety badge-ek[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        ))
+
+        self.info = Label(text='Modern dashboard...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        buttons = [
+            ('REFRESH', self.refresh),
+            ('KPI CARDS', self.kpis),
+            ('TOP COINS', self.top_coins),
+            ('THEME / SAFETY', self.theme),
+            ('TREND', lambda: self.manager.go_to('trend_history')),
+            ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+            ('PRE APK SAFE', lambda: self.manager.go_to('pre_apk_safe')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.refresh()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def refresh(self):
+        try:
+            res = demo_core.dashboard_modern_overview_data()
+            lines = []
+            lines.append('[b]Modern Dashboard Overview[/b]')
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append('')
+            th = res.get('theme') or {}
+            lines.append(f"[b]Theme:[/b] {th.get('theme')} | mode={'LIVE' if th.get('live') else 'DEMO'}")
+            lines.append('')
+            lines.append('[b]Badges[/b]')
+            for b in th.get('badges') or []:
+                lines.append(f"{b.get('label')}: {b.get('status')} ({b.get('level')})")
+            lines.append('')
+            k = res.get('kpis') or {}
+            lines.append('[b]KPI cards[/b]')
+            for c in k.get('cards') or []:
+                lines.append(f"{c.get('title')}: [b]{c.get('value')}[/b] {c.get('unit')}")
+            lines.append('')
+            top = res.get('top_coins') or {}
+            lines.append('[b]Top coin cards[/b]')
+            for c in top.get('cards') or []:
+                lines.append(f"{c.get('symbol')} | score={c.get('score')} | signal={c.get('signal')} | price={c.get('price')}")
+            lines.append('')
+            tr = res.get('trend') or {}
+            lines.append('[b]Trend[/b]')
+            lines.append(str(tr.get('sparkline', '')))
+            lines.append(str(tr.get('crosshair_bar', '')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Modern dashboard hiba: ' + str(e)
+
+    def kpis(self):
+        try:
+            res = demo_core.dashboard_kpi_cards_data()
+            lines = ['[b]KPI Cards[/b]', '']
+            for c in res.get('cards') or []:
+                lines.append(f"[b]{c.get('title')}[/b]: {c.get('value')} {c.get('unit')}")
+                lines.append(f"   {c.get('hint')}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'KPI hiba: ' + str(e)
+
+    def top_coins(self):
+        try:
+            res = demo_core.dashboard_top_coin_cards_data()
+            lines = ['[b]Top Coin Mini Cards[/b]', f"Enabled: {res.get('enabled')} | count={res.get('count')}", '']
+            for c in res.get('cards') or []:
+                lines.append(f"[b]{c.get('symbol')}[/b]")
+                lines.append(f"score={c.get('score')} signal={c.get('signal')} price={c.get('price')}")
+                lines.append(f"trend={c.get('trend_pct')} momentum={c.get('momentum_pct')} vol={c.get('volatility_pct')}")
+                lines.append(f"position={c.get('has_position')} qty={c.get('qty')} avg={c.get('avg')}")
+                lines.append('')
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Top coins hiba: ' + str(e)
+
+    def theme(self):
+        try:
+            res = demo_core.dashboard_theme_status()
+            lines = ['[b]Theme / Safety Badges[/b]', '']
+            for k, v in res.items():
+                if k != 'badges':
+                    lines.append(f"{k}: {v}")
+            lines.append('')
+            for b in res.get('badges') or []:
+                lines.append(f"{b.get('label')}: {b.get('status')} / {b.get('level')}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Theme hiba: ' + str(e)
+
+
+
 class DemoCoreIntegrationTestCenterScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -3560,6 +3682,11 @@ class DemoCoreSettingsScreen(Screen):
             ('integration_test_allow_network', 'Integration test allow network true/false'),
             ('integration_test_allow_email_send', 'Integration test allow email send true/false'),
             ('integration_test_report_file', 'Integration test report file'),
+            ('dashboard_modern_enabled', 'Dashboard modern enabled true/false'),
+            ('dashboard_top_coin_cards_enabled', 'Dashboard top coin cards enabled true/false'),
+            ('dashboard_top_coin_count', 'Dashboard top coin count'),
+            ('dashboard_theme_mode', 'Dashboard theme mode AUTO/DEMO_GOLD/LIVE_BLUE'),
+            ('dashboard_show_safety_badges', 'Dashboard show safety badges true/false'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -3772,6 +3899,11 @@ class DemoCoreSettingsScreen(Screen):
             cfg['integration_test_allow_network'] = self.inputs['integration_test_allow_network'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
             cfg['integration_test_allow_email_send'] = self.inputs['integration_test_allow_email_send'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
             cfg['integration_test_report_file'] = self.inputs['integration_test_report_file'].text.strip() or 'logs/integration_test_report.json'
+            cfg['dashboard_modern_enabled'] = self.inputs['dashboard_modern_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['dashboard_top_coin_cards_enabled'] = self.inputs['dashboard_top_coin_cards_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['dashboard_top_coin_count'] = int(float(self.inputs['dashboard_top_coin_count'].text.replace(',', '.')))
+            cfg['dashboard_theme_mode'] = self.inputs['dashboard_theme_mode'].text.strip().upper() or 'AUTO'
+            cfg['dashboard_show_safety_badges'] = self.inputs['dashboard_show_safety_badges'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -4055,6 +4187,12 @@ class DemoCoreScreen(Screen):
             self.manager.go_to("pre_apk_safe")
         except Exception:
             self.manager.current = "pre_apk_safe"
+
+    def open_modern_dashboard(self):
+        try:
+            self.manager.go_to("modern_dashboard")
+        except Exception:
+            self.manager.current = "modern_dashboard"
 
     def open_master_status(self):
         try:
@@ -4357,6 +4495,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreMasterStatusScreen(name="master_status"))
         sm.add_widget(DemoCorePreApkSafeTestScreen(name="pre_apk_safe"))
         sm.add_widget(DemoCoreIntegrationTestCenterScreen(name="integration_tests"))
+        sm.add_widget(DemoCoreModernDashboardScreen(name="modern_dashboard"))
         return sm
 
 if __name__ == "__main__":

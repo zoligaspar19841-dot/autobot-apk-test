@@ -1,4 +1,4 @@
-APP_VERSION = "0.5.0-demo-core"
+APP_VERSION = "0.5.1-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -72,6 +72,15 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+DASHBOARD_MODERN_DEFAULTS = {
+    "dashboard_modern_enabled": True,
+    "dashboard_top_coin_cards_enabled": True,
+    "dashboard_top_coin_count": 5,
+    "dashboard_theme_mode": "AUTO",
+    "dashboard_show_safety_badges": True,
+}
 
 INTEGRATION_TEST_DEFAULTS = {
     "integration_test_center_enabled": True,
@@ -382,6 +391,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "DASHBOARD_MODERN_DEFAULTS" in globals():
+        for k, v in DASHBOARD_MODERN_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -5640,6 +5655,191 @@ def export_integration_test_report(path=None):
         "path": path,
         "order_endpoint_used": False,
         "message": "Integration test report export kész.",
+    }
+
+
+
+def dashboard_theme_status():
+    """
+    Demo/Live téma és biztonsági vizuális státusz.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    live = bool(settings.get("live_mode_enabled", False))
+    safe_mode = bool(state.get("safe_mode", False))
+    running = bool(state.get("running", False))
+    exec_mode = str(settings.get("execution_mode", "AUTO") or "AUTO").upper()
+
+    theme_mode = str(settings.get("dashboard_theme_mode", "AUTO") or "AUTO").upper()
+    if theme_mode == "AUTO":
+        theme = "LIVE_BLUE" if live else "DEMO_GOLD"
+    else:
+        theme = theme_mode
+
+    badges = []
+
+    def badge(label, status, level="info"):
+        badges.append({
+            "label": label,
+            "status": status,
+            "level": level,
+        })
+
+    badge("MODE", "LIVE" if live else "DEMO", "danger" if live else "safe")
+    badge("RUNNING", "ON" if running else "OFF", "safe" if running else "info")
+    badge("SAFE MODE", "ON" if safe_mode else "OFF", "warning" if safe_mode else "safe")
+    badge("EXEC", exec_mode, "warning" if exec_mode == "MANUAL" else "safe")
+    badge("ORDER", "BLOCKED", "safe")
+
+    return {
+        "ok": True,
+        "theme": theme,
+        "live": live,
+        "running": running,
+        "safe_mode": safe_mode,
+        "execution_mode": exec_mode,
+        "badges": badges,
+        "order_endpoint_used": False,
+    }
+
+
+def dashboard_kpi_cards_data():
+    """
+    Modern dashboard KPI kártyák adatai.
+    """
+    kpi = _safe_call("dashboard_kpi_snapshot", {})
+    portfolio = _safe_call("spot_portfolio_status", {})
+    trend_stats = _safe_call("trend_history_stats", {})
+
+    total_value = kpi.get("total_value_usd", portfolio.get("portfolio_total_value_usd"))
+    tradable = kpi.get("tradable_usd", portfolio.get("portfolio_tradable_usd"))
+    realized = kpi.get("realized_pnl", 0.0)
+    open_positions = kpi.get("open_positions", 0)
+    usdc_free = kpi.get("usdc_free", kpi.get("quote_free_usd"))
+    usdt_free = kpi.get("usdt_free")
+
+    cards = [
+        {
+            "id": "total_value",
+            "title": "Total Value",
+            "value": total_value,
+            "unit": "USD",
+            "hint": "Spot portfolio becsült összérték.",
+        },
+        {
+            "id": "today_pnl",
+            "title": "Today / Realized PnL",
+            "value": realized,
+            "unit": "USD",
+            "hint": "Demo/live cache alapján számolt realizált PnL.",
+        },
+        {
+            "id": "tradable",
+            "title": "Tradable",
+            "value": tradable,
+            "unit": "USD",
+            "hint": "Kereskedésre figyelembe vehető szabad összeg.",
+        },
+        {
+            "id": "usdc_free",
+            "title": "USDC Free",
+            "value": usdc_free,
+            "unit": "USDC",
+            "hint": "Szabad USDC.",
+        },
+        {
+            "id": "usdt_free",
+            "title": "USDT Free",
+            "value": usdt_free,
+            "unit": "USDT",
+            "hint": "Szabad USDT.",
+        },
+        {
+            "id": "open_positions",
+            "title": "Open Positions",
+            "value": open_positions,
+            "unit": "db",
+            "hint": "Nyitott pozíciók száma.",
+        },
+    ]
+
+    return {
+        "ok": True,
+        "cards": cards,
+        "trend_stats": trend_stats if isinstance(trend_stats, dict) else {},
+        "order_endpoint_used": False,
+    }
+
+
+def dashboard_top_coin_cards_data():
+    """
+    Top coin mini-kártyák.
+    Scannerből és portfolio cache-ből dolgozik.
+    Nem hív ordert.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+    count = int(settings.get("dashboard_top_coin_count", 5) or 5)
+
+    candidates = []
+    try:
+        scan = scan_symbols()
+        candidates = scan.get("candidates") or []
+    except Exception:
+        candidates = []
+
+    positions = state.get("positions", {}) or {}
+
+    cards = []
+    for row in candidates[:count]:
+        sym = row.get("symbol")
+        base = sym.replace("USDT", "").replace("USDC", "") if isinstance(sym, str) else sym
+        pos = positions.get(sym, {}) if isinstance(positions, dict) else {}
+        cards.append({
+            "symbol": sym,
+            "base": base,
+            "score": row.get("score"),
+            "signal": row.get("signal"),
+            "price": row.get("price"),
+            "trend_pct": row.get("trend_pct"),
+            "momentum_pct": row.get("momentum_pct"),
+            "volatility_pct": row.get("volatility_pct"),
+            "has_position": bool(pos),
+            "qty": pos.get("qty") if isinstance(pos, dict) else None,
+            "avg": pos.get("avg") if isinstance(pos, dict) else None,
+        })
+
+    return {
+        "ok": True,
+        "enabled": bool(settings.get("dashboard_top_coin_cards_enabled", True)),
+        "count": len(cards),
+        "cards": cards,
+        "order_endpoint_used": False,
+    }
+
+
+def dashboard_modern_overview_data():
+    """
+    Modern dashboard teljes adatcsomag.
+    UI ebből tud kártyákat, badge-eket és mini coin listát rajzolni.
+    """
+    theme = dashboard_theme_status()
+    kpis = dashboard_kpi_cards_data()
+    top = dashboard_top_coin_cards_data()
+    trend = dashboard_trend_widget_data() if "dashboard_trend_widget_data" in globals() else {}
+    master = master_status_overview() if "master_status_overview" in globals() else {}
+
+    return {
+        "ok": True,
+        "theme": theme,
+        "kpis": kpis,
+        "top_coins": top,
+        "trend": trend,
+        "readiness": master.get("readiness", {}),
+        "safety": master.get("safety", {}),
+        "order_endpoint_used": False,
+        "message": "Modern dashboard adatcsomag kész.",
     }
 
 

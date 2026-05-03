@@ -186,12 +186,17 @@
     "integration_test_center_enabled": true,
     "integration_test_allow_network": false,
     "integration_test_allow_email_send": false,
-    "integration_test_report_file": "logs/integration_test_report.json"
+    "integration_test_report_file": "logs/integration_test_report.json",
+    "dashboard_modern_enabled": true,
+    "dashboard_top_coin_cards_enabled": true,
+    "dashboard_top_coin_count": 5,
+    "dashboard_theme_mode": "AUTO",
+    "dashboard_show_safety_badges": true
   },
-  "last_action": "Spot portfolio sync OK",
+  "last_action": "Scanner futott: top ETHUSDT, BTCUSDT, DOGEUSDT",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
-  "last_heartbeat_ts": 1777767336,
+  "last_heartbeat_ts": 1777767434,
   "cooldowns": {},
   "spot_balances_cache": [
     {
