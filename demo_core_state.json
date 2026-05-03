@@ -200,7 +200,13 @@
     "trade_simple_min_net_profit_pct": 0.1,
     "strategy_advanced_enabled": true,
     "strategy_validation_enabled": true,
-    "strategy_safety_preview_enabled": true
+    "strategy_safety_preview_enabled": true,
+    "readonly_balance_test_enabled": true,
+    "readonly_balance_allow_network": false,
+    "readonly_balance_require_signed_enabled": true,
+    "readonly_balance_require_account_read_enabled": true,
+    "readonly_balance_require_real_get_enabled": true,
+    "readonly_balance_report_file": "logs/readonly_balance_report.json"
   },
   "last_action": "AI advisor: HOLD BTCUSDT",
   "safe_mode": false,

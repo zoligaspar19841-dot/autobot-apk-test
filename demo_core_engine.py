@@ -1,4 +1,4 @@
-APP_VERSION = "0.5.2-demo-core"
+APP_VERSION = "0.5.3-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -74,6 +74,16 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+READONLY_BALANCE_TEST_DEFAULTS = {
+    "readonly_balance_test_enabled": True,
+    "readonly_balance_allow_network": False,
+    "readonly_balance_require_signed_enabled": True,
+    "readonly_balance_require_account_read_enabled": True,
+    "readonly_balance_require_real_get_enabled": True,
+    "readonly_balance_report_file": "logs/readonly_balance_report.json",
+}
 
 TRADE_UI_DEFAULTS = {
     "trade_ui_enabled": True,
@@ -404,6 +414,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "READONLY_BALANCE_TEST_DEFAULTS" in globals():
+        for k, v in READONLY_BALANCE_TEST_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -6111,6 +6127,200 @@ def save_trade_simple_settings(symbol=None, side=None, quote_amount=None, risk_p
     })
 
     return trade_simple_ui_status()
+
+
+
+def readonly_balance_test_gate():
+    """
+    Read-only Binance balance teszt gate.
+    Alapból nem hív hálózatot.
+    Order endpoint soha nincs engedve.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+    sec = _safe_call("load_secrets", {})
+
+    if not isinstance(sec, dict):
+        sec = {}
+
+    blockers = []
+    warnings = []
+
+    has_key = bool(sec.get("binance_api_key"))
+    has_secret = bool(sec.get("binance_api_secret"))
+
+    if not has_key:
+        blockers.append("Binance API key hiányzik")
+    if not has_secret:
+        blockers.append("Binance API secret hiányzik")
+
+    signed_enabled = bool(settings.get("binance_signed_readonly_enabled", False))
+    account_read_enabled = bool(settings.get("binance_account_read_enabled", False))
+    real_get_enabled = bool(settings.get("binance_real_account_get_enabled", False))
+
+    if bool(settings.get("readonly_balance_require_signed_enabled", True)) and not signed_enabled:
+        blockers.append("binance_signed_readonly_enabled false")
+    if bool(settings.get("readonly_balance_require_account_read_enabled", True)) and not account_read_enabled:
+        blockers.append("binance_account_read_enabled false")
+    if bool(settings.get("readonly_balance_require_real_get_enabled", True)) and not real_get_enabled:
+        blockers.append("binance_real_account_get_enabled false")
+
+    network_allowed = bool(settings.get("readonly_balance_allow_network", False)) and bool(settings.get("integration_test_allow_network", False))
+
+    if not network_allowed:
+        warnings.append("Hálózati read-only teszt tiltva: readonly_balance_allow_network vagy integration_test_allow_network false")
+
+    return {
+        "ok": True,
+        "ready_for_readonly_network_test": len(blockers) == 0 and network_allowed,
+        "network_allowed": network_allowed,
+        "has_api_key": has_key,
+        "has_api_secret": has_secret,
+        "signed_readonly_enabled": signed_enabled,
+        "account_read_enabled": account_read_enabled,
+        "real_account_get_enabled": real_get_enabled,
+        "blockers": blockers,
+        "warnings": warnings,
+        "binance_order_allowed": False,
+        "order_endpoint_used": False,
+        "message": "Read-only balance gate kész. Order nincs.",
+    }
+
+
+def readonly_balance_test_plan():
+    """
+    Lépéslista a valódi Binance spot olvasáshoz.
+    """
+    gate = readonly_balance_test_gate()
+
+    steps = [
+        "1. Secrets menüben Binance API key + API secret megadása.",
+        "2. Binance API kulcsnál csak olvasási jogosultság javasolt első teszthez.",
+        "3. Settings: binance_signed_readonly_enabled = true.",
+        "4. Settings: binance_account_read_enabled = true.",
+        "5. Settings: binance_real_account_get_enabled = true.",
+        "6. Settings: integration_test_allow_network = true.",
+        "7. Settings: readonly_balance_allow_network = true.",
+        "8. READONLY BALANCE menüben RUN READONLY TEST.",
+    ]
+
+    return {
+        "ok": True,
+        "gate": gate,
+        "steps": steps,
+        "danger_note": "Ez csak /api/v3/account olvasásra készül. Order endpoint továbbra sincs engedve.",
+        "order_endpoint_used": False,
+    }
+
+
+def run_readonly_balance_test():
+    """
+    Read-only balance teszt.
+    Ha a gate nem engedi, nem hív hálózatot.
+    Ha engedi, akkor is csak account read-only GET jellegű függvényt hív.
+    """
+    gate = readonly_balance_test_gate()
+
+    if not gate.get("ready_for_readonly_network_test"):
+        return {
+            "ok": True,
+            "called": False,
+            "ready": False,
+            "gate": gate,
+            "result": None,
+            "message": "Read-only hálózati teszt nem futott, gate tiltja.",
+            "order_endpoint_used": False,
+        }
+
+    result = None
+    try:
+        if "binance_account_readonly_real_get" in globals():
+            result = binance_account_readonly_real_get()
+        elif "binance_account_readonly_check" in globals():
+            result = binance_account_readonly_check()
+        else:
+            result = {"ok": False, "reason": "readonly_account_function_missing"}
+    except Exception as e:
+        result = {"ok": False, "error": str(e)}
+
+    audit_event("READONLY_BALANCE_TEST", "Binance read-only balance test", {
+        "called": True,
+        "ok": result.get("ok") if isinstance(result, dict) else False,
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "called": True,
+        "ready": True,
+        "gate": gate,
+        "result": result,
+        "message": "Read-only balance teszt lefutott. Order nincs.",
+        "order_endpoint_used": False,
+    }
+
+
+def spot_balance_sync_preview():
+    """
+    Spot balance sync előnézet.
+    Ha nincs valódi API engedély, demo/cache portfóliót mutat.
+    """
+    gate = readonly_balance_test_gate()
+    portfolio = _safe_call("spot_portfolio_status", {})
+    valuation = {}
+
+    try:
+        valuation = portfolio_valuation_from_balances() if "portfolio_valuation_from_balances" in globals() else {}
+    except Exception as e:
+        valuation = {"ok": False, "error": str(e)}
+
+    return {
+        "ok": True,
+        "gate": gate,
+        "portfolio_status": portfolio,
+        "valuation_preview": valuation,
+        "will_use_real_binance": bool(gate.get("ready_for_readonly_network_test")),
+        "sync_note": "Ha read-only gate zöld, valódi Binance spot balance olvasás jöhet. Order nincs.",
+        "order_endpoint_used": False,
+    }
+
+
+def export_readonly_balance_report(path=None):
+    """
+    Read-only balance report export.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if path is None:
+        path = settings.get("readonly_balance_report_file", "logs/readonly_balance_report.json") or "logs/readonly_balance_report.json"
+
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    report = {
+        "ts": int(time.time()),
+        "app_version": globals().get("APP_VERSION", "unknown"),
+        "plan": readonly_balance_test_plan(),
+        "gate": readonly_balance_test_gate(),
+        "sync_preview": spot_balance_sync_preview(),
+        "test": run_readonly_balance_test(),
+        "order_endpoint_used": False,
+    }
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    audit_event("READONLY_BALANCE_REPORT_EXPORT", "Read-only balance report export", {
+        "path": path,
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "path": path,
+        "order_endpoint_used": False,
+        "message": "Read-only balance report export kész.",
+    }
 
 
 if __name__ == "__main__":

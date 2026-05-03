@@ -1,0 +1,211 @@
+{
+  "ts": 1777768457,
+  "app_version": "0.5.3-demo-core",
+  "plan": {
+    "ok": true,
+    "gate": {
+      "ok": true,
+      "ready_for_readonly_network_test": false,
+      "network_allowed": false,
+      "has_api_key": false,
+      "has_api_secret": false,
+      "signed_readonly_enabled": false,
+      "account_read_enabled": false,
+      "real_account_get_enabled": false,
+      "blockers": [
+        "Binance API key hiányzik",
+        "Binance API secret hiányzik",
+        "binance_signed_readonly_enabled false",
+        "binance_account_read_enabled false",
+        "binance_real_account_get_enabled false"
+      ],
+      "warnings": [
+        "Hálózati read-only teszt tiltva: readonly_balance_allow_network vagy integration_test_allow_network false"
+      ],
+      "binance_order_allowed": false,
+      "order_endpoint_used": false,
+      "message": "Read-only balance gate kész. Order nincs."
+    },
+    "steps": [
+      "1. Secrets menüben Binance API key + API secret megadása.",
+      "2. Binance API kulcsnál csak olvasási jogosultság javasolt első teszthez.",
+      "3. Settings: binance_signed_readonly_enabled = true.",
+      "4. Settings: binance_account_read_enabled = true.",
+      "5. Settings: binance_real_account_get_enabled = true.",
+      "6. Settings: integration_test_allow_network = true.",
+      "7. Settings: readonly_balance_allow_network = true.",
+      "8. READONLY BALANCE menüben RUN READONLY TEST."
+    ],
+    "danger_note": "Ez csak /api/v3/account olvasásra készül. Order endpoint továbbra sincs engedve.",
+    "order_endpoint_used": false
+  },
+  "gate": {
+    "ok": true,
+    "ready_for_readonly_network_test": false,
+    "network_allowed": false,
+    "has_api_key": false,
+    "has_api_secret": false,
+    "signed_readonly_enabled": false,
+    "account_read_enabled": false,
+    "real_account_get_enabled": false,
+    "blockers": [
+      "Binance API key hiányzik",
+      "Binance API secret hiányzik",
+      "binance_signed_readonly_enabled false",
+      "binance_account_read_enabled false",
+      "binance_real_account_get_enabled false"
+    ],
+    "warnings": [
+      "Hálózati read-only teszt tiltva: readonly_balance_allow_network vagy integration_test_allow_network false"
+    ],
+    "binance_order_allowed": false,
+    "order_endpoint_used": false,
+    "message": "Read-only balance gate kész. Order nincs."
+  },
+  "sync_preview": {
+    "ok": true,
+    "gate": {
+      "ok": true,
+      "ready_for_readonly_network_test": false,
+      "network_allowed": false,
+      "has_api_key": false,
+      "has_api_secret": false,
+      "signed_readonly_enabled": false,
+      "account_read_enabled": false,
+      "real_account_get_enabled": false,
+      "blockers": [
+        "Binance API key hiányzik",
+        "Binance API secret hiányzik",
+        "binance_signed_readonly_enabled false",
+        "binance_account_read_enabled false",
+        "binance_real_account_get_enabled false"
+      ],
+      "warnings": [
+        "Hálózati read-only teszt tiltva: readonly_balance_allow_network vagy integration_test_allow_network false"
+      ],
+      "binance_order_allowed": false,
+      "order_endpoint_used": false,
+      "message": "Read-only balance gate kész. Order nincs."
+    },
+    "portfolio_status": {
+      "ok": true,
+      "spot_sync_enabled": true,
+      "spot_base_asset": "USDC",
+      "spot_quote_assets": "USDC,USDT",
+      "spot_safety_reserve": 10.0,
+      "spot_max_tradeable_pct": 90.0,
+      "spot_last_sync_ts": 1777766552,
+      "portfolio_total_value_usd": 99.88643379,
+      "portfolio_tradable_usd": 71.0,
+      "assets_count": 3,
+      "top_assets": [
+        {
+          "asset": "USDC",
+          "free": 81.0,
+          "locked": 0.0,
+          "total": 81.0,
+          "price_usd": 1.0,
+          "value_usd": 81.0,
+          "source": "demo"
+        },
+        {
+          "asset": "BTC",
+          "free": 0.0001267180989088671,
+          "locked": 0.0,
+          "total": 0.0001267180989088671,
+          "price_usd": 78527.3385158,
+          "value_usd": 9.95083505,
+          "source": "demo_position"
+        },
+        {
+          "asset": "ETH",
+          "free": 0.0038604882824240655,
+          "locked": 0.0,
+          "total": 0.0038604882824240655,
+          "price_usd": 2314.62915817,
+          "value_usd": 8.93559874,
+          "source": "demo_position"
+        }
+      ],
+      "order_endpoint_used": false
+    },
+    "valuation_preview": {
+      "ok": true,
+      "base_asset": "USDC",
+      "quote_assets": [
+        "USDC",
+        "USDT"
+      ],
+      "total_value_usd": 99.97360646,
+      "quote_free_usd": 81.0,
+      "safety_reserve_usd": 10.0,
+      "tradable_usd": 71.0,
+      "assets_count": 3,
+      "assets": [
+        {
+          "asset": "USDC",
+          "free": 81.0,
+          "locked": 0.0,
+          "total": 81.0,
+          "price_usd": 1.0,
+          "value_usd": 81.0,
+          "source": "demo"
+        },
+        {
+          "asset": "BTC",
+          "free": 0.0001267180989088671,
+          "locked": 0.0,
+          "total": 0.0001267180989088671,
+          "price_usd": 79012.31774114,
+          "value_usd": 10.01229069,
+          "source": "demo_position"
+        },
+        {
+          "asset": "ETH",
+          "free": 0.0038604882824240655,
+          "locked": 0.0,
+          "total": 0.0038604882824240655,
+          "price_usd": 2321.29075621,
+          "value_usd": 8.96131576,
+          "source": "demo_position"
+        }
+      ],
+      "source": "portfolio_valuation"
+    },
+    "will_use_real_binance": false,
+    "sync_note": "Ha read-only gate zöld, valódi Binance spot balance olvasás jöhet. Order nincs.",
+    "order_endpoint_used": false
+  },
+  "test": {
+    "ok": true,
+    "called": false,
+    "ready": false,
+    "gate": {
+      "ok": true,
+      "ready_for_readonly_network_test": false,
+      "network_allowed": false,
+      "has_api_key": false,
+      "has_api_secret": false,
+      "signed_readonly_enabled": false,
+      "account_read_enabled": false,
+      "real_account_get_enabled": false,
+      "blockers": [
+        "Binance API key hiányzik",
+        "Binance API secret hiányzik",
+        "binance_signed_readonly_enabled false",
+        "binance_account_read_enabled false",
+        "binance_real_account_get_enabled false"
+      ],
+      "warnings": [
+        "Hálózati read-only teszt tiltva: readonly_balance_allow_network vagy integration_test_allow_network false"
+      ],
+      "binance_order_allowed": false,
+      "order_endpoint_used": false,
+      "message": "Read-only balance gate kész. Order nincs."
+    },
+    "result": null,
+    "message": "Read-only hálózati teszt nem futott, gate tiltja.",
+    "order_endpoint_used": false
+  },
+  "order_endpoint_used": false
+}

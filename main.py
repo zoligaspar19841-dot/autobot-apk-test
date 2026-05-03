@@ -679,6 +679,141 @@ class TrendCanvasWidget(Widget):
 
 
 
+
+class DemoCoreReadonlyBalanceScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]READ-ONLY BINANCE BALANCE[/b]\n[size=14]Valódi spot balance olvasás előkészítés. Order nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=78
+        ))
+
+        self.info = Label(text='Readonly balance...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        buttons = [
+            ('PLAN', self.plan),
+            ('GATE CHECK', self.gate),
+            ('SYNC PREVIEW', self.preview),
+            ('RUN READONLY TEST', self.run_test),
+            ('EXPORT REPORT', self.export_report),
+            ('SECRETS', lambda: self.manager.go_to('secrets')),
+            ('INTEGRATION TESTS', lambda: self.manager.go_to('integration_tests')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.gate()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def plan(self):
+        try:
+            res = demo_core.readonly_balance_test_plan()
+            lines = ['[b]Read-only Balance Test Plan[/b]', '']
+            for step in res.get('steps') or []:
+                lines.append(step)
+            lines.append('')
+            lines.append('[b]Danger note[/b]')
+            lines.append(str(res.get('danger_note')))
+            lines.append('')
+            lines.append('[b]Gate[/b]')
+            lines.append(str(res.get('gate')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Plan hiba: ' + str(e)
+
+    def gate(self):
+        try:
+            res = demo_core.readonly_balance_test_gate()
+            lines = ['[b]Read-only Gate Check[/b]', '']
+            for k in ['ready_for_readonly_network_test','network_allowed','has_api_key','has_api_secret','signed_readonly_enabled','account_read_enabled','real_account_get_enabled','binance_order_allowed','order_endpoint_used']:
+                lines.append(f"{k}: {res.get(k)}")
+            lines.append('')
+            lines.append('[b]Blockers[/b]')
+            if res.get('blockers'):
+                for x in res.get('blockers'):
+                    lines.append('🔴 ' + str(x))
+            else:
+                lines.append('✅ Nincs blocker')
+            lines.append('')
+            lines.append('[b]Warnings[/b]')
+            if res.get('warnings'):
+                for x in res.get('warnings'):
+                    lines.append('🟡 ' + str(x))
+            else:
+                lines.append('✅ Nincs warning')
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Gate hiba: ' + str(e)
+
+    def preview(self):
+        try:
+            res = demo_core.spot_balance_sync_preview()
+            lines = ['[b]Spot Balance Sync Preview[/b]', '']
+            lines.append(f"Will use real Binance: {res.get('will_use_real_binance')}")
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append('')
+            lines.append('[b]Portfolio status[/b]')
+            lines.append(str(res.get('portfolio_status')))
+            lines.append('')
+            lines.append('[b]Valuation preview[/b]')
+            lines.append(str(res.get('valuation_preview')))
+            lines.append('')
+            lines.append(str(res.get('sync_note')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Preview hiba: ' + str(e)
+
+    def run_test(self):
+        try:
+            res = demo_core.run_readonly_balance_test()
+            lines = ['[b]Run Read-only Balance Test[/b]', '']
+            lines.append(f"Called: {res.get('called')}")
+            lines.append(f"Ready: {res.get('ready')}")
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append('')
+            lines.append(str(res.get('message')))
+            lines.append('')
+            lines.append('[b]Result[/b]')
+            lines.append(str(res.get('result')))
+            lines.append('')
+            lines.append('[b]Gate[/b]')
+            lines.append(str(res.get('gate')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Run test hiba: ' + str(e)
+
+    def export_report(self):
+        try:
+            res = demo_core.export_readonly_balance_report()
+            self.info.text = '[b]Read-only balance report export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Export hiba: ' + str(e)
+
+
+
 class DemoCoreTradeSimpleAdvancedScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -3867,6 +4002,12 @@ class DemoCoreSettingsScreen(Screen):
             ('strategy_advanced_enabled', 'Strategy advanced enabled true/false'),
             ('strategy_validation_enabled', 'Strategy validation enabled true/false'),
             ('strategy_safety_preview_enabled', 'Strategy safety preview enabled true/false'),
+            ('readonly_balance_test_enabled', 'Readonly balance test enabled true/false'),
+            ('readonly_balance_allow_network', 'Readonly balance allow network true/false'),
+            ('readonly_balance_require_signed_enabled', 'Readonly require signed enabled true/false'),
+            ('readonly_balance_require_account_read_enabled', 'Readonly require account read enabled true/false'),
+            ('readonly_balance_require_real_get_enabled', 'Readonly require real get enabled true/false'),
+            ('readonly_balance_report_file', 'Readonly balance report file'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -4095,6 +4236,12 @@ class DemoCoreSettingsScreen(Screen):
             cfg['strategy_advanced_enabled'] = self.inputs['strategy_advanced_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['strategy_validation_enabled'] = self.inputs['strategy_validation_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['strategy_safety_preview_enabled'] = self.inputs['strategy_safety_preview_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['readonly_balance_test_enabled'] = self.inputs['readonly_balance_test_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['readonly_balance_allow_network'] = self.inputs['readonly_balance_allow_network'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['readonly_balance_require_signed_enabled'] = self.inputs['readonly_balance_require_signed_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['readonly_balance_require_account_read_enabled'] = self.inputs['readonly_balance_require_account_read_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['readonly_balance_require_real_get_enabled'] = self.inputs['readonly_balance_require_real_get_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['readonly_balance_report_file'] = self.inputs['readonly_balance_report_file'].text.strip() or 'logs/readonly_balance_report.json'
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -4378,6 +4525,12 @@ class DemoCoreScreen(Screen):
             self.manager.go_to("pre_apk_safe")
         except Exception:
             self.manager.current = "pre_apk_safe"
+
+    def open_readonly_balance(self):
+        try:
+            self.manager.go_to("readonly_balance")
+        except Exception:
+            self.manager.current = "readonly_balance"
 
     def open_trade_simple_advanced(self):
         try:
@@ -4694,6 +4847,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreIntegrationTestCenterScreen(name="integration_tests"))
         sm.add_widget(DemoCoreModernDashboardScreen(name="modern_dashboard"))
         sm.add_widget(DemoCoreTradeSimpleAdvancedScreen(name="trade_simple_advanced"))
+        sm.add_widget(DemoCoreReadonlyBalanceScreen(name="readonly_balance"))
         return sm
 
 if __name__ == "__main__":
