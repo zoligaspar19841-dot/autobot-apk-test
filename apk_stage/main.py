@@ -4647,498 +4647,186 @@ class DemoCoreLogsScreen(Screen):
             self.info.text = 'Napló törlés hiba: ' + str(e)
 
 
+
 class DemoCoreSettingsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        root = BoxLayout(orientation='vertical', padding=12, spacing=10)
 
-        title = Label(text='[b]DEMO CORE SETTINGS[/b]\\n[size=14]Demo motor paraméterek[/size]', markup=True, size_hint_y=None, height=72)
+        root = BoxLayout(orientation="vertical", padding=10, spacing=8)
+
+        title = Label(
+            text="[b]DEMO CORE SETTINGS[/b]\n[size=13]Mobilbarát beállítások[/size]",
+            markup=True,
+            size_hint_y=None,
+            height=62,
+            halign="center"
+        )
         root.add_widget(title)
 
-        grid = GridLayout(cols=2, spacing=8, size_hint_y=None, height=360)
+        scroll = ScrollView()
+        form = BoxLayout(
+            orientation="vertical",
+            padding=6,
+            spacing=8,
+            size_hint_y=None
+        )
+        form.bind(minimum_height=form.setter("height"))
+
         self.inputs = {}
 
         fields = [
-            ('risk_pct', 'Risk / trade %'),
-            ('max_positions', 'Max coin / pozíció'),
-            ('min_profit_pct', 'Min profit %'),
-            ('stop_loss_pct', 'Stop loss %'),
-            ('trailing_drop_pct', 'Trailing drop %'),
-            ('watchlist', 'Watchlist vesszővel'),
-            ('execution_mode', 'Execution mode AUTO/MANUAL/OFF'),
-            ('hold_profit_minutes', 'Hold profit minutes'),
-            ('time_in_trend_minutes_max', 'Max time in trend min'),
-            ('cooldown_after_exit_min', 'Cooldown after exit min'),
-            ('profit_erosion_guard_pct', 'Profit erosion guard %'),
-            ('scanner_enabled', 'Scanner enabled true/false'),
-            ('scanner_top_n', 'Scanner top N'),
-            ('min_edge_score_open', 'Min edge open'),
-            ('min_edge_score_keep', 'Min edge keep'),
-            ('max_scan_symbols', 'Max scan symbols'),
-            ('maker_fee_pct', 'Maker fee %'),
-            ('taker_fee_pct', 'Taker fee %'),
-            ('tax_enabled', 'Tax enabled true/false'),
-            ('tax_pct', 'HU tax %'),
-            ('min_after_tax_profit_pct', 'Min after tax profit %'),
-            ('order_type', 'Order type LIMIT_BBO'),
-            ('use_bbo', 'Use BBO true/false'),
-            ('max_spread_pct', 'Max spread %'),
-            ('slippage_buffer_pct', 'Slippage buffer %'),
-            ('min_orderbook_imbalance', 'Min orderbook imbalance'),
-            ('tp_sl_enabled', 'TP/SL enabled true/false'),
-            ('take_profit_pct', 'Take profit %'),
-            ('ai_advisor_enabled', 'AI advisor enabled true/false'),
-            ('ai_mode', 'AI mode OFFLINE/API'),
-            ('ai_min_confidence', 'AI min confidence'),
-            ('ai_allow_auto_trade', 'AI allow auto trade true/false'),
-            ('email_notify_enabled', 'Email notify enabled true/false'),
-            ('email_on_buy', 'Email on BUY true/false'),
-            ('email_on_sell', 'Email on SELL true/false'),
-            ('email_on_error', 'Email on ERROR true/false'),
-            ('email_on_health_warning', 'Email on health warning true/false'),
-            ('openai_api_enabled', 'OpenAI API enabled true/false'),
-            ('openai_model', 'OpenAI model'),
-            ('openai_timeout_sec', 'OpenAI timeout sec'),
-            ('live_mode_enabled', 'Live mode enabled true/false'),
-            ('live_require_confirm', 'Live require confirm true/false'),
-            ('live_allow_buy', 'Live allow BUY true/false'),
-            ('live_allow_sell', 'Live allow SELL true/false'),
-            ('live_max_order_usdt', 'Live max order USDT'),
-            ('live_warning_ack', 'Live warning ACK true/false'),
-            ('backtest_symbol', 'Backtest symbol'),
-            ('backtest_limit', 'Backtest limit'),
-            ('backtest_start_balance', 'Backtest start balance'),
-            ('backtest_risk_pct', 'Backtest risk %'),
-            ('backtest_fee_pct', 'Backtest fee %'),
-            ('schedules_enabled', 'Schedules enabled true/false'),
-            ('snapshot_enabled', 'Snapshot enabled true/false'),
-            ('snapshot_time', 'Snapshot time HH:MM'),
-            ('price_trigger_enabled', 'Price trigger enabled true/false'),
-            ('price_trigger_symbol', 'Price trigger symbol'),
-            ('price_trigger_above', 'Price trigger above'),
-            ('price_trigger_below', 'Price trigger below'),
-            ('launchpool_enabled', 'Launchpool enabled true/false'),
-            ('launchpool_min_apr', 'Launchpool min APR'),
-            ('launchpool_watchlist', 'Launchpool watchlist'),
-            ('launchpool_scan_interval_min', 'Launchpool scan interval min'),
-            ('sync_enabled', 'Sync enabled true/false'),
-            ('sync_primary_device', 'Sync primary PHONE/PC'),
-            ('drive_sync_folder', 'Drive sync folder'),
-            ('pc_sync_folder', 'PC sync folder'),
-            ('auto_backup_on_start', 'Auto backup on start true/false'),
-            ('first_run_done', 'First run done true/false'),
-            ('admin_timeout_sec', 'Admin timeout sec'),
-            ('patch_manager_enabled', 'Patch manager enabled true/false'),
-            ('patch_require_admin', 'Patch require admin true/false'),
-            ('approval_required_for_manual', 'Approval required manual true/false'),
-            ('approval_required_for_live', 'Approval required live true/false'),
-            ('dry_run_executor_enabled', 'Dry-run executor enabled true/false'),
-            ('live_executor_enabled', 'Live executor enabled true/false'),
-            ('live_hard_stop_enabled', 'Live hard stop enabled true/false'),
-            ('live_require_admin_active', 'Live require admin active true/false'),
-            ('live_require_approval', 'Live require approval true/false'),
-            ('live_require_positive_after_tax', 'Live require positive after tax true/false'),
-            ('live_min_after_tax_profit_pct', 'Live min after tax profit %'),
-            ('live_max_order_usdt_hard', 'Live max order hard USDT'),
-            ('live_block_if_health_warning', 'Live block if health warning true/false'),
-            ('live_block_if_spread_bad', 'Live block if spread bad true/false'),
-            ('live_block_if_ai_hold', 'Live block if AI hold true/false'),
-            ('binance_account_check_enabled', 'Binance account check enabled true/false'),
-            ('binance_test_order_enabled', 'Binance test order enabled true/false'),
-            ('binance_test_order_symbol', 'Binance test order symbol'),
-            ('binance_test_order_side', 'Binance test order side'),
-            ('binance_test_order_type', 'Binance test order type'),
-            ('binance_test_order_quote_qty', 'Binance test order quote qty'),
-            ('binance_recv_window', 'Binance recvWindow'),
-            ('binance_base_url', 'Binance base URL'),
-            ('binance_signed_readonly_enabled', 'Binance signed readonly enabled true/false'),
-            ('binance_account_read_enabled', 'Binance account read enabled true/false'),
-            ('binance_real_account_get_enabled', 'Binance real account GET enabled true/false'),
-            ('binance_http_timeout_sec', 'Binance HTTP timeout sec'),
-            ('binance_balance_preview_assets', 'Binance balance preview assets'),
-            ('spot_sync_enabled', 'Spot sync enabled true/false'),
-            ('spot_base_asset', 'Spot base asset'),
-            ('spot_quote_assets', 'Spot quote assets'),
-            ('spot_safety_reserve', 'Spot safety reserve USD'),
-            ('spot_max_tradeable_pct', 'Spot max tradeable %'),
-            ('spot_min_asset_value_usd', 'Spot min asset value USD'),
-            ('dashboard_use_portfolio_cache', 'Dashboard use portfolio cache true/false'),
-            ('trend_history_enabled', 'Trend history enabled true/false'),
-            ('trend_history_max_points', 'Trend history max points'),
-            ('trend_view_mode', 'Trend view mode'),
-            ('trend_supported_views', 'Trend supported views'),
-            ('trend_chart_enabled', 'Trend chart enabled true/false'),
-            ('trend_chart_width', 'Trend chart width'),
-            ('trend_show_crosshair_data', 'Trend show crosshair data true/false'),
-            ('trend_export_enabled', 'Trend export enabled true/false'),
-            ('trend_time_format', 'Trend time format'),
-            ('trend_export_file', 'Trend export file'),
-            ('dashboard_trend_widget_enabled', 'Dashboard trend widget enabled true/false'),
-            ('dashboard_trend_widget_view', 'Dashboard trend widget view'),
-            ('dashboard_trend_widget_points', 'Dashboard trend widget points'),
-            ('dashboard_show_selected_trend_point', 'Dashboard show selected trend point true/false'),
-            ('trend_auto_snapshot_enabled', 'Trend auto snapshot enabled true/false'),
-            ('trend_auto_snapshot_interval_sec', 'Trend auto snapshot interval sec'),
-            ('trend_auto_snapshot_only_when_running', 'Trend auto snapshot only when running true/false'),
-            ('dashboard_auto_refresh_enabled', 'Dashboard auto refresh enabled true/false'),
-            ('dashboard_auto_refresh_interval_sec', 'Dashboard auto refresh interval sec'),
-            ('master_status_enabled', 'Master status enabled true/false'),
-            ('master_status_show_next_steps', 'Master status show next steps true/false'),
-            ('master_status_show_modules', 'Master status show modules true/false'),
-            ('master_status_show_missing', 'Master status show missing true/false'),
-            ('pre_apk_safe_test_enabled', 'Pre APK safe test enabled true/false'),
-            ('pre_apk_require_no_order_endpoint', 'Pre APK require no order endpoint true/false'),
-            ('pre_apk_require_compile_ok', 'Pre APK require compile OK true/false'),
-            ('pre_apk_require_master_status_ok', 'Pre APK require master status OK true/false'),
-            ('pre_apk_min_readiness_score_pct', 'Pre APK min readiness score %'),
-            ('pre_apk_report_file', 'Pre APK report file'),
-            ('integration_test_center_enabled', 'Integration test center enabled true/false'),
-            ('integration_test_allow_network', 'Integration test allow network true/false'),
-            ('integration_test_allow_email_send', 'Integration test allow email send true/false'),
-            ('integration_test_report_file', 'Integration test report file'),
-            ('dashboard_modern_enabled', 'Dashboard modern enabled true/false'),
-            ('dashboard_top_coin_cards_enabled', 'Dashboard top coin cards enabled true/false'),
-            ('dashboard_top_coin_count', 'Dashboard top coin count'),
-            ('dashboard_theme_mode', 'Dashboard theme mode AUTO/DEMO_GOLD/LIVE_BLUE'),
-            ('dashboard_show_safety_badges', 'Dashboard show safety badges true/false'),
-            ('trade_ui_enabled', 'Trade UI enabled true/false'),
-            ('trade_simple_symbol', 'Trade Simple symbol'),
-            ('trade_simple_side', 'Trade Simple side BUY/SELL'),
-            ('trade_simple_quote_amount', 'Trade Simple quote amount'),
-            ('trade_simple_risk_pct', 'Trade Simple risk pct'),
-            ('trade_simple_min_net_profit_pct', 'Trade Simple min net profit pct'),
-            ('strategy_advanced_enabled', 'Strategy advanced enabled true/false'),
-            ('strategy_validation_enabled', 'Strategy validation enabled true/false'),
-            ('strategy_safety_preview_enabled', 'Strategy safety preview enabled true/false'),
-            ('readonly_balance_test_enabled', 'Readonly balance test enabled true/false'),
-            ('readonly_balance_allow_network', 'Readonly balance allow network true/false'),
-            ('readonly_balance_require_signed_enabled', 'Readonly require signed enabled true/false'),
-            ('readonly_balance_require_account_read_enabled', 'Readonly require account read enabled true/false'),
-            ('readonly_balance_require_real_get_enabled', 'Readonly require real get enabled true/false'),
-            ('readonly_balance_report_file', 'Readonly balance report file'),
-            ('profit_report_enabled', 'Profit report enabled true/false'),
-            ('profit_report_file_json', 'Profit report JSON file'),
-            ('profit_report_file_csv', 'Profit report CSV file'),
-            ('profit_report_include_tax', 'Profit report include tax true/false'),
-            ('profit_report_tax_pct', 'Profit report tax pct'),
-            ('health_alert_center_enabled', 'Health alert center enabled true/false'),
-            ('heartbeat_stale_after_sec', 'Heartbeat stale after sec'),
-            ('error_alert_enabled', 'Error alert enabled true/false'),
-            ('crash_recovery_enabled', 'Crash recovery enabled true/false'),
-            ('resume_after_restart_enabled', 'Resume after restart enabled true/false'),
-            ('health_report_file', 'Health report file'),
-            ('firstrun_ready_enabled', 'First-run ready enabled true/false'),
-            ('firstrun_require_admin_password_change', 'First-run require admin password change true/false'),
-            ('firstrun_require_secrets_check', 'First-run require secrets check true/false'),
-            ('firstrun_require_safety_check', 'First-run require safety check true/false'),
-            ('firstrun_require_full_system_check', 'First-run require full system check true/false'),
-            ('firstrun_report_file', 'First-run report file'),
-            ('release_candidate_enabled', 'Release candidate enabled true/false'),
-            ('release_candidate_name', 'Release candidate name'),
-            ('release_candidate_report_file', 'Release candidate report file'),
-            ('apk_build_preview_enabled', 'APK build preview enabled true/false'),
-            ('apk_build_allowed', 'APK build allowed true/false'),
-            ('ui_route_check_enabled', 'UI route check enabled true/false'),
-            ('ui_route_report_file', 'UI route report file'),
-            ('ui_route_required_min_pct', 'UI route required min pct'),
-            ('apk_build_gate_enabled', 'APK build gate enabled true/false'),
-            ('apk_require_full_system_check', 'APK require full system check true/false'),
-            ('apk_require_ui_route_check', 'APK require UI route check true/false'),
-            ('apk_require_no_plain_secrets', 'APK require no plain secrets true/false'),
-            ('apk_manifest_file', 'APK manifest file'),
-            ('apk_build_gate_report_file', 'APK build gate report file'),
-            ('final_prebuild_audit_enabled', 'Final prebuild audit enabled true/false'),
-            ('final_prebuild_report_file', 'Final prebuild report file'),
-            ('final_prebuild_min_score_pct', 'Final prebuild min score pct'),
-            ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
-            ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
-            ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
-            ('first_run_show_live_warning', 'First-run show live warning true/false'),
+            ("risk_pct", "Risk / trade %", "10.0"),
+            ("max_positions", "Max pozíció", "3"),
+            ("min_profit_pct", "Min profit %", "10.0"),
+            ("stop_loss_pct", "Stop loss %", "3.0"),
+            ("trailing_drop_pct", "Trailing drop %", "1.5"),
+            ("hold_profit_minutes", "Profit tartás perc", "30"),
+            ("time_in_trend_minutes_max", "Max trend idő perc", "240"),
+            ("exit_cooldown_minutes", "Exit cooldown perc", "10"),
+            ("profit_erosion_guard_pct", "Profit erózió guard %", "1.5"),
+            ("watchlist", "Watchlist", "BTCUSDT,ETHUSDT,DOGEUSDT"),
+            ("execution_mode", "Execution mode", "AUTO"),
         ]
 
-        for key, label in fields:
-            grid.add_widget(Label(text=label))
-            ti = TextInput(text='', multiline=False)
+        for key, label, default in fields:
+            row = BoxLayout(
+                orientation="vertical",
+                size_hint_y=None,
+                height=86,
+                spacing=3
+            )
+
+            lab = Label(
+                text=label,
+                size_hint_y=None,
+                height=26,
+                halign="left",
+                valign="middle",
+                color=(1, 0.82, 0.18, 1)
+            )
+            lab.bind(size=lambda inst, val: setattr(inst, "text_size", val))
+
+            ti = TextInput(
+                text="",
+                hint_text=default,
+                multiline=False,
+                size_hint_y=None,
+                height=48,
+                foreground_color=(1, 1, 1, 1),
+                background_color=(0.08, 0.08, 0.08, 1),
+                cursor_color=(1, 0.82, 0.18, 1),
+                padding=[10, 10, 10, 10]
+            )
             self.inputs[key] = ti
-            grid.add_widget(ti)
 
-        root.add_widget(grid)
+            row.add_widget(lab)
+            row.add_widget(ti)
+            form.add_widget(row)
 
-        self.info = Label(text='Beállítások betöltése...', markup=True, halign='left', valign='top')
-        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+        scroll.add_widget(form)
+        root.add_widget(scroll)
+
+        self.info = Label(
+            text="Betöltés után módosíts, majd Mentés.",
+            size_hint_y=None,
+            height=44,
+            markup=True,
+            halign="left",
+            valign="middle"
+        )
+        self.info.bind(size=lambda inst, val: setattr(inst, "text_size", val))
         root.add_widget(self.info)
 
-        btns = GridLayout(cols=2, size_hint_y=None, height=180, spacing=8)
-        b_load = Button(text='BETÖLTÉS')
-        b_save = Button(text='MENTÉS')
-        b_reset = Button(text='ALAPÉRTÉK')
-        b_back = Button(text='VISSZA')
+        btns = GridLayout(cols=2, spacing=6, size_hint_y=None, height=156)
 
-        b_load.bind(on_press=lambda x: self.load_values())
-        b_save.bind(on_press=lambda x: self.save_values())
-        b_reset.bind(on_press=lambda x: self.reset_defaults())
-        b_back.bind(on_press=lambda x: self.go_back())
+        b = Button(text="BETÖLTÉS")
+        b.bind(on_press=lambda *_: self.load_values())
+        btns.add_widget(b)
 
-        for b in [b_load, b_save, b_reset, b_back]:
-            btns.add_widget(b)
+        b = Button(text="MENTÉS")
+        b.bind(on_press=lambda *_: self.save_values())
+        btns.add_widget(b)
+
+        b = Button(text="ALAPÉRTÉK")
+        b.bind(on_press=lambda *_: self.reset_defaults())
+        btns.add_widget(b)
+
+        b = Button(text="VISSZA")
+        b.bind(on_press=lambda *_: safe_go_back(self.manager, "main"))
+        btns.add_widget(b)
 
         root.add_widget(btns)
         self.add_widget(root)
 
-    def on_pre_enter(self):
+    def on_pre_enter(self, *args):
         self.load_values()
-
-    def go_back(self):
-        try:
-            self.manager.go_back()
-        except Exception:
-            self.manager.current = 'home'
 
     def load_values(self):
         try:
             st = demo_core.load_state()
-            cfg = st.get('settings', {})
-            for key, ti in self.inputs.items():
-                val = cfg.get(key, '')
+            settings = st.get("settings", {})
+            for key, inp in self.inputs.items():
+                val = settings.get(key, inp.hint_text)
                 if isinstance(val, list):
-                    ti.text = ','.join(val)
-                else:
-                    ti.text = str(val)
-            self.info.text = '[b]OK:[/b] Beállítások betöltve.'
+                    val = ",".join(map(str, val))
+                inp.text = str(val)
+            self.info.text = "[b]OK:[/b] Beállítások betöltve."
         except Exception as e:
-            self.info.text = '[b]HIBA:[/b] Betöltés sikertelen: ' + str(e)
+            self.info.text = "[b]HIBA:[/b] Betöltés sikertelen: " + str(e)
 
     def save_values(self):
         try:
             st = demo_core.load_state()
-            cfg = st.setdefault('settings', {})
+            settings = st.setdefault("settings", {})
 
-            cfg['risk_pct'] = float(self.inputs['risk_pct'].text.replace(',', '.'))
-            cfg['max_positions'] = int(float(self.inputs['max_positions'].text.replace(',', '.')))
-            cfg['min_profit_pct'] = float(self.inputs['min_profit_pct'].text.replace(',', '.'))
-            cfg['stop_loss_pct'] = float(self.inputs['stop_loss_pct'].text.replace(',', '.'))
-            cfg['trailing_drop_pct'] = float(self.inputs['trailing_drop_pct'].text.replace(',', '.'))
+            def to_float(key, fallback):
+                try:
+                    return float(self.inputs[key].text.strip().replace(",", "."))
+                except Exception:
+                    return fallback
 
-            raw_watch = self.inputs['watchlist'].text.strip()
-            watch = []
-            for item in raw_watch.split(','):
-                sym = item.strip().upper()
-                if sym:
-                    if not sym.endswith('USDT'):
-                        sym = sym + 'USDT'
-                    watch.append(sym)
-            cfg['watchlist'] = watch or ['BTCUSDT', 'ETHUSDT', 'DOGEUSDT']
-            mode = self.inputs['execution_mode'].text.strip().upper() or 'AUTO'
-            if mode not in ['AUTO', 'MANUAL', 'OFF']:
-                mode = 'MANUAL'
-            cfg['execution_mode'] = mode
-            cfg['hold_profit_minutes'] = float(self.inputs['hold_profit_minutes'].text.replace(',', '.'))
-            cfg['time_in_trend_minutes_max'] = float(self.inputs['time_in_trend_minutes_max'].text.replace(',', '.'))
-            cfg['cooldown_after_exit_min'] = float(self.inputs['cooldown_after_exit_min'].text.replace(',', '.'))
-            cfg['profit_erosion_guard_pct'] = float(self.inputs['profit_erosion_guard_pct'].text.replace(',', '.'))
-            cfg['scanner_enabled'] = self.inputs['scanner_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['scanner_top_n'] = int(float(self.inputs['scanner_top_n'].text.replace(',', '.')))
-            cfg['min_edge_score_open'] = float(self.inputs['min_edge_score_open'].text.replace(',', '.'))
-            cfg['min_edge_score_keep'] = float(self.inputs['min_edge_score_keep'].text.replace(',', '.'))
-            cfg['max_scan_symbols'] = int(float(self.inputs['max_scan_symbols'].text.replace(',', '.')))
-            cfg['maker_fee_pct'] = float(self.inputs['maker_fee_pct'].text.replace(',', '.'))
-            cfg['taker_fee_pct'] = float(self.inputs['taker_fee_pct'].text.replace(',', '.'))
-            cfg['tax_enabled'] = self.inputs['tax_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['tax_pct'] = float(self.inputs['tax_pct'].text.replace(',', '.'))
-            cfg['min_after_tax_profit_pct'] = float(self.inputs['min_after_tax_profit_pct'].text.replace(',', '.'))
-            cfg['order_type'] = self.inputs['order_type'].text.strip().upper() or 'LIMIT_BBO'
-            cfg['use_bbo'] = self.inputs['use_bbo'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['max_spread_pct'] = float(self.inputs['max_spread_pct'].text.replace(',', '.'))
-            cfg['slippage_buffer_pct'] = float(self.inputs['slippage_buffer_pct'].text.replace(',', '.'))
-            cfg['min_orderbook_imbalance'] = float(self.inputs['min_orderbook_imbalance'].text.replace(',', '.'))
-            cfg['tp_sl_enabled'] = self.inputs['tp_sl_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['take_profit_pct'] = float(self.inputs['take_profit_pct'].text.replace(',', '.'))
-            cfg['ai_advisor_enabled'] = self.inputs['ai_advisor_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['ai_mode'] = self.inputs['ai_mode'].text.strip().upper() or 'OFFLINE'
-            cfg['ai_min_confidence'] = float(self.inputs['ai_min_confidence'].text.replace(',', '.'))
-            cfg['ai_allow_auto_trade'] = self.inputs['ai_allow_auto_trade'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['email_notify_enabled'] = self.inputs['email_notify_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['email_on_buy'] = self.inputs['email_on_buy'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['email_on_sell'] = self.inputs['email_on_sell'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['email_on_error'] = self.inputs['email_on_error'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['email_on_health_warning'] = self.inputs['email_on_health_warning'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['openai_api_enabled'] = self.inputs['openai_api_enabled'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['openai_model'] = self.inputs['openai_model'].text.strip() or 'gpt-5-mini'
-            cfg['openai_timeout_sec'] = int(float(self.inputs['openai_timeout_sec'].text.replace(',', '.')))
-            cfg['live_mode_enabled'] = self.inputs['live_mode_enabled'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['live_require_confirm'] = self.inputs['live_require_confirm'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['live_allow_buy'] = self.inputs['live_allow_buy'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['live_allow_sell'] = self.inputs['live_allow_sell'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['live_max_order_usdt'] = float(self.inputs['live_max_order_usdt'].text.replace(',', '.'))
-            cfg['live_warning_ack'] = self.inputs['live_warning_ack'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['backtest_symbol'] = self.inputs['backtest_symbol'].text.strip().upper() or 'BTCUSDT'
-            cfg['backtest_limit'] = int(float(self.inputs['backtest_limit'].text.replace(',', '.')))
-            cfg['backtest_start_balance'] = float(self.inputs['backtest_start_balance'].text.replace(',', '.'))
-            cfg['backtest_risk_pct'] = float(self.inputs['backtest_risk_pct'].text.replace(',', '.'))
-            cfg['backtest_fee_pct'] = float(self.inputs['backtest_fee_pct'].text.replace(',', '.'))
-            cfg['schedules_enabled'] = self.inputs['schedules_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['snapshot_enabled'] = self.inputs['snapshot_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['snapshot_time'] = self.inputs['snapshot_time'].text.strip() or '08:00'
-            cfg['price_trigger_enabled'] = self.inputs['price_trigger_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['price_trigger_symbol'] = self.inputs['price_trigger_symbol'].text.strip().upper() or 'BTCUSDT'
-            cfg['price_trigger_above'] = float(self.inputs['price_trigger_above'].text.replace(',', '.'))
-            cfg['price_trigger_below'] = float(self.inputs['price_trigger_below'].text.replace(',', '.'))
-            cfg['launchpool_enabled'] = self.inputs['launchpool_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['launchpool_min_apr'] = float(self.inputs['launchpool_min_apr'].text.replace(',', '.'))
-            cfg['launchpool_watchlist'] = self.inputs['launchpool_watchlist'].text.strip() or 'BNB,FDUSD,USDT'
-            cfg['launchpool_scan_interval_min'] = int(float(self.inputs['launchpool_scan_interval_min'].text.replace(',', '.')))
-            cfg['sync_enabled'] = self.inputs['sync_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['sync_primary_device'] = self.inputs['sync_primary_device'].text.strip().upper() or 'PHONE'
-            cfg['drive_sync_folder'] = self.inputs['drive_sync_folder'].text.strip() or 'AutobotBackups'
-            cfg['pc_sync_folder'] = self.inputs['pc_sync_folder'].text.strip() or 'PCSync'
-            cfg['auto_backup_on_start'] = self.inputs['auto_backup_on_start'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['first_run_done'] = self.inputs['first_run_done'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['admin_timeout_sec'] = int(float(self.inputs['admin_timeout_sec'].text.replace(',', '.')))
-            cfg['patch_manager_enabled'] = self.inputs['patch_manager_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['patch_require_admin'] = self.inputs['patch_require_admin'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['approval_required_for_manual'] = self.inputs['approval_required_for_manual'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['approval_required_for_live'] = self.inputs['approval_required_for_live'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['dry_run_executor_enabled'] = self.inputs['dry_run_executor_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['live_executor_enabled'] = self.inputs['live_executor_enabled'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['live_hard_stop_enabled'] = self.inputs['live_hard_stop_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['live_require_admin_active'] = self.inputs['live_require_admin_active'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['live_require_approval'] = self.inputs['live_require_approval'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['live_require_positive_after_tax'] = self.inputs['live_require_positive_after_tax'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['live_min_after_tax_profit_pct'] = float(self.inputs['live_min_after_tax_profit_pct'].text.replace(',', '.'))
-            cfg['live_max_order_usdt_hard'] = float(self.inputs['live_max_order_usdt_hard'].text.replace(',', '.'))
-            cfg['live_block_if_health_warning'] = self.inputs['live_block_if_health_warning'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['live_block_if_spread_bad'] = self.inputs['live_block_if_spread_bad'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['live_block_if_ai_hold'] = self.inputs['live_block_if_ai_hold'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['binance_account_check_enabled'] = self.inputs['binance_account_check_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['binance_test_order_enabled'] = self.inputs['binance_test_order_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['binance_test_order_symbol'] = self.inputs['binance_test_order_symbol'].text.strip().upper() or 'BTCUSDT'
-            cfg['binance_test_order_side'] = self.inputs['binance_test_order_side'].text.strip().upper() or 'BUY'
-            cfg['binance_test_order_type'] = self.inputs['binance_test_order_type'].text.strip().upper() or 'MARKET'
-            cfg['binance_test_order_quote_qty'] = float(self.inputs['binance_test_order_quote_qty'].text.replace(',', '.'))
-            cfg['binance_recv_window'] = int(float(self.inputs['binance_recv_window'].text.replace(',', '.')))
-            cfg['binance_base_url'] = self.inputs['binance_base_url'].text.strip() or 'https://api.binance.com'
-            cfg['binance_signed_readonly_enabled'] = self.inputs['binance_signed_readonly_enabled'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['binance_account_read_enabled'] = self.inputs['binance_account_read_enabled'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['binance_real_account_get_enabled'] = self.inputs['binance_real_account_get_enabled'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['binance_http_timeout_sec'] = float(self.inputs['binance_http_timeout_sec'].text.replace(',', '.'))
-            cfg['binance_balance_preview_assets'] = self.inputs['binance_balance_preview_assets'].text.strip() or 'USDT,USDC,BTC,ETH,BNB,DOGE'
-            cfg['spot_sync_enabled'] = self.inputs['spot_sync_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['spot_base_asset'] = self.inputs['spot_base_asset'].text.strip().upper() or 'USDC'
-            cfg['spot_quote_assets'] = self.inputs['spot_quote_assets'].text.strip().upper() or 'USDC,USDT'
-            cfg['spot_safety_reserve'] = float(self.inputs['spot_safety_reserve'].text.replace(',', '.'))
-            cfg['spot_max_tradeable_pct'] = float(self.inputs['spot_max_tradeable_pct'].text.replace(',', '.'))
-            cfg['spot_min_asset_value_usd'] = float(self.inputs['spot_min_asset_value_usd'].text.replace(',', '.'))
-            cfg['dashboard_use_portfolio_cache'] = self.inputs['dashboard_use_portfolio_cache'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['trend_history_enabled'] = self.inputs['trend_history_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['trend_history_max_points'] = int(float(self.inputs['trend_history_max_points'].text.replace(',', '.')))
-            cfg['trend_view_mode'] = self.inputs['trend_view_mode'].text.strip().upper() or 'PROFIT'
-            cfg['trend_supported_views'] = self.inputs['trend_supported_views'].text.strip().upper() or 'EQUITY,PROFIT,TRADABLE,TOTAL_VALUE'
-            cfg['trend_chart_enabled'] = self.inputs['trend_chart_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['trend_chart_width'] = int(float(self.inputs['trend_chart_width'].text.replace(',', '.')))
-            cfg['trend_show_crosshair_data'] = self.inputs['trend_show_crosshair_data'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['trend_export_enabled'] = self.inputs['trend_export_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['trend_time_format'] = self.inputs['trend_time_format'].text.strip() or '%Y-%m-%d %H:%M:%S'
-            cfg['trend_export_file'] = self.inputs['trend_export_file'].text.strip() or 'logs/trend_history.csv'
-            cfg['dashboard_trend_widget_enabled'] = self.inputs['dashboard_trend_widget_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['dashboard_trend_widget_view'] = self.inputs['dashboard_trend_widget_view'].text.strip().upper() or 'PROFIT'
-            cfg['dashboard_trend_widget_points'] = int(float(self.inputs['dashboard_trend_widget_points'].text.replace(',', '.')))
-            cfg['dashboard_show_selected_trend_point'] = self.inputs['dashboard_show_selected_trend_point'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['trend_auto_snapshot_enabled'] = self.inputs['trend_auto_snapshot_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['trend_auto_snapshot_interval_sec'] = int(float(self.inputs['trend_auto_snapshot_interval_sec'].text.replace(',', '.')))
-            cfg['trend_auto_snapshot_only_when_running'] = self.inputs['trend_auto_snapshot_only_when_running'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['dashboard_auto_refresh_enabled'] = self.inputs['dashboard_auto_refresh_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['dashboard_auto_refresh_interval_sec'] = int(float(self.inputs['dashboard_auto_refresh_interval_sec'].text.replace(',', '.')))
-            cfg['master_status_enabled'] = self.inputs['master_status_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['master_status_show_next_steps'] = self.inputs['master_status_show_next_steps'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['master_status_show_modules'] = self.inputs['master_status_show_modules'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['master_status_show_missing'] = self.inputs['master_status_show_missing'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['pre_apk_safe_test_enabled'] = self.inputs['pre_apk_safe_test_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['pre_apk_require_no_order_endpoint'] = self.inputs['pre_apk_require_no_order_endpoint'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['pre_apk_require_compile_ok'] = self.inputs['pre_apk_require_compile_ok'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['pre_apk_require_master_status_ok'] = self.inputs['pre_apk_require_master_status_ok'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['pre_apk_min_readiness_score_pct'] = float(self.inputs['pre_apk_min_readiness_score_pct'].text.replace(',', '.'))
-            cfg['pre_apk_report_file'] = self.inputs['pre_apk_report_file'].text.strip() or 'logs/pre_apk_safe_report.json'
-            cfg['integration_test_center_enabled'] = self.inputs['integration_test_center_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['integration_test_allow_network'] = self.inputs['integration_test_allow_network'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['integration_test_allow_email_send'] = self.inputs['integration_test_allow_email_send'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['integration_test_report_file'] = self.inputs['integration_test_report_file'].text.strip() or 'logs/integration_test_report.json'
-            cfg['dashboard_modern_enabled'] = self.inputs['dashboard_modern_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['dashboard_top_coin_cards_enabled'] = self.inputs['dashboard_top_coin_cards_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['dashboard_top_coin_count'] = int(float(self.inputs['dashboard_top_coin_count'].text.replace(',', '.')))
-            cfg['dashboard_theme_mode'] = self.inputs['dashboard_theme_mode'].text.strip().upper() or 'AUTO'
-            cfg['dashboard_show_safety_badges'] = self.inputs['dashboard_show_safety_badges'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['trade_ui_enabled'] = self.inputs['trade_ui_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['trade_simple_symbol'] = self.inputs['trade_simple_symbol'].text.strip().upper() or 'BTCUSDT'
-            cfg['trade_simple_side'] = self.inputs['trade_simple_side'].text.strip().upper() or 'BUY'
-            cfg['trade_simple_quote_amount'] = float(self.inputs['trade_simple_quote_amount'].text.replace(',', '.'))
-            cfg['trade_simple_risk_pct'] = float(self.inputs['trade_simple_risk_pct'].text.replace(',', '.'))
-            cfg['risk_pct'] = float(self.inputs['trade_simple_risk_pct'].text.replace(',', '.'))
-            cfg['trade_simple_min_net_profit_pct'] = float(self.inputs['trade_simple_min_net_profit_pct'].text.replace(',', '.'))
-            cfg['min_after_tax_profit_pct'] = float(self.inputs['trade_simple_min_net_profit_pct'].text.replace(',', '.'))
-            cfg['strategy_advanced_enabled'] = self.inputs['strategy_advanced_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['strategy_validation_enabled'] = self.inputs['strategy_validation_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['strategy_safety_preview_enabled'] = self.inputs['strategy_safety_preview_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['readonly_balance_test_enabled'] = self.inputs['readonly_balance_test_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['readonly_balance_allow_network'] = self.inputs['readonly_balance_allow_network'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['readonly_balance_require_signed_enabled'] = self.inputs['readonly_balance_require_signed_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['readonly_balance_require_account_read_enabled'] = self.inputs['readonly_balance_require_account_read_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['readonly_balance_require_real_get_enabled'] = self.inputs['readonly_balance_require_real_get_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['readonly_balance_report_file'] = self.inputs['readonly_balance_report_file'].text.strip() or 'logs/readonly_balance_report.json'
-            cfg['profit_report_enabled'] = self.inputs['profit_report_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['profit_report_file_json'] = self.inputs['profit_report_file_json'].text.strip() or 'logs/profit_report.json'
-            cfg['profit_report_file_csv'] = self.inputs['profit_report_file_csv'].text.strip() or 'logs/profit_report.csv'
-            cfg['profit_report_include_tax'] = self.inputs['profit_report_include_tax'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['profit_report_tax_pct'] = float(self.inputs['profit_report_tax_pct'].text.replace(',', '.'))
-            cfg['health_alert_center_enabled'] = self.inputs['health_alert_center_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['heartbeat_stale_after_sec'] = int(float(self.inputs['heartbeat_stale_after_sec'].text.replace(',', '.')))
-            cfg['error_alert_enabled'] = self.inputs['error_alert_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['crash_recovery_enabled'] = self.inputs['crash_recovery_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['resume_after_restart_enabled'] = self.inputs['resume_after_restart_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['health_report_file'] = self.inputs['health_report_file'].text.strip() or 'logs/health_report.json'
-            cfg['firstrun_ready_enabled'] = self.inputs['firstrun_ready_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['firstrun_require_admin_password_change'] = self.inputs['firstrun_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['firstrun_require_secrets_check'] = self.inputs['firstrun_require_secrets_check'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['firstrun_require_safety_check'] = self.inputs['firstrun_require_safety_check'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['firstrun_require_full_system_check'] = self.inputs['firstrun_require_full_system_check'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['firstrun_report_file'] = self.inputs['firstrun_report_file'].text.strip() or 'logs/firstrun_readiness_report.json'
-            cfg['release_candidate_enabled'] = self.inputs['release_candidate_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['release_candidate_name'] = self.inputs['release_candidate_name'].text.strip() or 'Autobot DemoCore RC'
-            cfg['release_candidate_report_file'] = self.inputs['release_candidate_report_file'].text.strip() or 'logs/release_candidate_report.json'
-            cfg['apk_build_preview_enabled'] = self.inputs['apk_build_preview_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['apk_build_allowed'] = self.inputs['apk_build_allowed'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
-            cfg['ui_route_check_enabled'] = self.inputs['ui_route_check_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['ui_route_report_file'] = self.inputs['ui_route_report_file'].text.strip() or 'logs/ui_route_report.json'
-            cfg['ui_route_required_min_pct'] = float(self.inputs['ui_route_required_min_pct'].text.replace(',', '.'))
-            cfg['apk_build_gate_enabled'] = self.inputs['apk_build_gate_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['apk_require_full_system_check'] = self.inputs['apk_require_full_system_check'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['apk_require_ui_route_check'] = self.inputs['apk_require_ui_route_check'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['apk_require_no_plain_secrets'] = self.inputs['apk_require_no_plain_secrets'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['apk_manifest_file'] = self.inputs['apk_manifest_file'].text.strip() or 'logs/apk_artifact_manifest.json'
-            cfg['apk_build_gate_report_file'] = self.inputs['apk_build_gate_report_file'].text.strip() or 'logs/apk_build_gate_report.json'
-            cfg['final_prebuild_audit_enabled'] = self.inputs['final_prebuild_audit_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['final_prebuild_report_file'] = self.inputs['final_prebuild_report_file'].text.strip() or 'logs/final_prebuild_audit_report.json'
-            cfg['final_prebuild_min_score_pct'] = float(self.inputs['final_prebuild_min_score_pct'].text.replace(',', '.'))
-            cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
-            cfg['first_run_show_live_warning'] = self.inputs['first_run_show_live_warning'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            def to_int(key, fallback):
+                try:
+                    return int(float(self.inputs[key].text.strip().replace(",", ".")))
+                except Exception:
+                    return fallback
 
-            st['last_action'] = 'Demo settings mentve'
+            settings["risk_pct"] = to_float("risk_pct", settings.get("risk_pct", 10.0))
+            settings["max_positions"] = to_int("max_positions", settings.get("max_positions", 3))
+            settings["min_profit_pct"] = to_float("min_profit_pct", settings.get("min_profit_pct", 10.0))
+            settings["stop_loss_pct"] = to_float("stop_loss_pct", settings.get("stop_loss_pct", 3.0))
+            settings["trailing_drop_pct"] = to_float("trailing_drop_pct", settings.get("trailing_drop_pct", 1.5))
+            settings["hold_profit_minutes"] = to_int("hold_profit_minutes", settings.get("hold_profit_minutes", 30))
+            settings["time_in_trend_minutes_max"] = to_int("time_in_trend_minutes_max", settings.get("time_in_trend_minutes_max", 240))
+            settings["exit_cooldown_minutes"] = to_int("exit_cooldown_minutes", settings.get("exit_cooldown_minutes", 10))
+            settings["profit_erosion_guard_pct"] = to_float("profit_erosion_guard_pct", settings.get("profit_erosion_guard_pct", 1.5))
+
+            wl = self.inputs["watchlist"].text.strip()
+            settings["watchlist"] = [x.strip().upper() for x in wl.split(",") if x.strip()]
+
+            mode = self.inputs["execution_mode"].text.strip().upper()
+            if mode not in ("AUTO", "MANUAL", "OFF"):
+                mode = "AUTO"
+            settings["execution_mode"] = mode
+
+            st["last_action"] = "Demo settings mentve"
             demo_core.save_state(st)
-            self.info.text = '[b]OK:[/b] Mentve. Új beállítások aktívak a következő ticknél.'
+            self.info.text = "[b]OK:[/b] Mentve. Új beállítások aktívak a következő ticknél."
         except Exception as e:
-            self.info.text = '[b]HIBA:[/b] Mentés sikertelen: ' + str(e)
+            self.info.text = "[b]HIBA:[/b] Mentés sikertelen: " + str(e)
 
     def reset_defaults(self):
         try:
             st = demo_core.load_state()
-            st['settings'] = dict(demo_core.DEFAULT_STATE['settings'])
-            st['last_action'] = 'Demo settings alapértékre állítva'
+            defaults = dict(demo_core.DEFAULT_STATE.get("settings", {}))
+            st["settings"] = defaults
+            st["last_action"] = "Demo settings alapértékre állítva"
             demo_core.save_state(st)
             self.load_values()
-            self.info.text = '[b]OK:[/b] Alapértékek visszaállítva.'
+            self.info.text = "[b]OK:[/b] Alapértékek visszaállítva."
         except Exception as e:
-            self.info.text = '[b]HIBA:[/b] Reset sikertelen: ' + str(e)
+            self.info.text = "[b]HIBA:[/b] Reset sikertelen: " + str(e)
+
 
 
 class DemoCoreScreen(Screen):
