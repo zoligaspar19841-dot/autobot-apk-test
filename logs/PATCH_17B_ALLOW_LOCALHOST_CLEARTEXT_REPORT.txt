@@ -1,0 +1,14 @@
+PATCH 17B OK
+Date: Sun May  3 22:49:24 CEST 2026
+
+Javítás:
+- Android WebView localhost HTTP engedélyezés
+- android:usesCleartextTraffic="true"
+- INTERNET permission ellenőrizve
+- webui fájltípusok engedélyezve
+- APK build NEM indult
+- Commit NEM történt
+- Binance order NEM történt
+
+Hiba oka:
+net::ERR_CLEARTEXT_NOT_PERMITTED
