@@ -211,12 +211,18 @@
     "profit_report_file_json": "logs/profit_report.json",
     "profit_report_file_csv": "logs/profit_report.csv",
     "profit_report_include_tax": true,
-    "profit_report_tax_pct": 15.0
+    "profit_report_tax_pct": 15.0,
+    "health_alert_center_enabled": true,
+    "heartbeat_stale_after_sec": 120,
+    "error_alert_enabled": true,
+    "crash_recovery_enabled": true,
+    "resume_after_restart_enabled": true,
+    "health_report_file": "logs/health_report.json"
   },
-  "last_action": "AI advisor: HOLD BTCUSDT",
+  "last_action": "Heartbeat update: test",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
-  "last_heartbeat_ts": 1777767434,
+  "last_heartbeat_ts": 1777768639,
   "cooldowns": {},
   "spot_balances_cache": [
     {

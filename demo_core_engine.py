@@ -1,4 +1,4 @@
-APP_VERSION = "0.5.4-demo-core"
+APP_VERSION = "0.5.5-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -76,6 +76,16 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+HEALTH_ALERT_DEFAULTS = {
+    "health_alert_center_enabled": True,
+    "heartbeat_stale_after_sec": 120,
+    "error_alert_enabled": True,
+    "crash_recovery_enabled": True,
+    "resume_after_restart_enabled": True,
+    "health_report_file": "logs/health_report.json",
+}
 
 PROFIT_REPORT_DEFAULTS = {
     "profit_report_enabled": True,
@@ -423,6 +433,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "HEALTH_ALERT_DEFAULTS" in globals():
+        for k, v in HEALTH_ALERT_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -6582,6 +6598,205 @@ def profit_report_full_export():
         "summary": profit_report_summary(),
         "order_endpoint_used": False,
         "message": "Profit report full export kész.",
+    }
+
+
+
+def heartbeat_status():
+    """
+    Heartbeat státusz: fut-e, mikor volt utolsó tick.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+    now = int(time.time())
+
+    last_hb = int(state.get("last_heartbeat_ts", 0) or 0)
+    last_tick = int(state.get("last_tick_ts", 0) or 0)
+    stale_after = int(settings.get("heartbeat_stale_after_sec", 120) or 120)
+
+    age_hb = now - last_hb if last_hb else None
+    age_tick = now - last_tick if last_tick else None
+
+    heartbeat_ok = bool(last_hb and age_hb is not None and age_hb <= stale_after)
+    tick_ok = bool(last_tick and age_tick is not None and age_tick <= stale_after)
+
+    return {
+        "ok": True,
+        "now": now,
+        "running": bool(state.get("running", False)),
+        "last_heartbeat_ts": last_hb,
+        "last_tick_ts": last_tick,
+        "heartbeat_age_sec": age_hb,
+        "tick_age_sec": age_tick,
+        "stale_after_sec": stale_after,
+        "heartbeat_ok": heartbeat_ok,
+        "tick_ok": tick_ok,
+        "last_action": state.get("last_action", ""),
+        "order_endpoint_used": False,
+    }
+
+
+def update_heartbeat(reason="manual"):
+    """
+    Heartbeat frissítés. Nem kereskedik.
+    """
+    state = load_state()
+    now = int(time.time())
+    state["last_heartbeat_ts"] = now
+    state["last_action"] = "Heartbeat update: " + str(reason)
+    save_state(state)
+
+    audit_event("HEARTBEAT_UPDATE", "Heartbeat frissítve", {
+        "reason": reason,
+        "ts": now,
+        "order_endpoint_used": False,
+    })
+
+    return heartbeat_status()
+
+
+def error_alert_summary():
+    """
+    Hiba/riasztás összefoglaló.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    warnings = list(state.get("warnings", []) or [])
+    safe_mode = bool(state.get("safe_mode", False))
+    running = bool(state.get("running", False))
+
+    health = _safe_call("healthcheck", {})
+    hb = heartbeat_status()
+    live_gate = _safe_call("live_executor_gate_status", {})
+    readonly_gate = _safe_call("readonly_balance_test_gate", {})
+
+    alerts = []
+
+    def add(level, title, detail):
+        alerts.append({
+            "level": level,
+            "title": title,
+            "detail": detail,
+        })
+
+    if safe_mode:
+        add("warning", "Safe Mode aktív", "Bot csak biztonsági állapotban van.")
+    if not hb.get("heartbeat_ok") and running:
+        add("warning", "Heartbeat régi", f"Utolsó heartbeat age: {hb.get('heartbeat_age_sec')}")
+    if warnings:
+        for w in warnings[-10:]:
+            add("warning", "State warning", str(w))
+    if isinstance(health, dict) and health.get("ok") is False:
+        add("error", "Healthcheck hiba", str(health))
+    if isinstance(live_gate, dict) and live_gate.get("ready_for_live") is False:
+        add("info", "Live gate nem ready", str(live_gate.get("warnings", live_gate.get("message", ""))))
+    if isinstance(readonly_gate, dict) and readonly_gate.get("ready_for_readonly_network_test") is False:
+        add("info", "Read-only gate nem ready", str(readonly_gate.get("blockers", [])))
+
+    return {
+        "ok": True,
+        "enabled": bool(settings.get("error_alert_enabled", True)),
+        "alert_count": len(alerts),
+        "alerts": alerts,
+        "health": health,
+        "heartbeat": hb,
+        "order_endpoint_used": False,
+    }
+
+
+def crash_recovery_status():
+    """
+    Crash recovery / restart utáni folytatás státusz.
+    Nem indít kereskedést, csak megmondja, mit lehet folytatni.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    positions = state.get("positions", {}) or {}
+    running = bool(state.get("running", False))
+    safe_mode = bool(state.get("safe_mode", False))
+    resume_enabled = bool(settings.get("resume_after_restart_enabled", True))
+
+    blockers = []
+    actions = []
+
+    if safe_mode:
+        blockers.append("safe_mode_active")
+    if not resume_enabled:
+        blockers.append("resume_after_restart_disabled")
+    if not positions:
+        actions.append("Nincs nyitott pozíció, nincs mit visszavenni.")
+    else:
+        actions.append(f"{len(positions)} nyitott pozíció állapotból visszaolvasható.")
+    if running:
+        actions.append("Bot running flag aktív.")
+    else:
+        actions.append("Bot stopped flag, újraindítás kézi START után.")
+
+    return {
+        "ok": True,
+        "crash_recovery_enabled": bool(settings.get("crash_recovery_enabled", True)),
+        "resume_after_restart_enabled": resume_enabled,
+        "can_resume": len(blockers) == 0,
+        "running": running,
+        "safe_mode": safe_mode,
+        "open_positions": len(positions),
+        "blockers": blockers,
+        "recommended_actions": actions,
+        "order_endpoint_used": False,
+        "message": "Crash recovery státusz kész. Nem indít ordert.",
+    }
+
+
+def health_alert_center_status():
+    """
+    Health + heartbeat + alerts + recovery egyben.
+    """
+    return {
+        "ok": True,
+        "heartbeat": heartbeat_status(),
+        "alerts": error_alert_summary(),
+        "recovery": crash_recovery_status(),
+        "integration": _safe_call("integration_test_center_status", {}),
+        "master": _safe_call("master_status_overview", {}),
+        "order_endpoint_used": False,
+        "message": "Health Alert Recovery Center státusz kész.",
+    }
+
+
+def export_health_report(path=None):
+    """
+    Health report JSON export.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if path is None:
+        path = settings.get("health_report_file", "logs/health_report.json") or "logs/health_report.json"
+
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    report = {
+        "ts": int(time.time()),
+        "app_version": globals().get("APP_VERSION", "unknown"),
+        "health_alert_center": health_alert_center_status(),
+        "order_endpoint_used": False,
+    }
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    audit_event("HEALTH_REPORT_EXPORT", "Health report export", {
+        "path": path,
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "path": path,
+        "order_endpoint_used": False,
+        "message": "Health report export kész.",
     }
 
 

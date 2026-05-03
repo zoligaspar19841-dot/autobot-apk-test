@@ -681,6 +681,133 @@ class TrendCanvasWidget(Widget):
 
 
 
+
+class DemoCoreHealthAlertRecoveryScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]HEALTH / ALERT / RECOVERY[/b]\n[size=14]Heartbeat, hibák, riasztás, crash recovery. Order nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=82
+        ))
+
+        self.info = Label(text='Health center...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        buttons = [
+            ('STATUS', self.status),
+            ('HEARTBEAT', self.heartbeat),
+            ('UPDATE HEARTBEAT', self.update_hb),
+            ('ALERTS', self.alerts),
+            ('RECOVERY', self.recovery),
+            ('EXPORT REPORT', self.export_report),
+            ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.status()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def status(self):
+        try:
+            res = demo_core.health_alert_center_status()
+            lines = ['[b]Health Alert Recovery Center[/b]', '']
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append(str(res.get('message')))
+            lines.append('')
+            hb = res.get('heartbeat') or {}
+            lines.append('[b]Heartbeat[/b]')
+            for k in ['running','heartbeat_ok','tick_ok','heartbeat_age_sec','tick_age_sec','last_action']:
+                lines.append(f"{k}: {hb.get(k)}")
+            lines.append('')
+            al = res.get('alerts') or {}
+            lines.append(f"[b]Alerts:[/b] {al.get('alert_count')}")
+            for a in al.get('alerts') or []:
+                lines.append(f"{a.get('level')}: {a.get('title')} - {a.get('detail')}")
+            lines.append('')
+            rec = res.get('recovery') or {}
+            lines.append('[b]Recovery[/b]')
+            lines.append(f"can_resume: {rec.get('can_resume')}")
+            lines.append(f"open_positions: {rec.get('open_positions')}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Health status hiba: ' + str(e)
+
+    def heartbeat(self):
+        try:
+            res = demo_core.heartbeat_status()
+            self.info.text = '[b]Heartbeat Status[/b]\\n' + '\\n'.join([f"{k}: {v}" for k, v in res.items()])
+        except Exception as e:
+            self.info.text = 'Heartbeat hiba: ' + str(e)
+
+    def update_hb(self):
+        try:
+            res = demo_core.update_heartbeat('ui_button')
+            self.info.text = '[b]Heartbeat frissítve[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Heartbeat update hiba: ' + str(e)
+
+    def alerts(self):
+        try:
+            res = demo_core.error_alert_summary()
+            lines = ['[b]Error Alert Summary[/b]', f"Alert count: {res.get('alert_count')}", '']
+            for a in res.get('alerts') or []:
+                lines.append(f"{a.get('level')}: [b]{a.get('title')}[/b]")
+                lines.append(str(a.get('detail')))
+                lines.append('')
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Alerts hiba: ' + str(e)
+
+    def recovery(self):
+        try:
+            res = demo_core.crash_recovery_status()
+            lines = ['[b]Crash Recovery Status[/b]', '']
+            for k in ['crash_recovery_enabled','resume_after_restart_enabled','can_resume','running','safe_mode','open_positions','order_endpoint_used']:
+                lines.append(f"{k}: {res.get(k)}")
+            lines.append('')
+            lines.append('[b]Blockers[/b]')
+            for x in res.get('blockers') or []:
+                lines.append('🟡 ' + str(x))
+            lines.append('')
+            lines.append('[b]Recommended actions[/b]')
+            for x in res.get('recommended_actions') or []:
+                lines.append('- ' + str(x))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Recovery hiba: ' + str(e)
+
+    def export_report(self):
+        try:
+            res = demo_core.export_health_report()
+            self.info.text = '[b]Health report export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Health export hiba: ' + str(e)
+
+
+
 class DemoCoreProfitReportScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -4131,6 +4258,12 @@ class DemoCoreSettingsScreen(Screen):
             ('profit_report_file_csv', 'Profit report CSV file'),
             ('profit_report_include_tax', 'Profit report include tax true/false'),
             ('profit_report_tax_pct', 'Profit report tax pct'),
+            ('health_alert_center_enabled', 'Health alert center enabled true/false'),
+            ('heartbeat_stale_after_sec', 'Heartbeat stale after sec'),
+            ('error_alert_enabled', 'Error alert enabled true/false'),
+            ('crash_recovery_enabled', 'Crash recovery enabled true/false'),
+            ('resume_after_restart_enabled', 'Resume after restart enabled true/false'),
+            ('health_report_file', 'Health report file'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -4370,6 +4503,12 @@ class DemoCoreSettingsScreen(Screen):
             cfg['profit_report_file_csv'] = self.inputs['profit_report_file_csv'].text.strip() or 'logs/profit_report.csv'
             cfg['profit_report_include_tax'] = self.inputs['profit_report_include_tax'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['profit_report_tax_pct'] = float(self.inputs['profit_report_tax_pct'].text.replace(',', '.'))
+            cfg['health_alert_center_enabled'] = self.inputs['health_alert_center_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['heartbeat_stale_after_sec'] = int(float(self.inputs['heartbeat_stale_after_sec'].text.replace(',', '.')))
+            cfg['error_alert_enabled'] = self.inputs['error_alert_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['crash_recovery_enabled'] = self.inputs['crash_recovery_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['resume_after_restart_enabled'] = self.inputs['resume_after_restart_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['health_report_file'] = self.inputs['health_report_file'].text.strip() or 'logs/health_report.json'
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -4653,6 +4792,12 @@ class DemoCoreScreen(Screen):
             self.manager.go_to("pre_apk_safe")
         except Exception:
             self.manager.current = "pre_apk_safe"
+
+    def open_health_alert(self):
+        try:
+            self.manager.go_to("health_alert")
+        except Exception:
+            self.manager.current = "health_alert"
 
     def open_profit_report(self):
         try:
@@ -4983,6 +5128,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreTradeSimpleAdvancedScreen(name="trade_simple_advanced"))
         sm.add_widget(DemoCoreReadonlyBalanceScreen(name="readonly_balance"))
         sm.add_widget(DemoCoreProfitReportScreen(name="profit_report"))
+        sm.add_widget(DemoCoreHealthAlertRecoveryScreen(name="health_alert"))
         return sm
 
 if __name__ == "__main__":
