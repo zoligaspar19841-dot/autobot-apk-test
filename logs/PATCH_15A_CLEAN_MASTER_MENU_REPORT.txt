@@ -1,0 +1,11 @@
+PATCH 15A OK
+Date: Sun May  3 19:54:10 CEST 2026
+
+Elemzés alapján javítva:
+- Főmenü tisztább
+- Demo / Live különválasztva
+- Debug/fejlesztői részek külön csoportban
+- Több helper magyarázat
+- Nem létező route esetén nem dobál át véletlenül másik képernyőre
+- APK build nem indult
+- Binance order nem történt
