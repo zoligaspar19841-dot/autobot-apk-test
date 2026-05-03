@@ -1,0 +1,2218 @@
+PATCH 11A DASHBOARD / TREND AUDIT
+======================================================================
+APK build: NEM indult
+Commit: NEM történt
+
+
+======================================================================
+FILE: main.py
+======================================================================
+Gyors kulcsszó számláló:
+  Dashboard: 8
+  dashboard: 8
+  modern_dashboard: 1
+  Trend: 20
+  trend: 58
+  sparkline: 2
+  Canvas: 2
+  canvas: 8
+  Line: 10
+  Color: 14
+  Rectangle: 6
+  Balance: 8
+  Equity: 3
+  PnL: 12
+  Realized: 1
+  Open Positions: 1
+  USDC: 8
+  USDT: 16
+  Profit: 16
+  SMA: 6
+  RSI: 3
+
+Dashboard/Trend/KPI related classes:
+  - Card
+  - Trend
+  - Dashboard
+  - MasterMenu
+  - DemoResetScreen
+  - TrendCanvasWidget
+  - DemoCoreFinalPrebuildAuditScreen
+  - DemoCoreApkBuildGateScreen
+  - DemoCoreUiRouteCheckScreen
+  - DemoCoreReleaseCandidateScreen
+  - DemoCoreFirstRunReadinessScreen
+  - DemoCoreHealthAlertRecoveryScreen
+  - DemoCoreProfitReportScreen
+  - DemoCoreReadonlyBalanceScreen
+  - DemoCoreTradeSimpleAdvancedScreen
+  - DemoCoreModernDashboardScreen
+  - DemoCoreIntegrationTestCenterScreen
+  - DemoCorePreApkSafeTestScreen
+  - DemoCoreMasterStatusScreen
+  - DemoCoreTrendHistoryScreen
+  - DemoCoreSpotPortfolioScreen
+  - DemoCoreStartupSafetyScreen
+  - DemoCoreIntegrationOverviewScreen
+  - DemoCoreBinanceReadOnlyRealScreen
+  - DemoCoreBinanceSignedScreen
+  - DemoCoreBinanceAccountScreen
+  - DemoCoreLiveGateScreen
+  - DemoCoreApprovalExecutorScreen
+  - DemoCoreAdminScreen
+  - DemoCorePatchManagerScreen
+  - DemoCoreSyncScreen
+  - DemoCoreFirstRunScreen
+  - DemoCorePackageScreen
+  - DemoCoreSchedulesScreen
+  - DemoCoreLaunchpoolScreen
+  - DemoCoreBacktestScreen
+  - DemoCoreDiagnosticsScreen
+  - DemoCoreBinanceLiveScreen
+  - DemoCoreSecretsScreen
+  - DemoCoreAIScreen
+  - DemoCoreTradeScreen
+  - DemoCoreFeeTaxScreen
+  - DemoCoreScannerScreen
+  - DemoCoreAuditScreen
+  - DemoCoreLogsScreen
+  - DemoCoreSettingsScreen
+  - TrendMiniChart
+  - DemoCoreScreen
+  - AppMain
+
+Fontos blokkok első része:
+
+----------------------------------------------------------------------
+CLASS: Card
+----------------------------------------------------------------------
+0001: class Card(BoxLayout):
+0002:     def __init__(self, bg=CARD, **kw):
+0003:         super().__init__(**kw)
+0004:         self.bg = bg
+0005:         self.padding = 10
+0006:         self.spacing = 6
+0007:         self.bind(pos=self.draw, size=self.draw)
+0008: 
+0009:     def draw(self, *a):
+0010:         self.canvas.before.clear()
+0011:         with self.canvas.before:
+0012:             Color(*self.bg)
+0013:             RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
+0014: 
+
+----------------------------------------------------------------------
+CLASS: Trend
+----------------------------------------------------------------------
+0001: class Trend(Widget):
+0002:     def __init__(self, color=ORANGE, **kw):
+0003:         super().__init__(**kw)
+0004:         self.color = color
+0005:         self.values = [random.uniform(40, 60) for _ in range(40)]
+0006:         self.bind(pos=self.draw, size=self.draw)
+0007: 
+0008:     def set_values(self, vals):
+0009:         if vals:
+0010:             self.values = vals[-50:]
+0011:         self.draw()
+0012: 
+0013:     def draw(self, *a):
+0014:         self.canvas.clear()
+0015:         with self.canvas:
+0016:             Color(0.035, 0.04, 0.045, 1)
+0017:             RoundedRectangle(pos=self.pos, size=self.size, radius=[18])
+0018:             if len(self.values) < 2:
+0019:                 return
+0020:             mn, mx = min(self.values), max(self.values)
+0021:             span = max(mx - mn, 0.000001)
+0022:             pts = []
+0023:             for i, v in enumerate(self.values):
+0024:                 x = self.x + 8 + i * ((self.width - 16) / (len(self.values) - 1))
+0025:                 y = self.y + 8 + ((v - mn) / span) * (self.height - 16)
+0026:                 pts += [x, y]
+0027:             Color(*self.color)
+0028:             Line(points=pts, width=2.2)
+0029: 
+0030: def button(text, color=CARD, fs=24):
+0031:     return Button(text=text, font_size=fs, bold=True, background_color=color)
+0032: 
+0033: 
+
+----------------------------------------------------------------------
+CLASS: Dashboard
+----------------------------------------------------------------------
+0001: class Dashboard(Screen):
+0002:     def __init__(self, mode, color, **kw):
+0003:         super().__init__(**kw)
+0004:         self.mode = mode
+0005:         self.color = color
+0006:         self.symbol = load_settings().get("symbol", "BTCUSDT")
+0007: 
+0008:         root = BoxLayout(orientation="vertical", padding=8, spacing=8)
+0009: 
+0010:         head = Card(bg=color, size_hint_y=.13)
+0011:         head.add_widget(Label(text=mode.upper() + " DASHBOARD", font_size=31, bold=True))
+0012:         root.add_widget(head)
+0013: 
+0014:         self.trend = Trend(color=color, size_hint_y=.30)
+0015:         root.add_widget(self.trend)
+0016: 
+0017:         kpi = GridLayout(cols=2, spacing=8, size_hint_y=.25)
+0018:         ba_bind_grid_height(kpi)
+0019:         self.k1 = Label(text="Ár: ...", font_size=23)
+0020:         self.k2 = Label(text="Total: 100", font_size=23)
+0021:         self.k3 = Label(text="Free: 100", font_size=23)
+0022:         self.k4 = Label(text="PnL: 0", font_size=23)
+0023: 
+0024:         for w in [self.k1, self.k2, self.k3, self.k4]:
+0025:             c = Card(bg=CARD)
+0026:             c.add_widget(w)
+0027:             kpi.add_widget(c)
+0028: 
+0029:         root.add_widget(kpi)
+0030: 
+0031:         self.msg = Label(text="Indulás kész.", font_size=18, size_hint_y=.10)
+0032:         root.add_widget(self.msg)
+0033: 
+0034:         controls = GridLayout(cols=2, spacing=8, size_hint_y=.22)
+0035:         ba_bind_grid_height(controls)
+0036:         for txt, col, fn in [
+0037:             ("START", (.05, .55, .1, 1), self.start),
+0038:             ("STOP", (.65, 0, 0, 1), self.stop),
+0039:             ("FRISSÍTÉS", (.28, .28, .28, 1), self.refresh),
+0040:             ("VISSZA", (.35, .35, .35, 1), self.back),
+0041:         ]:
+0042:             b = button(txt, col, 23)
+0043:             b.bind(on_press=fn)
+0044:             controls.add_widget(b)
+0045: 
+0046:         root.add_widget(controls)
+0047:         self.add_widget(root)
+0048:         Clock.schedule_once(lambda dt: self.refresh(None), 1)
+0049: 
+0050:     def start(self, x):
+0051:         st = load_state()
+0052:         st[self.mode]["running"] = True
+0053:         save_json(STATE_FILE, st)
+0054:         self.msg.text = "Bot elindítva."
+0055: 
+0056:     def stop(self, x):
+0057:         st = load_state()
+0058:         st[self.mode]["running"] = False
+0059:         save_json(STATE_FILE, st)
+0060:         self.msg.text = "Bot leállítva."
+0061: 
+0062:     def refresh(self, x):
+0063:         cfg = load_settings()
+0064:         self.symbol = cfg.get("symbol", "BTCUSDT")
+0065:         price = get_price(self.symbol)
+0066:         kl = get_klines(self.symbol)
+0067:         if kl:
+0068:             self.trend.set_values(kl)
+0069:         st = load_state()
+0070:         bal = st.get("demo", {}).get("balance", 100.0)
+0071:         pnl = st.get("demo", {}).get("profit", 0.0)
+0072:         self.k1.text = f"{self.symbol}\n{price:.4g}" if price else f"{self.symbol}\noffline"
+0073:         self.k2.text = f"Total\n{bal:.2f}"
+0074:         self.k3.text = f"Free\n{bal:.2f}"
+0075:         self.k4.text = f"PnL\n{pnl:.2f}"
+0076:         self.msg.text = "Frissítve." if price else "Offline / nincs adat."
+0077: 
+0078:     def back(self, x):
+0079:         go_back(self.manager)
+0080: 
+
+----------------------------------------------------------------------
+CLASS: MasterMenu
+----------------------------------------------------------------------
+0001: class MasterMenu(Screen):
+0002:     def __init__(self, **kw):
+0003:         super().__init__(**kw)
+0004:         root = BoxLayout(orientation="vertical", padding=10, spacing=8)
+0005:         root.add_widget(Label(text="MASTER LISTA", font_size=34, bold=True, color=(1,.75,0,1), size_hint_y=.12))
+0006: 
+0007:         grid = GridLayout(cols=1, spacing=7, size_hint_y=None)
+0008:         ba_bind_grid_height(grid)
+0009:         grid.bind(minimum_height=grid.setter("height"))
+0010: 
+0011:         items = [
+0012:             ("1. Általános működés", "main"),
+0013:             ("2. Dashboard", "demo"),
+0014:             ("3. Trade Simple", "trade_simple"),
+0015:             ("4. Strategy Advanced", "strategy_advanced"),
+0016:             ("5. Schedules", "schedules"),
+0017:             ("6. Launchpool / Airdrop", "launchpool"),
+0018:             ("7. Patch / Snapshot", "patch_snapshot"),
+0019:             ("8. Trades / Export", "logs"),
+0020:             ("9. Settings / Security", "settings"),
+0021:             ("10. PC + Google Drive Sync", "pc_drive_sync"),
+0022:             ("11. Diagnostics / Tests", "diagnostics"),
+0023:             ("12. Patch Manager UI", "patch_manager_ui"),
+0024:             ("13. Demo Reset", "demo_reset"),
+0025:             ("14. Fájlszerkezet", "file_structure"),
+0026:             ("15. Extra fejlesztések", "extra_features"),
+0027:             ("16. AI / MI kereskedés", "strategy"),
+0028:             ("17. Multi-symbol Scanner", "scanner"),
+0029:             ("18. Safety Guards", "safety_guards"),
+0030:             ("19. Healthcheck", "healthcheck"),
+0031:             ("20. Backtest / Replay", "backtest"),
+0032:             ("21. Audit log", "audit_log"),
+0033:             ("22. UI Mockup / Megjelenés", "ui_mockup"),
+0034:             ("23. Fee / Adózás", "fee_tax"),
+0035:             ("24. Profit-Hold AI", "profit_hold_ai"),
+0036:         ]
+0037: 
+0038:         for txt, scr in items:
+0039:             b = button(txt, CARD, 20)
+0040:             b.size_hint_y = None
+0041:             b.height = 58
+0042:             b.bind(on_press=lambda x, sc=scr: go_to(self.manager, sc))
+0043:             grid.add_widget(b)
+0044: 
+0045:         sv = ScrollView()
+0046:         sv.add_widget(grid)
+0047:         root.add_widget(sv)
+0048: 
+0049:         back = button("VISSZA", (.35,.35,.35,1), 24)
+0050:         back.size_hint_y = .11
+0051:         back.bind(on_press=lambda x: go_back(self.manager))
+0052:         root.add_widget(back)
+0053:         self.add_widget(root)
+0054: 
+
+----------------------------------------------------------------------
+CLASS: DemoResetScreen
+----------------------------------------------------------------------
+0001: class DemoResetScreen(Screen):
+0002:     def __init__(self, **kw):
+0003:         super().__init__(**kw)
+0004:         root = BoxLayout(orientation="vertical", padding=18, spacing=12)
+0005: 
+0006:         root.add_widget(Label(
+0007:             text="DEMO RESET",
+0008:             font_size=34,
+0009:             bold=True,
+0010:             color=(1,.75,0,1),
+0011:             size_hint_y=.16
+0012:         ))
+0013: 
+0014:         self.info = Label(
+0015:             text="Demo számla visszaállítása:\n\n"
+0016:                  "- egyenleg: 100 USDC\n"
+0017:                  "- profit/loss: 0\n"
+0018:                  "- futás: leállítva\n\n"
+0019:                  "Live módot nem érinti.",
+0020:             font_size=22
+0021:         )
+0022:         root.add_widget(self.info)
+0023: 
+0024:         reset = button("DEMO RESET FUTTATÁSA", (1,.50,0,1), 24)
+0025:         back = button("VISSZA", (.35,.35,.35,1), 23)
+0026: 
+0027:         reset.bind(on_press=self.do_reset)
+0028:         back.bind(on_press=lambda x: go_back(self.manager))
+0029: 
+0030:         root.add_widget(reset)
+0031:         root.add_widget(back)
+0032:         self.add_widget(root)
+0033: 
+0034:     def do_reset(self, x):
+0035:         st = load_state()
+0036:         st["mode"] = "demo"
+0037:         st["demo"] = {"balance": 100.0, "profit": 0.0, "running": False}
+0038:         if "live" not in st:
+0039:             st["live"] = {"running": False, "api_ready": False}
+0040:         st["last_msg"] = "Demo reset kész"
+0041:         save_json(STATE_FILE, st)
+0042:         self.info.text = "✅ Demo Reset kész!\n\nEgyenleg: 100 USDC\nProfit/Loss: 0\nBot: leállítva"
+0043: 
+0044: 
+0045: 
+
+----------------------------------------------------------------------
+CLASS: TrendCanvasWidget
+----------------------------------------------------------------------
+0001: class TrendCanvasWidget(Widget):
+0002:     def __init__(self, **kwargs):
+0003:         super().__init__(**kwargs)
+0004:         self.points = []
+0005:         self.selected_index = -1
+0006:         self.bind(pos=self.redraw, size=self.redraw)
+0007: 
+0008:     def set_chart(self, chart):
+0009:         try:
+0010:             self.points = chart.get('points') or []
+0011:             self.selected_index = int(chart.get('selected_index', -1) or -1)
+0012:         except Exception:
+0013:             self.points = []
+0014:             self.selected_index = -1
+0015:         self.redraw()
+0016: 
+0017:     def redraw(self, *args):
+0018:         self.canvas.clear()
+0019:         with self.canvas:
+0020:             Color(0.10, 0.12, 0.16, 1)
+0021:             Rectangle(pos=self.pos, size=self.size)
+0022: 
+0023:             if not self.points:
+0024:                 Color(0.5, 0.5, 0.5, 1)
+0025:                 Line(points=[self.x, self.center_y, self.right, self.center_y], width=1)
+0026:                 return
+0027: 
+0028:             vals = []
+0029:             for p in self.points:
+0030:                 try:
+0031:                     vals.append(float(p.get('value') or 0))
+0032:                 except Exception:
+0033:                     vals.append(0.0)
+0034: 
+0035:             if not vals:
+0036:                 return
+0037: 
+0038:             mn = min(vals)
+0039:             mx = max(vals)
+0040:             span = mx - mn if mx != mn else 1.0
+0041: 
+0042:             pad = 8
+0043:             w = max(1, self.width - pad * 2)
+0044:             h = max(1, self.height - pad * 2)
+0045: 
+0046:             coords = []
+0047:             n = len(vals)
+0048:             for i, v in enumerate(vals):
+0049:                 x = self.x + pad + (i / max(1, n - 1)) * w
+0050:                 y = self.y + pad + ((v - mn) / span) * h
+0051:                 coords.extend([x, y])
+0052: 
+0053:             Color(0.95, 0.72, 0.15, 1)
+0054:             if len(coords) >= 4:
+0055:                 Line(points=coords, width=1.4)
+0056: 
+0057:             # baseline
+0058:             Color(0.35, 0.35, 0.35, 1)
+0059:             Line(points=[self.x + pad, self.y + pad, self.right - pad, self.y + pad], width=1)
+0060: 
+0061:             # selected crosshair
+0062:             idx = self.selected_index
+0063:             if idx < 0 or idx >= n:
+0064:                 idx = n - 1
+0065: 
+0066:             sx = self.x + pad + (idx / max(1, n - 1)) * w
+0067:             Color(0.2, 0.8, 1.0, 1)
+0068:             Line(points=[sx, self.y + pad, sx, self.top - pad], width=1)
+0069: 
+0070:     def on_touch_down(self, touch):
+0071:         if not self.collide_point(*touch.pos):
+0072:             return False
+0073: 
+0074:         if self.points:
+0075:             ratio = (touch.x - self.x) / max(1, self.width)
+0076:             try:
+0077:                 demo_core.select_trend_by_ratio(ratio)
+0078:             except Exception:
+0079:                 pass
+0080: 
+0081:         return True
+0082: 
+0083: 
+0084: 
+0085: 
+0086: 
+0087: 
+0088: 
+0089: 
+0090: 
+0091: 
+0092: 
+0093: 
+0094: 
+0095: 
+0096: 
+0097: 
+
+----------------------------------------------------------------------
+CLASS: DemoCoreFinalPrebuildAuditScreen
+----------------------------------------------------------------------
+0001: class DemoCoreFinalPrebuildAuditScreen(Screen):
+0002:     def __init__(self, **kwargs):
+0003:         super().__init__(**kwargs)
+0004:         root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+0005: 
+0006:         root.add_widget(Label(
+0007:             text='[b]FINAL PREBUILD AUDIT / GO-NOGO[/b]\n[size=14]Végső APK előtti audit. APK build nincs, order nincs.[/size]',
+0008:             markup=True,
+0009:             size_hint_y=None,
+0010:             height=86
+0011:         ))
+0012: 
+0013:         self.info = Label(text='Final prebuild audit...', markup=True, halign='left', valign='top')
+0014:         self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+0015: 
+0016:         scroll = ScrollView()
+0017:         scroll.add_widget(self.info)
+0018:         root.add_widget(scroll)
+0019: 
+0020:         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+0021:         ba_bind_grid_height(btns)
+0022:         buttons = [
+0023:             ('FINAL AUDIT', self.audit),
+0024:             ('GO / NO-GO', self.go_nogo),
+0025:             ('EXPORT REPORT', self.export_report),
+0026:             ('APK GATE', lambda: self.manager.go_to('apk_build_gate')),
+0027:             ('RC STATUS', lambda: self.manager.go_to('release_candidate')),
+0028:             ('VISSZA', self.go_back),
+0029:         ]
+0030: 
+0031:         for text, fn in buttons:
+0032:             b = Button(text=text)
+0033:             ba_style_button(b)
+0034:             b.bind(on_press=lambda x, f=fn: f())
+0035:             btns.add_widget(b)
+0036: 
+0037:         root.add_widget(btns)
+0038:         self.add_widget(root)
+0039: 
+0040:     def on_pre_enter(self):
+0041:         self.audit()
+0042: 
+0043:     def go_back(self):
+0044:         try:
+0045:             self.manager.go_back()
+0046:         except Exception:
+0047:             self.manager.current = 'home'
+0048: 
+0049:     def audit(self):
+0050:         try:
+0051:             res = demo_core.final_prebuild_audit_status()
+0052:             lines = ['[b]Final Prebuild Audit[/b]', '']
+0053:             lines.append(f"GO for APK build later: [b]{res.get('go_for_apk_build_later')}[/b]")
+0054:             lines.append(f"Score: {res.get('score_pct')}% / min {res.get('min_score_pct')}%")
+0055:             lines.append(f"Required: {res.get('passed_required')}/{res.get('total_required')}")
+0056:             lines.append(f"Order flags: {res.get('order_endpoint_flags')}")
+0057:             lines.append(f"Will build now: {res.get('will_build_now')}")
+0058:             lines.append(f"APK build touched: {res.get('apk_build_touched')}")
+0059:             lines.append('')
+0060:             lines.append('[b]Failed required[/b]')
+0061:             failed = res.get('failed_required') or []
+0062:             if not failed:
+0063:                 lines.append('✅ Nincs hiba')
+0064:             for f in failed:
+0065:                 lines.append('🔴 ' + str(f.get('title')))
+0066:             self.info.text = '\\n'.join(lines)
+0067:         except Exception as e:
+0068:             self.info.text = 'Final audit hiba: ' + str(e)
+0069: 
+0070:     def go_nogo(self):
+0071:         try:
+0072:             res = demo_core.final_go_nogo_summary()
+0073:             lines = ['[b]GO / NO-GO Summary[/b]', '']
+0074:             lines.append(f"Verdict: [b]{res.get('verdict')}[/b]")
+0075:             lines.append(f"Score: {res.get('score_pct')}%")
+0076:             lines.append(f"Failed count: {res.get('failed_count')}")
+0077:             lines.append('')
+0078:             for step in res.get('next_steps') or []:
+0079:                 lines.append('- ' + str(step))
+0080:             self.info.text = '\\n'.join(lines)
+0081:         except Exception as e:
+0082:             self.info.text = 'GO/NO-GO hiba: ' + str(e)
+0083: 
+0084:     def export_report(self):
+0085:         try:
+0086:             res = demo_core.export_final_prebuild_audit_report()
+0087:             self.info.text = '[b]Final prebuild audit export[/b]\\n' + str(res)
+0088:         except Exception as e:
+0089:             self.info.text = 'Export hiba: ' + str(e)
+0090: 
+0091: 
+0092: 
+
+----------------------------------------------------------------------
+CLASS: DemoCoreApkBuildGateScreen
+----------------------------------------------------------------------
+0001: class DemoCoreApkBuildGateScreen(Screen):
+0002:     def __init__(self, **kwargs):
+0003:         super().__init__(**kwargs)
+0004:         root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+0005: 
+0006:         root.add_widget(Label(
+0007:             text='[b]APK BUILD GATE / ARTIFACT MANIFEST[/b]\n[size=14]Build előtti kapu, fájlmanifest, secrets clean check. APK build nincs.[/size]',
+0008:             markup=True,
+0009:             size_hint_y=None,
+0010:             height=86
+0011:         ))
+0012: 
+0013:         self.info = Label(text='APK build gate...', markup=True, halign='left', valign='top')
+0014:         self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+0015: 
+0016:         scroll = ScrollView()
+0017:         scroll.add_widget(self.info)
+0018:         root.add_widget(scroll)
+0019: 
+0020:         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+0021:         ba_bind_grid_height(btns)
+0022:         buttons = [
+0023:             ('BUILD GATE', self.gate),
+0024:             ('MANIFEST', self.manifest),
+0025:             ('SECRETS CLEAN', self.secrets_clean),
+0026:             ('EXPORT MANIFEST', self.export_manifest),
+0027:             ('EXPORT GATE REPORT', self.export_gate),
+0028:             ('RC STATUS', lambda: self.manager.go_to('release_candidate')),
+0029:             ('UI CHECK', lambda: self.manager.go_to('ui_route_check')),
+0030:             ('VISSZA', self.go_back),
+0031:         ]
+0032: 
+0033:         for text, fn in buttons:
+0034:             b = Button(text=text)
+0035:             ba_style_button(b)
+0036:             b.bind(on_press=lambda x, f=fn: f())
+0037:             btns.add_widget(b)
+0038: 
+0039:         root.add_widget(btns)
+0040:         self.add_widget(root)
+0041: 
+0042:     def on_pre_enter(self):
+0043:         self.gate()
+0044: 
+0045:     def go_back(self):
+0046:         try:
+0047:             self.manager.go_back()
+0048:         except Exception:
+0049:             self.manager.current = 'home'
+0050: 
+0051:     def gate(self):
+0052:         try:
+0053:             res = demo_core.apk_build_gate_status()
+0054:             lines = ['[b]APK Build Gate[/b]', '']
+0055:             for k in ['can_build_later','full_system_report_exists','ui_route_ok','release_candidate_rc_ok','preapk_ok','secrets_clean','manifest_ok','apk_build_allowed_setting','will_build_now','apk_build_touched','order_endpoint_used']:
+0056:                 lines.append(f"{k}: [b]{res.get(k)}[/b]")
+0057:             lines.append('')
+0058:             lines.append('[b]Blockers[/b]')
+0059:             for b in res.get('blockers') or []:
+0060:                 lines.append('🔴 ' + str(b))
+0061:             if not res.get('blockers'):
+0062:                 lines.append('✅ Nincs blocker')
+0063:             lines.append('')
+0064:             lines.append(str(res.get('message')))
+0065:             self.info.text = '\\n'.join(lines)
+0066:         except Exception as e:
+0067:             self.info.text = 'Build gate hiba: ' + str(e)
+0068: 
+0069:     def manifest(self):
+0070:         try:
+0071:             res = demo_core.apk_artifact_manifest()
+0072:             lines = ['[b]APK Artifact Manifest[/b]', '']
+0073:             lines.append(f"OK: [b]{res.get('ok')}[/b]")
+0074:             for row in res.get('files') or []:
+0075:                 mark = '✅' if row.get('exists') else ('🔴' if row.get('required') else '🟡')
+0076:                 lines.append(f"{mark} {row.get('path')} | required={row.get('required')} | size={row.get('size')}")
+0077:             lines.append('')
+0078:             lines.append('[b]Excluded secrets[/b]')
+0079:             for x in res.get('excluded_secrets') or []:
+0080:                 lines.append('- ' + str(x))
+0081:             self.info.text = '\\n'.join(lines)
+0082:         except Exception as e:
+0083:             self.info.text = 'Manifest hiba: ' + str(e)
+0084: 
+0085:     def secrets_clean(self):
+0086:         try:
+0087:             res = demo_core.secrets_clean_check()
+0088:             lines = ['[b]Secrets Clean Check[/b]', '']
+0089:             lines.append(f"OK: [b]{res.get('ok')}[/b]")
+0090:             lines.append(f"gitignore_secret_rules_ok: {res.get('gitignore_secret_rules_ok')}")
+0091:             lines.append('')
+0092:             lines.append('[b]Plain secret files found[/b]')
+0093:             for x in res.get('plain_secret_files_found') or []:
+0094:                 lines.append('🔴 ' + str(x))
+0095:             if not res.get('plain_secret_files_found'):
+0096:                 lines.append('✅ Nincs plain secret fájl')
+0097:             lines.append('')
+0098:             lines.append('[b]Encrypted local files found[/b]')
+0099:             for x in res.get('encrypted_local_files_found') or []:
+0100:                 lines.append('🟡 ' + str(x))
+0101:             lines.append('')
+0102:             lines.append(str(res.get('note')))
+0103:             self.info.text = '\\n'.join(lines)
+0104:         except Exception as e:
+0105:             self.info.text = 'Secrets check hiba: ' + str(e)
+0106: 
+0107:     def export_manifest(self):
+0108:         try:
+0109:             res = demo_core.export_apk_artifact_manifest()
+0110:             self.info.text = '[b]APK manifest export[/b]\\n' + str(res)
+0111:         except Exception as e:
+0112:             self.info.text = 'Manifest export hiba: ' + str(e)
+0113: 
+0114:     def export_gate(self):
+0115:         try:
+0116:             res = demo_core.export_apk_build_gate_report()
+0117:             self.info.text = '[b]APK build gate report export[/b]\\n' + str(res)
+0118:         except Exception as e:
+0119:             self.info.text = 'Gate export hiba: ' + str(e)
+0120: 
+0121: 
+0122: 
+
+----------------------------------------------------------------------
+CLASS: DemoCoreUiRouteCheckScreen
+----------------------------------------------------------------------
+0001: class DemoCoreUiRouteCheckScreen(Screen):
+0002:     def __init__(self, **kwargs):
+0003:         super().__init__(**kwargs)
+0004:         root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+0005: 
+0006:         root.add_widget(Label(
+0007:             text='[b]UI ROUTE / SCREEN CHECK[/b]\n[size=14]Képernyő registry, menü route, hiányzó screen report. APK build nincs.[/size]',
+0008:             markup=True,
+0009:             size_hint_y=None,
+0010:             height=86
+0011:         ))
+0012: 
+0013:         self.info = Label(text='UI route check...', markup=True, halign='left', valign='top')
+0014:         self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+0015: 
+0016:         scroll = ScrollView()
+0017:         scroll.add_widget(self.info)
+0018:         root.add_widget(scroll)
+0019: 
+0020:         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+0021:         ba_bind_grid_height(btns)
+0022:         buttons = [
+0023:             ('SCREEN REGISTRY', self.registry),
+0024:             ('MENU ROUTES', self.menu_routes),
+0025:             ('MISSING REPORT', self.missing),
+0026:             ('EXPORT REPORT', self.export_report),
+0027:             ('RC STATUS', lambda: self.manager.go_to('release_candidate')),
+0028:             ('VISSZA', self.go_back),
+0029:         ]
+0030: 
+0031:         for text, fn in buttons:
+0032:             b = Button(text=text)
+0033:             ba_style_button(b)
+0034:             b.bind(on_press=lambda x, f=fn: f())
+0035:             btns.add_widget(b)
+0036: 
+0037:         root.add_widget(btns)
+0038:         self.add_widget(root)
+0039: 
+0040:     def on_pre_enter(self):
+0041:         self.registry()
+0042: 
+0043:     def go_back(self):
+0044:         try:
+0045:             self.manager.go_back()
+0046:         except Exception:
+0047:             self.manager.current = 'home'
+0048: 
+0049:     def registry(self):
+0050:         try:
+0051:             res = demo_core.ui_route_screen_registry_check()
+0052:             lines = ['[b]UI Screen Registry[/b]', '']
+0053:             lines.append(f"OK: [b]{res.get('ok')}[/b]")
+0054:             lines.append(f"Score: {res.get('score_pct')}%")
+0055:             lines.append(f"OK count: {res.get('ok_count')}/{res.get('total_count')}")
+0056:             lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+0057:             lines.append('')
+0058:             for r in res.get('screens') or []:
+0059:                 mark = '✅' if r.get('ok') else '🔴'
+0060:                 lines.append(f"{mark} {r.get('name')} | class={r.get('class_exists')} | registered={r.get('registered')}")
+0061:             self.info.text = '\\n'.join(lines)
+0062:         except Exception as e:
+0063:             self.info.text = 'Registry hiba: ' + str(e)
+0064: 
+0065:     def menu_routes(self):
+0066:         try:
+0067:             res = demo_core.ui_menu_route_check()
+0068:             lines = ['[b]UI Menu Routes[/b]', '']
+0069:             lines.append(f"OK: [b]{res.get('ok')}[/b]")
+0070:             for r in res.get('routes') or []:
+0071:                 mark = '✅' if r.get('ok') else '🔴'
+0072:                 lines.append(f"{mark} {r.get('function')} -> {r.get('route')}")
+0073:             self.info.text = '\\n'.join(lines)
+0074:         except Exception as e:
+0075:             self.info.text = 'Menu route hiba: ' + str(e)
+0076: 
+0077:     def missing(self):
+0078:         try:
+0079:             res = demo_core.ui_missing_screen_report()
+0080:             lines = ['[b]Missing Screen Report[/b]', '']
+0081:             lines.append(f"OK: [b]{res.get('ok')}[/b]")
+0082:             lines.append(f"Registry score: {res.get('registry_score_pct')}%")
+0083:             lines.append('')
+0084:             lines.append('[b]Registry missing[/b]')
+0085:             for r in res.get('registry_missing') or []:
+0086:                 lines.append('🔴 ' + str(r.get('name')) + ' / ' + str(r.get('class')))
+0087:             lines.append('')
+0088:             lines.append('[b]Menu missing[/b]')
+0089:             for r in res.get('menu_missing') or []:
+0090:                 lines.append('🔴 ' + str(r))
+0091:             lines.append('')
+0092:             lines.append(str(res.get('recommendation')))
+0093:             self.info.text = '\\n'.join(lines)
+0094:         except Exception as e:
+0095:             self.info.text = 'Missing report hiba: ' + str(e)
+0096: 
+0097:     def export_report(self):
+0098:         try:
+0099:             res = demo_core.export_ui_route_report()
+0100:             self.info.text = '[b]UI route report export[/b]\\n' + str(res)
+0101:         except Exception as e:
+0102:             self.info.text = 'Export hiba: ' + str(e)
+0103: 
+0104: 
+0105: 
+
+----------------------------------------------------------------------
+CLASS: DemoCoreReleaseCandidateScreen
+----------------------------------------------------------------------
+0001: class DemoCoreReleaseCandidateScreen(Screen):
+0002:     def __init__(self, **kwargs):
+0003:         super().__init__(**kwargs)
+0004:         root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+0005: 
+0006:         root.add_widget(Label(
+0007:             text='[b]RELEASE CANDIDATE / ROLLBACK / BUILD PREVIEW[/b]\n[size=14]Stabil pont, rollback terv, APK build előnézet. Build nincs.[/size]',
+0008:             markup=True,
+0009:             size_hint_y=None,
+0010:             height=86
+0011:         ))
+0012: 
+0013:         self.info = Label(text='Release candidate...', markup=True, halign='left', valign='top')
+0014:         self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+0015: 
+0016:         scroll = ScrollView()
+0017:         scroll.add_widget(self.info)
+0018:         root.add_widget(scroll)
+0019: 
+0020:         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+0021:         ba_bind_grid_height(btns)
+0022:         buttons = [
+0023:             ('RC STATUS', self.rc_status),
+0024:             ('ROLLBACK PLAN', self.rollback),
+0025:             ('BUILD INPUT', self.build_input),
+0026:             ('BUILD PREVIEW', self.build_preview),
+0027:             ('EXPORT REPORT', self.export_report),
+0028:             ('FULL CHECK', lambda: self.manager.go_to('firstrun_readiness')),
+0029:             ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+0030:             ('VISSZA', self.go_back),
+0031:         ]
+0032: 
+0033:         for text, fn in buttons:
+0034:             b = Button(text=text)
+0035:             ba_style_button(b)
+0036:             b.bind(on_press=lambda x, f=fn: f())
+0037:             btns.add_widget(b)
+0038: 
+0039:         root.add_widget(btns)
+0040:         self.add_widget(root)
+0041: 
+0042:     def on_pre_enter(self):
+0043:         self.rc_status()
+0044: 
+0045:     def go_back(self):
+0046:         try:
+0047:             self.manager.go_back()
+0048:         except Exception:
+0049:             self.manager.current = 'home'
+0050: 
+0051:     def rc_status(self):
+0052:         try:
+0053:             res = demo_core.release_candidate_status()
+0054:             lines = ['[b]Release Candidate Status[/b]', '']
+0055:             for k in ['release_candidate_name','rc_ok','full_system_report_exists','firstrun_report_exists','preapk_report_exists','apk_build_allowed','apk_build_touched','order_endpoint_used']:
+0056:                 lines.append(f"{k}: [b]{res.get(k)}[/b]")
+0057:             lines.append('')
+0058:             lines.append('[b]Latest stable tags[/b]')
+0059:             for t in res.get('latest_tags') or []:
+0060:                 lines.append('- ' + str(t))
+0061:             self.info.text = '\\n'.join(lines)
+0062:         except Exception as e:
+0063:             self.info.text = 'RC status hiba: ' + str(e)
+0064: 
+0065:     def rollback(self):
+0066:         try:
+0067:             res = demo_core.rollback_plan_status()
+0068:             lines = ['[b]Rollback Plan[/b]', '']
+0069:             lines.append(f"Recommended tag: [b]{res.get('recommended_tag')}[/b]")
+0070:             lines.append('')
+0071:             lines.append('[b]Commands preview[/b]')
+0072:             for c in res.get('rollback_commands_preview') or []:
+0073:                 lines.append(c)
+0074:             lines.append('')
+0075:             lines.append(str(res.get('danger_note')))
+0076:             self.info.text = '\\n'.join(lines)
+0077:         except Exception as e:
+0078:             self.info.text = 'Rollback hiba: ' + str(e)
+0079: 
+0080:     def build_input(self):
+0081:         try:
+0082:             res = demo_core.build_input_preview()
+0083:             lines = ['[b]Build Input Preview[/b]', '']
+0084:             for row in res.get('files') or []:
+0085:                 mark = '✅' if row.get('exists') else '🔴'
+0086:                 lines.append(f"{mark} {row.get('path')} | size={row.get('size', 0)}")
+0087:             lines.append('')
+0088:             lines.append(str(res.get('message')))
+0089:             self.info.text = '\\n'.join(lines)
+0090:         except Exception as e:
+0091:             self.info.text = 'Build input hiba: ' + str(e)
+0092: 
+0093:     def build_preview(self):
+0094:         try:
+0095:             res = demo_core.safe_build_command_preview()
+0096:             lines = ['[b]Safe Build Command Preview[/b]', '']
+0097:             lines.append(f"apk_build_allowed: {res.get('apk_build_allowed')}")
+0098:             lines.append(f"will_build_now: {res.get('will_build_now')}")
+0099:             lines.append('')
+0100:             for c in res.get('commands_preview') or []:
+0101:                 lines.append(c)
+0102:             lines.append('')
+0103:             lines.append(str(res.get('warning')))
+0104:             self.info.text = '\\n'.join(lines)
+0105:         except Exception as e:
+0106:             self.info.text = 'Build preview hiba: ' + str(e)
+0107: 
+0108:     def export_report(self):
+0109:         try:
+0110:             res = demo_core.export_release_candidate_report()
+0111:             self.info.text = '[b]Release candidate report export[/b]\\n' + str(res)
+0112:         except Exception as e:
+0113:             self.info.text = 'Export hiba: ' + str(e)
+0114: 
+0115: 
+0116: 
+
+----------------------------------------------------------------------
+CLASS: DemoCoreFirstRunReadinessScreen
+----------------------------------------------------------------------
+0001: class DemoCoreFirstRunReadinessScreen(Screen):
+0002:     def __init__(self, **kwargs):
+0003:         super().__init__(**kwargs)
+0004:         root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+0005: 
+0006:         root.add_widget(Label(
+0007:             text='[b]FIRST-RUN / SETUP READINESS[/b]\n[size=14]Kötelező beállítások, biztonság, APK előtti readiness. Order nincs.[/size]',
+0008:             markup=True,
+0009:             size_hint_y=None,
+0010:             height=82
+0011:         ))
+0012: 
+0013:         self.info = Label(text='First-run readiness...', markup=True, halign='left', valign='top')
+0014:         self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+0015: 
+0016:         scroll = ScrollView()
+0017:         scroll.add_widget(self.info)
+0018:         root.add_widget(scroll)
+0019: 
+0020:         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+0021:         ba_bind_grid_height(btns)
+0022:         buttons = [
+0023:             ('READINESS CHECK', self.readiness),
+0024:             ('NEXT ACTIONS', self.actions),
+0025:             ('EXPORT REPORT', self.export_report),
+0026:             ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+0027:             ('PRE-APK TEST', lambda: self.manager.go_to('pre_apk_safe')),
+0028:             ('VISSZA', self.go_back),
+0029:         ]
+0030: 
+0031:         for text, fn in buttons:
+0032:             b = Button(text=text)
+0033:             ba_style_button(b)
+0034:             b.bind(on_press=lambda x, f=fn: f())
+0035:             btns.add_widget(b)
+0036: 
+0037:         root.add_widget(btns)
+0038:         self.add_widget(root)
+0039: 
+0040:     def on_pre_enter(self):
+0041:         self.readiness()
+0042: 
+0043:     def go_back(self):
+0044:         try:
+0045:             self.manager.go_back()
+0046:         except Exception:
+0047:             self.manager.current = 'home'
+0048: 
+0049:     def readiness(self):
+0050:         try:
+0051:             res = demo_core.firstrun_readiness_check()
+0052:             lines = ['[b]First-Run Readiness[/b]', '']
+0053:             lines.append(f"Complete: [b]{res.get('complete')}[/b]")
+0054:             lines.append(f"Required OK: {res.get('required_ok_count')}/{res.get('required_count')}")
+0055:             lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+0056:             lines.append('')
+0057:             lines.append('[b]Checks[/b]')
+0058:             for c in res.get('checks') or []:
+0059:                 mark = '✅' if c.get('ok') else '🔴' if c.get('required') else '🟡'
+0060:                 lines.append(f"{mark} {c.get('title')} | required={c.get('required')}")
+0061:             lines.append('')
+0062:             if res.get('missing_required'):
+0063:                 lines.append('[b]Missing required[/b]')
+0064:                 for c in res.get('missing_required'):
+0065:                     lines.append('🔴 ' + str(c.get('title')))
+0066:             self.info.text = '\\n'.join(lines)
+0067:         except Exception as e:
+0068:             self.info.text = 'Readiness hiba: ' + str(e)
+0069: 
+0070:     def actions(self):
+0071:         try:
+0072:             res = demo_core.firstrun_next_actions()
+0073:             lines = ['[b]Next Actions[/b]', '']
+0074:             for a in res.get('actions') or []:
+0075:                 lines.append('- ' + str(a))
+0076:             self.info.text = '\\n'.join(lines)
+0077:         except Exception as e:
+0078:             self.info.text = 'Actions hiba: ' + str(e)
+0079: 
+0080:     def export_report(self):
+0081:         try:
+0082:             res = demo_core.export_firstrun_readiness_report()
+0083:             self.info.text = '[b]First-run report export[/b]\\n' + str(res)
+0084:         except Exception as e:
+0085:             self.info.text = 'Export hiba: ' + str(e)
+0086: 
+0087: 
+0088: 
+
+----------------------------------------------------------------------
+CLASS: DemoCoreHealthAlertRecoveryScreen
+----------------------------------------------------------------------
+0001: class DemoCoreHealthAlertRecoveryScreen(Screen):
+0002:     def __init__(self, **kwargs):
+0003:         super().__init__(**kwargs)
+0004:         root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+0005: 
+0006:         root.add_widget(Label(
+0007:             text='[b]HEALTH / ALERT / RECOVERY[/b]\n[size=14]Heartbeat, hibák, riasztás, crash recovery. Order nincs.[/size]',
+0008:             markup=True,
+0009:             size_hint_y=None,
+0010:             height=82
+0011:         ))
+0012: 
+0013:         self.info = Label(text='Health center...', markup=True, halign='left', valign='top')
+0014:         self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+0015: 
+0016:         scroll = ScrollView()
+0017:         scroll.add_widget(self.info)
+0018:         root.add_widget(scroll)
+0019: 
+0020:         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+0021:         ba_bind_grid_height(btns)
+0022:         buttons = [
+0023:             ('STATUS', self.status),
+0024:             ('HEARTBEAT', self.heartbeat),
+0025:             ('UPDATE HEARTBEAT', self.update_hb),
+0026:             ('ALERTS', self.alerts),
+0027:             ('RECOVERY', self.recovery),
+0028:             ('EXPORT REPORT', self.export_report),
+0029:             ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+0030:             ('VISSZA', self.go_back),
+0031:         ]
+0032: 
+0033:         for text, fn in buttons:
+0034:             b = Button(text=text)
+0035:             ba_style_button(b)
+0036:             b.bind(on_press=lambda x, f=fn: f())
+0037:             btns.add_widget(b)
+0038: 
+0039:         root.add_widget(btns)
+0040:         self.add_widget(root)
+0041: 
+0042:     def on_pre_enter(self):
+0043:         self.status()
+0044: 
+0045:     def go_back(self):
+0046:         try:
+0047:             self.manager.go_back()
+0048:         except Exception:
+0049:             self.manager.current = 'home'
+0050: 
+0051:     def status(self):
+0052:         try:
+0053:             res = demo_core.health_alert_center_status()
+0054:             lines = ['[b]Health Alert Recovery Center[/b]', '']
+0055:             lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+0056:             lines.append(str(res.get('message')))
+0057:             lines.append('')
+0058:             hb = res.get('heartbeat') or {}
+0059:             lines.append('[b]Heartbeat[/b]')
+0060:             for k in ['running','heartbeat_ok','tick_ok','heartbeat_age_sec','tick_age_sec','last_action']:
+0061:                 lines.append(f"{k}: {hb.get(k)}")
+0062:             lines.append('')
+0063:             al = res.get('alerts') or {}
+0064:             lines.append(f"[b]Alerts:[/b] {al.get('alert_count')}")
+0065:             for a in al.get('alerts') or []:
+0066:                 lines.append(f"{a.get('level')}: {a.get('title')} - {a.get('detail')}")
+0067:             lines.append('')
+0068:             rec = res.get('recovery') or {}
+0069:             lines.append('[b]Recovery[/b]')
+0070:             lines.append(f"can_resume: {rec.get('can_resume')}")
+0071:             lines.append(f"open_positions: {rec.get('open_positions')}")
+0072:             self.info.text = '\\n'.join(lines)
+0073:         except Exception as e:
+0074:             self.info.text = 'Health status hiba: ' + str(e)
+0075: 
+0076:     def heartbeat(self):
+0077:         try:
+0078:             res = demo_core.heartbeat_status()
+0079:             self.info.text = '[b]Heartbeat Status[/b]\\n' + '\\n'.join([f"{k}: {v}" for k, v in res.items()])
+0080:         except Exception as e:
+0081:             self.info.text = 'Heartbeat hiba: ' + str(e)
+0082: 
+0083:     def update_hb(self):
+0084:         try:
+0085:             res = demo_core.update_heartbeat('ui_button')
+0086:             self.info.text = '[b]Heartbeat frissítve[/b]\\n' + str(res)
+0087:         except Exception as e:
+0088:             self.info.text = 'Heartbeat update hiba: ' + str(e)
+0089: 
+0090:     def alerts(self):
+0091:         try:
+0092:             res = demo_core.error_alert_summary()
+0093:             lines = ['[b]Error Alert Summary[/b]', f"Alert count: {res.get('alert_count')}", '']
+0094:             for a in res.get('alerts') or []:
+0095:                 lines.append(f"{a.get('level')}: [b]{a.get('title')}[/b]")
+0096:                 lines.append(str(a.get('detail')))
+0097:                 lines.append('')
+0098:             self.info.text = '\\n'.join(lines)
+0099:         except Exception as e:
+0100:             self.info.text = 'Alerts hiba: ' + str(e)
+0101: 
+0102:     def recovery(self):
+0103:         try:
+0104:             res = demo_core.crash_recovery_status()
+0105:             lines = ['[b]Crash Recovery Status[/b]', '']
+0106:             for k in ['crash_recovery_enabled','resume_after_restart_enabled','can_resume','running','safe_mode','open_positions','order_endpoint_used']:
+0107:                 lines.append(f"{k}: {res.get(k)}")
+0108:             lines.append('')
+0109:             lines.append('[b]Blockers[/b]')
+0110:             for x in res.get('blockers') or []:
+0111:                 lines.append('🟡 ' + str(x))
+0112:             lines.append('')
+0113:             lines.append('[b]Recommended actions[/b]')
+0114:             for x in res.get('recommended_actions') or []:
+0115:                 lines.append('- ' + str(x))
+0116:             self.info.text = '\\n'.join(lines)
+0117:         except Exception as e:
+0118:             self.info.text = 'Recovery hiba: ' + str(e)
+0119: 
+0120:     def export_report(self):
+0121:         try:
+0122:             res = demo_core.export_health_report()
+0123:             self.info.text = '[b]Health report export[/b]\\n' + str(res)
+0124:         except Exception as e:
+0125:             self.info.text = 'Health export hiba: ' + str(e)
+0126: 
+0127: 
+0128: 
+
+OK: alap KPI szövegek megtalálhatók.
+
+======================================================================
+FILE: apk_stage/main.py
+======================================================================
+Gyors kulcsszó számláló:
+  Dashboard: 8
+  dashboard: 8
+  modern_dashboard: 1
+  Trend: 20
+  trend: 58
+  sparkline: 2
+  Canvas: 2
+  canvas: 8
+  Line: 10
+  Color: 14
+  Rectangle: 6
+  Balance: 8
+  Equity: 3
+  PnL: 12
+  Realized: 1
+  Open Positions: 1
+  USDC: 8
+  USDT: 16
+  Profit: 16
+  SMA: 6
+  RSI: 3
+
+Dashboard/Trend/KPI related classes:
+  - Card
+  - Trend
+  - Dashboard
+  - MasterMenu
+  - DemoResetScreen
+  - TrendCanvasWidget
+  - DemoCoreFinalPrebuildAuditScreen
+  - DemoCoreApkBuildGateScreen
+  - DemoCoreUiRouteCheckScreen
+  - DemoCoreReleaseCandidateScreen
+  - DemoCoreFirstRunReadinessScreen
+  - DemoCoreHealthAlertRecoveryScreen
+  - DemoCoreProfitReportScreen
+  - DemoCoreReadonlyBalanceScreen
+  - DemoCoreTradeSimpleAdvancedScreen
+  - DemoCoreModernDashboardScreen
+  - DemoCoreIntegrationTestCenterScreen
+  - DemoCorePreApkSafeTestScreen
+  - DemoCoreMasterStatusScreen
+  - DemoCoreTrendHistoryScreen
+  - DemoCoreSpotPortfolioScreen
+  - DemoCoreStartupSafetyScreen
+  - DemoCoreIntegrationOverviewScreen
+  - DemoCoreBinanceReadOnlyRealScreen
+  - DemoCoreBinanceSignedScreen
+  - DemoCoreBinanceAccountScreen
+  - DemoCoreLiveGateScreen
+  - DemoCoreApprovalExecutorScreen
+  - DemoCoreAdminScreen
+  - DemoCorePatchManagerScreen
+  - DemoCoreSyncScreen
+  - DemoCoreFirstRunScreen
+  - DemoCorePackageScreen
+  - DemoCoreSchedulesScreen
+  - DemoCoreLaunchpoolScreen
+  - DemoCoreBacktestScreen
+  - DemoCoreDiagnosticsScreen
+  - DemoCoreBinanceLiveScreen
+  - DemoCoreSecretsScreen
+  - DemoCoreAIScreen
+  - DemoCoreTradeScreen
+  - DemoCoreFeeTaxScreen
+  - DemoCoreScannerScreen
+  - DemoCoreAuditScreen
+  - DemoCoreLogsScreen
+  - DemoCoreSettingsScreen
+  - TrendMiniChart
+  - DemoCoreScreen
+  - AppMain
+
+Fontos blokkok első része:
+
+----------------------------------------------------------------------
+CLASS: Card
+----------------------------------------------------------------------
+0001: class Card(BoxLayout):
+0002:     def __init__(self, bg=CARD, **kw):
+0003:         super().__init__(**kw)
+0004:         self.bg = bg
+0005:         self.padding = 10
+0006:         self.spacing = 6
+0007:         self.bind(pos=self.draw, size=self.draw)
+0008: 
+0009:     def draw(self, *a):
+0010:         self.canvas.before.clear()
+0011:         with self.canvas.before:
+0012:             Color(*self.bg)
+0013:             RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
+0014: 
+
+----------------------------------------------------------------------
+CLASS: Trend
+----------------------------------------------------------------------
+0001: class Trend(Widget):
+0002:     def __init__(self, color=ORANGE, **kw):
+0003:         super().__init__(**kw)
+0004:         self.color = color
+0005:         self.values = [random.uniform(40, 60) for _ in range(40)]
+0006:         self.bind(pos=self.draw, size=self.draw)
+0007: 
+0008:     def set_values(self, vals):
+0009:         if vals:
+0010:             self.values = vals[-50:]
+0011:         self.draw()
+0012: 
+0013:     def draw(self, *a):
+0014:         self.canvas.clear()
+0015:         with self.canvas:
+0016:             Color(0.035, 0.04, 0.045, 1)
+0017:             RoundedRectangle(pos=self.pos, size=self.size, radius=[18])
+0018:             if len(self.values) < 2:
+0019:                 return
+0020:             mn, mx = min(self.values), max(self.values)
+0021:             span = max(mx - mn, 0.000001)
+0022:             pts = []
+0023:             for i, v in enumerate(self.values):
+0024:                 x = self.x + 8 + i * ((self.width - 16) / (len(self.values) - 1))
+0025:                 y = self.y + 8 + ((v - mn) / span) * (self.height - 16)
+0026:                 pts += [x, y]
+0027:             Color(*self.color)
+0028:             Line(points=pts, width=2.2)
+0029: 
+0030: def button(text, color=CARD, fs=24):
+0031:     return Button(text=text, font_size=fs, bold=True, background_color=color)
+0032: 
+0033: 
+
+----------------------------------------------------------------------
+CLASS: Dashboard
+----------------------------------------------------------------------
+0001: class Dashboard(Screen):
+0002:     def __init__(self, mode, color, **kw):
+0003:         super().__init__(**kw)
+0004:         self.mode = mode
+0005:         self.color = color
+0006:         self.symbol = load_settings().get("symbol", "BTCUSDT")
+0007: 
+0008:         root = BoxLayout(orientation="vertical", padding=8, spacing=8)
+0009: 
+0010:         head = Card(bg=color, size_hint_y=.13)
+0011:         head.add_widget(Label(text=mode.upper() + " DASHBOARD", font_size=31, bold=True))
+0012:         root.add_widget(head)
+0013: 
+0014:         self.trend = Trend(color=color, size_hint_y=.30)
+0015:         root.add_widget(self.trend)
+0016: 
+0017:         kpi = GridLayout(cols=2, spacing=8, size_hint_y=.25)
+0018:         ba_bind_grid_height(kpi)
+0019:         self.k1 = Label(text="Ár: ...", font_size=23)
+0020:         self.k2 = Label(text="Total: 100", font_size=23)
+0021:         self.k3 = Label(text="Free: 100", font_size=23)
+0022:         self.k4 = Label(text="PnL: 0", font_size=23)
+0023: 
+0024:         for w in [self.k1, self.k2, self.k3, self.k4]:
+0025:             c = Card(bg=CARD)
+0026:             c.add_widget(w)
+0027:             kpi.add_widget(c)
+0028: 
+0029:         root.add_widget(kpi)
+0030: 
+0031:         self.msg = Label(text="Indulás kész.", font_size=18, size_hint_y=.10)
+0032:         root.add_widget(self.msg)
+0033: 
+0034:         controls = GridLayout(cols=2, spacing=8, size_hint_y=.22)
+0035:         ba_bind_grid_height(controls)
+0036:         for txt, col, fn in [
+0037:             ("START", (.05, .55, .1, 1), self.start),
+0038:             ("STOP", (.65, 0, 0, 1), self.stop),
+0039:             ("FRISSÍTÉS", (.28, .28, .28, 1), self.refresh),
+0040:             ("VISSZA", (.35, .35, .35, 1), self.back),
+0041:         ]:
+0042:             b = button(txt, col, 23)
+0043:             b.bind(on_press=fn)
+0044:             controls.add_widget(b)
+0045: 
+0046:         root.add_widget(controls)
+0047:         self.add_widget(root)
+0048:         Clock.schedule_once(lambda dt: self.refresh(None), 1)
+0049: 
+0050:     def start(self, x):
+0051:         st = load_state()
+0052:         st[self.mode]["running"] = True
+0053:         save_json(STATE_FILE, st)
+0054:         self.msg.text = "Bot elindítva."
+0055: 
+0056:     def stop(self, x):
+0057:         st = load_state()
+0058:         st[self.mode]["running"] = False
+0059:         save_json(STATE_FILE, st)
+0060:         self.msg.text = "Bot leállítva."
+0061: 
+0062:     def refresh(self, x):
+0063:         cfg = load_settings()
+0064:         self.symbol = cfg.get("symbol", "BTCUSDT")
+0065:         price = get_price(self.symbol)
+0066:         kl = get_klines(self.symbol)
+0067:         if kl:
+0068:             self.trend.set_values(kl)
+0069:         st = load_state()
+0070:         bal = st.get("demo", {}).get("balance", 100.0)
+0071:         pnl = st.get("demo", {}).get("profit", 0.0)
+0072:         self.k1.text = f"{self.symbol}\n{price:.4g}" if price else f"{self.symbol}\noffline"
+0073:         self.k2.text = f"Total\n{bal:.2f}"
+0074:         self.k3.text = f"Free\n{bal:.2f}"
+0075:         self.k4.text = f"PnL\n{pnl:.2f}"
+0076:         self.msg.text = "Frissítve." if price else "Offline / nincs adat."
+0077: 
+0078:     def back(self, x):
+0079:         go_back(self.manager)
+0080: 
+
+----------------------------------------------------------------------
+CLASS: MasterMenu
+----------------------------------------------------------------------
+0001: class MasterMenu(Screen):
+0002:     def __init__(self, **kw):
+0003:         super().__init__(**kw)
+0004:         root = BoxLayout(orientation="vertical", padding=10, spacing=8)
+0005:         root.add_widget(Label(text="MASTER LISTA", font_size=34, bold=True, color=(1,.75,0,1), size_hint_y=.12))
+0006: 
+0007:         grid = GridLayout(cols=1, spacing=7, size_hint_y=None)
+0008:         ba_bind_grid_height(grid)
+0009:         grid.bind(minimum_height=grid.setter("height"))
+0010: 
+0011:         items = [
+0012:             ("1. Általános működés", "main"),
+0013:             ("2. Dashboard", "demo"),
+0014:             ("3. Trade Simple", "trade_simple"),
+0015:             ("4. Strategy Advanced", "strategy_advanced"),
+0016:             ("5. Schedules", "schedules"),
+0017:             ("6. Launchpool / Airdrop", "launchpool"),
+0018:             ("7. Patch / Snapshot", "patch_snapshot"),
+0019:             ("8. Trades / Export", "logs"),
+0020:             ("9. Settings / Security", "settings"),
+0021:             ("10. PC + Google Drive Sync", "pc_drive_sync"),
+0022:             ("11. Diagnostics / Tests", "diagnostics"),
+0023:             ("12. Patch Manager UI", "patch_manager_ui"),
+0024:             ("13. Demo Reset", "demo_reset"),
+0025:             ("14. Fájlszerkezet", "file_structure"),
+0026:             ("15. Extra fejlesztések", "extra_features"),
+0027:             ("16. AI / MI kereskedés", "strategy"),
+0028:             ("17. Multi-symbol Scanner", "scanner"),
+0029:             ("18. Safety Guards", "safety_guards"),
+0030:             ("19. Healthcheck", "healthcheck"),
+0031:             ("20. Backtest / Replay", "backtest"),
+0032:             ("21. Audit log", "audit_log"),
+0033:             ("22. UI Mockup / Megjelenés", "ui_mockup"),
+0034:             ("23. Fee / Adózás", "fee_tax"),
+0035:             ("24. Profit-Hold AI", "profit_hold_ai"),
+0036:         ]
+0037: 
+0038:         for txt, scr in items:
+0039:             b = button(txt, CARD, 20)
+0040:             b.size_hint_y = None
+0041:             b.height = 58
+0042:             b.bind(on_press=lambda x, sc=scr: go_to(self.manager, sc))
+0043:             grid.add_widget(b)
+0044: 
+0045:         sv = ScrollView()
+0046:         sv.add_widget(grid)
+0047:         root.add_widget(sv)
+0048: 
+0049:         back = button("VISSZA", (.35,.35,.35,1), 24)
+0050:         back.size_hint_y = .11
+0051:         back.bind(on_press=lambda x: go_back(self.manager))
+0052:         root.add_widget(back)
+0053:         self.add_widget(root)
+0054: 
+
+----------------------------------------------------------------------
+CLASS: DemoResetScreen
+----------------------------------------------------------------------
+0001: class DemoResetScreen(Screen):
+0002:     def __init__(self, **kw):
+0003:         super().__init__(**kw)
+0004:         root = BoxLayout(orientation="vertical", padding=18, spacing=12)
+0005: 
+0006:         root.add_widget(Label(
+0007:             text="DEMO RESET",
+0008:             font_size=34,
+0009:             bold=True,
+0010:             color=(1,.75,0,1),
+0011:             size_hint_y=.16
+0012:         ))
+0013: 
+0014:         self.info = Label(
+0015:             text="Demo számla visszaállítása:\n\n"
+0016:                  "- egyenleg: 100 USDC\n"
+0017:                  "- profit/loss: 0\n"
+0018:                  "- futás: leállítva\n\n"
+0019:                  "Live módot nem érinti.",
+0020:             font_size=22
+0021:         )
+0022:         root.add_widget(self.info)
+0023: 
+0024:         reset = button("DEMO RESET FUTTATÁSA", (1,.50,0,1), 24)
+0025:         back = button("VISSZA", (.35,.35,.35,1), 23)
+0026: 
+0027:         reset.bind(on_press=self.do_reset)
+0028:         back.bind(on_press=lambda x: go_back(self.manager))
+0029: 
+0030:         root.add_widget(reset)
+0031:         root.add_widget(back)
+0032:         self.add_widget(root)
+0033: 
+0034:     def do_reset(self, x):
+0035:         st = load_state()
+0036:         st["mode"] = "demo"
+0037:         st["demo"] = {"balance": 100.0, "profit": 0.0, "running": False}
+0038:         if "live" not in st:
+0039:             st["live"] = {"running": False, "api_ready": False}
+0040:         st["last_msg"] = "Demo reset kész"
+0041:         save_json(STATE_FILE, st)
+0042:         self.info.text = "✅ Demo Reset kész!\n\nEgyenleg: 100 USDC\nProfit/Loss: 0\nBot: leállítva"
+0043: 
+0044: 
+0045: 
+
+----------------------------------------------------------------------
+CLASS: TrendCanvasWidget
+----------------------------------------------------------------------
+0001: class TrendCanvasWidget(Widget):
+0002:     def __init__(self, **kwargs):
+0003:         super().__init__(**kwargs)
+0004:         self.points = []
+0005:         self.selected_index = -1
+0006:         self.bind(pos=self.redraw, size=self.redraw)
+0007: 
+0008:     def set_chart(self, chart):
+0009:         try:
+0010:             self.points = chart.get('points') or []
+0011:             self.selected_index = int(chart.get('selected_index', -1) or -1)
+0012:         except Exception:
+0013:             self.points = []
+0014:             self.selected_index = -1
+0015:         self.redraw()
+0016: 
+0017:     def redraw(self, *args):
+0018:         self.canvas.clear()
+0019:         with self.canvas:
+0020:             Color(0.10, 0.12, 0.16, 1)
+0021:             Rectangle(pos=self.pos, size=self.size)
+0022: 
+0023:             if not self.points:
+0024:                 Color(0.5, 0.5, 0.5, 1)
+0025:                 Line(points=[self.x, self.center_y, self.right, self.center_y], width=1)
+0026:                 return
+0027: 
+0028:             vals = []
+0029:             for p in self.points:
+0030:                 try:
+0031:                     vals.append(float(p.get('value') or 0))
+0032:                 except Exception:
+0033:                     vals.append(0.0)
+0034: 
+0035:             if not vals:
+0036:                 return
+0037: 
+0038:             mn = min(vals)
+0039:             mx = max(vals)
+0040:             span = mx - mn if mx != mn else 1.0
+0041: 
+0042:             pad = 8
+0043:             w = max(1, self.width - pad * 2)
+0044:             h = max(1, self.height - pad * 2)
+0045: 
+0046:             coords = []
+0047:             n = len(vals)
+0048:             for i, v in enumerate(vals):
+0049:                 x = self.x + pad + (i / max(1, n - 1)) * w
+0050:                 y = self.y + pad + ((v - mn) / span) * h
+0051:                 coords.extend([x, y])
+0052: 
+0053:             Color(0.95, 0.72, 0.15, 1)
+0054:             if len(coords) >= 4:
+0055:                 Line(points=coords, width=1.4)
+0056: 
+0057:             # baseline
+0058:             Color(0.35, 0.35, 0.35, 1)
+0059:             Line(points=[self.x + pad, self.y + pad, self.right - pad, self.y + pad], width=1)
+0060: 
+0061:             # selected crosshair
+0062:             idx = self.selected_index
+0063:             if idx < 0 or idx >= n:
+0064:                 idx = n - 1
+0065: 
+0066:             sx = self.x + pad + (idx / max(1, n - 1)) * w
+0067:             Color(0.2, 0.8, 1.0, 1)
+0068:             Line(points=[sx, self.y + pad, sx, self.top - pad], width=1)
+0069: 
+0070:     def on_touch_down(self, touch):
+0071:         if not self.collide_point(*touch.pos):
+0072:             return False
+0073: 
+0074:         if self.points:
+0075:             ratio = (touch.x - self.x) / max(1, self.width)
+0076:             try:
+0077:                 demo_core.select_trend_by_ratio(ratio)
+0078:             except Exception:
+0079:                 pass
+0080: 
+0081:         return True
+0082: 
+0083: 
+0084: 
+0085: 
+0086: 
+0087: 
+0088: 
+0089: 
+0090: 
+0091: 
+0092: 
+0093: 
+0094: 
+0095: 
+0096: 
+0097: 
+
+----------------------------------------------------------------------
+CLASS: DemoCoreFinalPrebuildAuditScreen
+----------------------------------------------------------------------
+0001: class DemoCoreFinalPrebuildAuditScreen(Screen):
+0002:     def __init__(self, **kwargs):
+0003:         super().__init__(**kwargs)
+0004:         root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+0005: 
+0006:         root.add_widget(Label(
+0007:             text='[b]FINAL PREBUILD AUDIT / GO-NOGO[/b]\n[size=14]Végső APK előtti audit. APK build nincs, order nincs.[/size]',
+0008:             markup=True,
+0009:             size_hint_y=None,
+0010:             height=86
+0011:         ))
+0012: 
+0013:         self.info = Label(text='Final prebuild audit...', markup=True, halign='left', valign='top')
+0014:         self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+0015: 
+0016:         scroll = ScrollView()
+0017:         scroll.add_widget(self.info)
+0018:         root.add_widget(scroll)
+0019: 
+0020:         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+0021:         ba_bind_grid_height(btns)
+0022:         buttons = [
+0023:             ('FINAL AUDIT', self.audit),
+0024:             ('GO / NO-GO', self.go_nogo),
+0025:             ('EXPORT REPORT', self.export_report),
+0026:             ('APK GATE', lambda: self.manager.go_to('apk_build_gate')),
+0027:             ('RC STATUS', lambda: self.manager.go_to('release_candidate')),
+0028:             ('VISSZA', self.go_back),
+0029:         ]
+0030: 
+0031:         for text, fn in buttons:
+0032:             b = Button(text=text)
+0033:             ba_style_button(b)
+0034:             b.bind(on_press=lambda x, f=fn: f())
+0035:             btns.add_widget(b)
+0036: 
+0037:         root.add_widget(btns)
+0038:         self.add_widget(root)
+0039: 
+0040:     def on_pre_enter(self):
+0041:         self.audit()
+0042: 
+0043:     def go_back(self):
+0044:         try:
+0045:             self.manager.go_back()
+0046:         except Exception:
+0047:             self.manager.current = 'home'
+0048: 
+0049:     def audit(self):
+0050:         try:
+0051:             res = demo_core.final_prebuild_audit_status()
+0052:             lines = ['[b]Final Prebuild Audit[/b]', '']
+0053:             lines.append(f"GO for APK build later: [b]{res.get('go_for_apk_build_later')}[/b]")
+0054:             lines.append(f"Score: {res.get('score_pct')}% / min {res.get('min_score_pct')}%")
+0055:             lines.append(f"Required: {res.get('passed_required')}/{res.get('total_required')}")
+0056:             lines.append(f"Order flags: {res.get('order_endpoint_flags')}")
+0057:             lines.append(f"Will build now: {res.get('will_build_now')}")
+0058:             lines.append(f"APK build touched: {res.get('apk_build_touched')}")
+0059:             lines.append('')
+0060:             lines.append('[b]Failed required[/b]')
+0061:             failed = res.get('failed_required') or []
+0062:             if not failed:
+0063:                 lines.append('✅ Nincs hiba')
+0064:             for f in failed:
+0065:                 lines.append('🔴 ' + str(f.get('title')))
+0066:             self.info.text = '\\n'.join(lines)
+0067:         except Exception as e:
+0068:             self.info.text = 'Final audit hiba: ' + str(e)
+0069: 
+0070:     def go_nogo(self):
+0071:         try:
+0072:             res = demo_core.final_go_nogo_summary()
+0073:             lines = ['[b]GO / NO-GO Summary[/b]', '']
+0074:             lines.append(f"Verdict: [b]{res.get('verdict')}[/b]")
+0075:             lines.append(f"Score: {res.get('score_pct')}%")
+0076:             lines.append(f"Failed count: {res.get('failed_count')}")
+0077:             lines.append('')
+0078:             for step in res.get('next_steps') or []:
+0079:                 lines.append('- ' + str(step))
+0080:             self.info.text = '\\n'.join(lines)
+0081:         except Exception as e:
+0082:             self.info.text = 'GO/NO-GO hiba: ' + str(e)
+0083: 
+0084:     def export_report(self):
+0085:         try:
+0086:             res = demo_core.export_final_prebuild_audit_report()
+0087:             self.info.text = '[b]Final prebuild audit export[/b]\\n' + str(res)
+0088:         except Exception as e:
+0089:             self.info.text = 'Export hiba: ' + str(e)
+0090: 
+0091: 
+0092: 
+
+----------------------------------------------------------------------
+CLASS: DemoCoreApkBuildGateScreen
+----------------------------------------------------------------------
+0001: class DemoCoreApkBuildGateScreen(Screen):
+0002:     def __init__(self, **kwargs):
+0003:         super().__init__(**kwargs)
+0004:         root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+0005: 
+0006:         root.add_widget(Label(
+0007:             text='[b]APK BUILD GATE / ARTIFACT MANIFEST[/b]\n[size=14]Build előtti kapu, fájlmanifest, secrets clean check. APK build nincs.[/size]',
+0008:             markup=True,
+0009:             size_hint_y=None,
+0010:             height=86
+0011:         ))
+0012: 
+0013:         self.info = Label(text='APK build gate...', markup=True, halign='left', valign='top')
+0014:         self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+0015: 
+0016:         scroll = ScrollView()
+0017:         scroll.add_widget(self.info)
+0018:         root.add_widget(scroll)
+0019: 
+0020:         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+0021:         ba_bind_grid_height(btns)
+0022:         buttons = [
+0023:             ('BUILD GATE', self.gate),
+0024:             ('MANIFEST', self.manifest),
+0025:             ('SECRETS CLEAN', self.secrets_clean),
+0026:             ('EXPORT MANIFEST', self.export_manifest),
+0027:             ('EXPORT GATE REPORT', self.export_gate),
+0028:             ('RC STATUS', lambda: self.manager.go_to('release_candidate')),
+0029:             ('UI CHECK', lambda: self.manager.go_to('ui_route_check')),
+0030:             ('VISSZA', self.go_back),
+0031:         ]
+0032: 
+0033:         for text, fn in buttons:
+0034:             b = Button(text=text)
+0035:             ba_style_button(b)
+0036:             b.bind(on_press=lambda x, f=fn: f())
+0037:             btns.add_widget(b)
+0038: 
+0039:         root.add_widget(btns)
+0040:         self.add_widget(root)
+0041: 
+0042:     def on_pre_enter(self):
+0043:         self.gate()
+0044: 
+0045:     def go_back(self):
+0046:         try:
+0047:             self.manager.go_back()
+0048:         except Exception:
+0049:             self.manager.current = 'home'
+0050: 
+0051:     def gate(self):
+0052:         try:
+0053:             res = demo_core.apk_build_gate_status()
+0054:             lines = ['[b]APK Build Gate[/b]', '']
+0055:             for k in ['can_build_later','full_system_report_exists','ui_route_ok','release_candidate_rc_ok','preapk_ok','secrets_clean','manifest_ok','apk_build_allowed_setting','will_build_now','apk_build_touched','order_endpoint_used']:
+0056:                 lines.append(f"{k}: [b]{res.get(k)}[/b]")
+0057:             lines.append('')
+0058:             lines.append('[b]Blockers[/b]')
+0059:             for b in res.get('blockers') or []:
+0060:                 lines.append('🔴 ' + str(b))
+0061:             if not res.get('blockers'):
+0062:                 lines.append('✅ Nincs blocker')
+0063:             lines.append('')
+0064:             lines.append(str(res.get('message')))
+0065:             self.info.text = '\\n'.join(lines)
+0066:         except Exception as e:
+0067:             self.info.text = 'Build gate hiba: ' + str(e)
+0068: 
+0069:     def manifest(self):
+0070:         try:
+0071:             res = demo_core.apk_artifact_manifest()
+0072:             lines = ['[b]APK Artifact Manifest[/b]', '']
+0073:             lines.append(f"OK: [b]{res.get('ok')}[/b]")
+0074:             for row in res.get('files') or []:
+0075:                 mark = '✅' if row.get('exists') else ('🔴' if row.get('required') else '🟡')
+0076:                 lines.append(f"{mark} {row.get('path')} | required={row.get('required')} | size={row.get('size')}")
+0077:             lines.append('')
+0078:             lines.append('[b]Excluded secrets[/b]')
+0079:             for x in res.get('excluded_secrets') or []:
+0080:                 lines.append('- ' + str(x))
+0081:             self.info.text = '\\n'.join(lines)
+0082:         except Exception as e:
+0083:             self.info.text = 'Manifest hiba: ' + str(e)
+0084: 
+0085:     def secrets_clean(self):
+0086:         try:
+0087:             res = demo_core.secrets_clean_check()
+0088:             lines = ['[b]Secrets Clean Check[/b]', '']
+0089:             lines.append(f"OK: [b]{res.get('ok')}[/b]")
+0090:             lines.append(f"gitignore_secret_rules_ok: {res.get('gitignore_secret_rules_ok')}")
+0091:             lines.append('')
+0092:             lines.append('[b]Plain secret files found[/b]')
+0093:             for x in res.get('plain_secret_files_found') or []:
+0094:                 lines.append('🔴 ' + str(x))
+0095:             if not res.get('plain_secret_files_found'):
+0096:                 lines.append('✅ Nincs plain secret fájl')
+0097:             lines.append('')
+0098:             lines.append('[b]Encrypted local files found[/b]')
+0099:             for x in res.get('encrypted_local_files_found') or []:
+0100:                 lines.append('🟡 ' + str(x))
+0101:             lines.append('')
+0102:             lines.append(str(res.get('note')))
+0103:             self.info.text = '\\n'.join(lines)
+0104:         except Exception as e:
+0105:             self.info.text = 'Secrets check hiba: ' + str(e)
+0106: 
+0107:     def export_manifest(self):
+0108:         try:
+0109:             res = demo_core.export_apk_artifact_manifest()
+0110:             self.info.text = '[b]APK manifest export[/b]\\n' + str(res)
+0111:         except Exception as e:
+0112:             self.info.text = 'Manifest export hiba: ' + str(e)
+0113: 
+0114:     def export_gate(self):
+0115:         try:
+0116:             res = demo_core.export_apk_build_gate_report()
+0117:             self.info.text = '[b]APK build gate report export[/b]\\n' + str(res)
+0118:         except Exception as e:
+0119:             self.info.text = 'Gate export hiba: ' + str(e)
+0120: 
+0121: 
+0122: 
+
+----------------------------------------------------------------------
+CLASS: DemoCoreUiRouteCheckScreen
+----------------------------------------------------------------------
+0001: class DemoCoreUiRouteCheckScreen(Screen):
+0002:     def __init__(self, **kwargs):
+0003:         super().__init__(**kwargs)
+0004:         root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+0005: 
+0006:         root.add_widget(Label(
+0007:             text='[b]UI ROUTE / SCREEN CHECK[/b]\n[size=14]Képernyő registry, menü route, hiányzó screen report. APK build nincs.[/size]',
+0008:             markup=True,
+0009:             size_hint_y=None,
+0010:             height=86
+0011:         ))
+0012: 
+0013:         self.info = Label(text='UI route check...', markup=True, halign='left', valign='top')
+0014:         self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+0015: 
+0016:         scroll = ScrollView()
+0017:         scroll.add_widget(self.info)
+0018:         root.add_widget(scroll)
+0019: 
+0020:         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+0021:         ba_bind_grid_height(btns)
+0022:         buttons = [
+0023:             ('SCREEN REGISTRY', self.registry),
+0024:             ('MENU ROUTES', self.menu_routes),
+0025:             ('MISSING REPORT', self.missing),
+0026:             ('EXPORT REPORT', self.export_report),
+0027:             ('RC STATUS', lambda: self.manager.go_to('release_candidate')),
+0028:             ('VISSZA', self.go_back),
+0029:         ]
+0030: 
+0031:         for text, fn in buttons:
+0032:             b = Button(text=text)
+0033:             ba_style_button(b)
+0034:             b.bind(on_press=lambda x, f=fn: f())
+0035:             btns.add_widget(b)
+0036: 
+0037:         root.add_widget(btns)
+0038:         self.add_widget(root)
+0039: 
+0040:     def on_pre_enter(self):
+0041:         self.registry()
+0042: 
+0043:     def go_back(self):
+0044:         try:
+0045:             self.manager.go_back()
+0046:         except Exception:
+0047:             self.manager.current = 'home'
+0048: 
+0049:     def registry(self):
+0050:         try:
+0051:             res = demo_core.ui_route_screen_registry_check()
+0052:             lines = ['[b]UI Screen Registry[/b]', '']
+0053:             lines.append(f"OK: [b]{res.get('ok')}[/b]")
+0054:             lines.append(f"Score: {res.get('score_pct')}%")
+0055:             lines.append(f"OK count: {res.get('ok_count')}/{res.get('total_count')}")
+0056:             lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+0057:             lines.append('')
+0058:             for r in res.get('screens') or []:
+0059:                 mark = '✅' if r.get('ok') else '🔴'
+0060:                 lines.append(f"{mark} {r.get('name')} | class={r.get('class_exists')} | registered={r.get('registered')}")
+0061:             self.info.text = '\\n'.join(lines)
+0062:         except Exception as e:
+0063:             self.info.text = 'Registry hiba: ' + str(e)
+0064: 
+0065:     def menu_routes(self):
+0066:         try:
+0067:             res = demo_core.ui_menu_route_check()
+0068:             lines = ['[b]UI Menu Routes[/b]', '']
+0069:             lines.append(f"OK: [b]{res.get('ok')}[/b]")
+0070:             for r in res.get('routes') or []:
+0071:                 mark = '✅' if r.get('ok') else '🔴'
+0072:                 lines.append(f"{mark} {r.get('function')} -> {r.get('route')}")
+0073:             self.info.text = '\\n'.join(lines)
+0074:         except Exception as e:
+0075:             self.info.text = 'Menu route hiba: ' + str(e)
+0076: 
+0077:     def missing(self):
+0078:         try:
+0079:             res = demo_core.ui_missing_screen_report()
+0080:             lines = ['[b]Missing Screen Report[/b]', '']
+0081:             lines.append(f"OK: [b]{res.get('ok')}[/b]")
+0082:             lines.append(f"Registry score: {res.get('registry_score_pct')}%")
+0083:             lines.append('')
+0084:             lines.append('[b]Registry missing[/b]')
+0085:             for r in res.get('registry_missing') or []:
+0086:                 lines.append('🔴 ' + str(r.get('name')) + ' / ' + str(r.get('class')))
+0087:             lines.append('')
+0088:             lines.append('[b]Menu missing[/b]')
+0089:             for r in res.get('menu_missing') or []:
+0090:                 lines.append('🔴 ' + str(r))
+0091:             lines.append('')
+0092:             lines.append(str(res.get('recommendation')))
+0093:             self.info.text = '\\n'.join(lines)
+0094:         except Exception as e:
+0095:             self.info.text = 'Missing report hiba: ' + str(e)
+0096: 
+0097:     def export_report(self):
+0098:         try:
+0099:             res = demo_core.export_ui_route_report()
+0100:             self.info.text = '[b]UI route report export[/b]\\n' + str(res)
+0101:         except Exception as e:
+0102:             self.info.text = 'Export hiba: ' + str(e)
+0103: 
+0104: 
+0105: 
+
+----------------------------------------------------------------------
+CLASS: DemoCoreReleaseCandidateScreen
+----------------------------------------------------------------------
+0001: class DemoCoreReleaseCandidateScreen(Screen):
+0002:     def __init__(self, **kwargs):
+0003:         super().__init__(**kwargs)
+0004:         root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+0005: 
+0006:         root.add_widget(Label(
+0007:             text='[b]RELEASE CANDIDATE / ROLLBACK / BUILD PREVIEW[/b]\n[size=14]Stabil pont, rollback terv, APK build előnézet. Build nincs.[/size]',
+0008:             markup=True,
+0009:             size_hint_y=None,
+0010:             height=86
+0011:         ))
+0012: 
+0013:         self.info = Label(text='Release candidate...', markup=True, halign='left', valign='top')
+0014:         self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+0015: 
+0016:         scroll = ScrollView()
+0017:         scroll.add_widget(self.info)
+0018:         root.add_widget(scroll)
+0019: 
+0020:         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+0021:         ba_bind_grid_height(btns)
+0022:         buttons = [
+0023:             ('RC STATUS', self.rc_status),
+0024:             ('ROLLBACK PLAN', self.rollback),
+0025:             ('BUILD INPUT', self.build_input),
+0026:             ('BUILD PREVIEW', self.build_preview),
+0027:             ('EXPORT REPORT', self.export_report),
+0028:             ('FULL CHECK', lambda: self.manager.go_to('firstrun_readiness')),
+0029:             ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+0030:             ('VISSZA', self.go_back),
+0031:         ]
+0032: 
+0033:         for text, fn in buttons:
+0034:             b = Button(text=text)
+0035:             ba_style_button(b)
+0036:             b.bind(on_press=lambda x, f=fn: f())
+0037:             btns.add_widget(b)
+0038: 
+0039:         root.add_widget(btns)
+0040:         self.add_widget(root)
+0041: 
+0042:     def on_pre_enter(self):
+0043:         self.rc_status()
+0044: 
+0045:     def go_back(self):
+0046:         try:
+0047:             self.manager.go_back()
+0048:         except Exception:
+0049:             self.manager.current = 'home'
+0050: 
+0051:     def rc_status(self):
+0052:         try:
+0053:             res = demo_core.release_candidate_status()
+0054:             lines = ['[b]Release Candidate Status[/b]', '']
+0055:             for k in ['release_candidate_name','rc_ok','full_system_report_exists','firstrun_report_exists','preapk_report_exists','apk_build_allowed','apk_build_touched','order_endpoint_used']:
+0056:                 lines.append(f"{k}: [b]{res.get(k)}[/b]")
+0057:             lines.append('')
+0058:             lines.append('[b]Latest stable tags[/b]')
+0059:             for t in res.get('latest_tags') or []:
+0060:                 lines.append('- ' + str(t))
+0061:             self.info.text = '\\n'.join(lines)
+0062:         except Exception as e:
+0063:             self.info.text = 'RC status hiba: ' + str(e)
+0064: 
+0065:     def rollback(self):
+0066:         try:
+0067:             res = demo_core.rollback_plan_status()
+0068:             lines = ['[b]Rollback Plan[/b]', '']
+0069:             lines.append(f"Recommended tag: [b]{res.get('recommended_tag')}[/b]")
+0070:             lines.append('')
+0071:             lines.append('[b]Commands preview[/b]')
+0072:             for c in res.get('rollback_commands_preview') or []:
+0073:                 lines.append(c)
+0074:             lines.append('')
+0075:             lines.append(str(res.get('danger_note')))
+0076:             self.info.text = '\\n'.join(lines)
+0077:         except Exception as e:
+0078:             self.info.text = 'Rollback hiba: ' + str(e)
+0079: 
+0080:     def build_input(self):
+0081:         try:
+0082:             res = demo_core.build_input_preview()
+0083:             lines = ['[b]Build Input Preview[/b]', '']
+0084:             for row in res.get('files') or []:
+0085:                 mark = '✅' if row.get('exists') else '🔴'
+0086:                 lines.append(f"{mark} {row.get('path')} | size={row.get('size', 0)}")
+0087:             lines.append('')
+0088:             lines.append(str(res.get('message')))
+0089:             self.info.text = '\\n'.join(lines)
+0090:         except Exception as e:
+0091:             self.info.text = 'Build input hiba: ' + str(e)
+0092: 
+0093:     def build_preview(self):
+0094:         try:
+0095:             res = demo_core.safe_build_command_preview()
+0096:             lines = ['[b]Safe Build Command Preview[/b]', '']
+0097:             lines.append(f"apk_build_allowed: {res.get('apk_build_allowed')}")
+0098:             lines.append(f"will_build_now: {res.get('will_build_now')}")
+0099:             lines.append('')
+0100:             for c in res.get('commands_preview') or []:
+0101:                 lines.append(c)
+0102:             lines.append('')
+0103:             lines.append(str(res.get('warning')))
+0104:             self.info.text = '\\n'.join(lines)
+0105:         except Exception as e:
+0106:             self.info.text = 'Build preview hiba: ' + str(e)
+0107: 
+0108:     def export_report(self):
+0109:         try:
+0110:             res = demo_core.export_release_candidate_report()
+0111:             self.info.text = '[b]Release candidate report export[/b]\\n' + str(res)
+0112:         except Exception as e:
+0113:             self.info.text = 'Export hiba: ' + str(e)
+0114: 
+0115: 
+0116: 
+
+----------------------------------------------------------------------
+CLASS: DemoCoreFirstRunReadinessScreen
+----------------------------------------------------------------------
+0001: class DemoCoreFirstRunReadinessScreen(Screen):
+0002:     def __init__(self, **kwargs):
+0003:         super().__init__(**kwargs)
+0004:         root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+0005: 
+0006:         root.add_widget(Label(
+0007:             text='[b]FIRST-RUN / SETUP READINESS[/b]\n[size=14]Kötelező beállítások, biztonság, APK előtti readiness. Order nincs.[/size]',
+0008:             markup=True,
+0009:             size_hint_y=None,
+0010:             height=82
+0011:         ))
+0012: 
+0013:         self.info = Label(text='First-run readiness...', markup=True, halign='left', valign='top')
+0014:         self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+0015: 
+0016:         scroll = ScrollView()
+0017:         scroll.add_widget(self.info)
+0018:         root.add_widget(scroll)
+0019: 
+0020:         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+0021:         ba_bind_grid_height(btns)
+0022:         buttons = [
+0023:             ('READINESS CHECK', self.readiness),
+0024:             ('NEXT ACTIONS', self.actions),
+0025:             ('EXPORT REPORT', self.export_report),
+0026:             ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+0027:             ('PRE-APK TEST', lambda: self.manager.go_to('pre_apk_safe')),
+0028:             ('VISSZA', self.go_back),
+0029:         ]
+0030: 
+0031:         for text, fn in buttons:
+0032:             b = Button(text=text)
+0033:             ba_style_button(b)
+0034:             b.bind(on_press=lambda x, f=fn: f())
+0035:             btns.add_widget(b)
+0036: 
+0037:         root.add_widget(btns)
+0038:         self.add_widget(root)
+0039: 
+0040:     def on_pre_enter(self):
+0041:         self.readiness()
+0042: 
+0043:     def go_back(self):
+0044:         try:
+0045:             self.manager.go_back()
+0046:         except Exception:
+0047:             self.manager.current = 'home'
+0048: 
+0049:     def readiness(self):
+0050:         try:
+0051:             res = demo_core.firstrun_readiness_check()
+0052:             lines = ['[b]First-Run Readiness[/b]', '']
+0053:             lines.append(f"Complete: [b]{res.get('complete')}[/b]")
+0054:             lines.append(f"Required OK: {res.get('required_ok_count')}/{res.get('required_count')}")
+0055:             lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+0056:             lines.append('')
+0057:             lines.append('[b]Checks[/b]')
+0058:             for c in res.get('checks') or []:
+0059:                 mark = '✅' if c.get('ok') else '🔴' if c.get('required') else '🟡'
+0060:                 lines.append(f"{mark} {c.get('title')} | required={c.get('required')}")
+0061:             lines.append('')
+0062:             if res.get('missing_required'):
+0063:                 lines.append('[b]Missing required[/b]')
+0064:                 for c in res.get('missing_required'):
+0065:                     lines.append('🔴 ' + str(c.get('title')))
+0066:             self.info.text = '\\n'.join(lines)
+0067:         except Exception as e:
+0068:             self.info.text = 'Readiness hiba: ' + str(e)
+0069: 
+0070:     def actions(self):
+0071:         try:
+0072:             res = demo_core.firstrun_next_actions()
+0073:             lines = ['[b]Next Actions[/b]', '']
+0074:             for a in res.get('actions') or []:
+0075:                 lines.append('- ' + str(a))
+0076:             self.info.text = '\\n'.join(lines)
+0077:         except Exception as e:
+0078:             self.info.text = 'Actions hiba: ' + str(e)
+0079: 
+0080:     def export_report(self):
+0081:         try:
+0082:             res = demo_core.export_firstrun_readiness_report()
+0083:             self.info.text = '[b]First-run report export[/b]\\n' + str(res)
+0084:         except Exception as e:
+0085:             self.info.text = 'Export hiba: ' + str(e)
+0086: 
+0087: 
+0088: 
+
+----------------------------------------------------------------------
+CLASS: DemoCoreHealthAlertRecoveryScreen
+----------------------------------------------------------------------
+0001: class DemoCoreHealthAlertRecoveryScreen(Screen):
+0002:     def __init__(self, **kwargs):
+0003:         super().__init__(**kwargs)
+0004:         root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+0005: 
+0006:         root.add_widget(Label(
+0007:             text='[b]HEALTH / ALERT / RECOVERY[/b]\n[size=14]Heartbeat, hibák, riasztás, crash recovery. Order nincs.[/size]',
+0008:             markup=True,
+0009:             size_hint_y=None,
+0010:             height=82
+0011:         ))
+0012: 
+0013:         self.info = Label(text='Health center...', markup=True, halign='left', valign='top')
+0014:         self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+0015: 
+0016:         scroll = ScrollView()
+0017:         scroll.add_widget(self.info)
+0018:         root.add_widget(scroll)
+0019: 
+0020:         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+0021:         ba_bind_grid_height(btns)
+0022:         buttons = [
+0023:             ('STATUS', self.status),
+0024:             ('HEARTBEAT', self.heartbeat),
+0025:             ('UPDATE HEARTBEAT', self.update_hb),
+0026:             ('ALERTS', self.alerts),
+0027:             ('RECOVERY', self.recovery),
+0028:             ('EXPORT REPORT', self.export_report),
+0029:             ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+0030:             ('VISSZA', self.go_back),
+0031:         ]
+0032: 
+0033:         for text, fn in buttons:
+0034:             b = Button(text=text)
+0035:             ba_style_button(b)
+0036:             b.bind(on_press=lambda x, f=fn: f())
+0037:             btns.add_widget(b)
+0038: 
+0039:         root.add_widget(btns)
+0040:         self.add_widget(root)
+0041: 
+0042:     def on_pre_enter(self):
+0043:         self.status()
+0044: 
+0045:     def go_back(self):
+0046:         try:
+0047:             self.manager.go_back()
+0048:         except Exception:
+0049:             self.manager.current = 'home'
+0050: 
+0051:     def status(self):
+0052:         try:
+0053:             res = demo_core.health_alert_center_status()
+0054:             lines = ['[b]Health Alert Recovery Center[/b]', '']
+0055:             lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+0056:             lines.append(str(res.get('message')))
+0057:             lines.append('')
+0058:             hb = res.get('heartbeat') or {}
+0059:             lines.append('[b]Heartbeat[/b]')
+0060:             for k in ['running','heartbeat_ok','tick_ok','heartbeat_age_sec','tick_age_sec','last_action']:
+0061:                 lines.append(f"{k}: {hb.get(k)}")
+0062:             lines.append('')
+0063:             al = res.get('alerts') or {}
+0064:             lines.append(f"[b]Alerts:[/b] {al.get('alert_count')}")
+0065:             for a in al.get('alerts') or []:
+0066:                 lines.append(f"{a.get('level')}: {a.get('title')} - {a.get('detail')}")
+0067:             lines.append('')
+0068:             rec = res.get('recovery') or {}
+0069:             lines.append('[b]Recovery[/b]')
+0070:             lines.append(f"can_resume: {rec.get('can_resume')}")
+0071:             lines.append(f"open_positions: {rec.get('open_positions')}")
+0072:             self.info.text = '\\n'.join(lines)
+0073:         except Exception as e:
+0074:             self.info.text = 'Health status hiba: ' + str(e)
+0075: 
+0076:     def heartbeat(self):
+0077:         try:
+0078:             res = demo_core.heartbeat_status()
+0079:             self.info.text = '[b]Heartbeat Status[/b]\\n' + '\\n'.join([f"{k}: {v}" for k, v in res.items()])
+0080:         except Exception as e:
+0081:             self.info.text = 'Heartbeat hiba: ' + str(e)
+0082: 
+0083:     def update_hb(self):
+0084:         try:
+0085:             res = demo_core.update_heartbeat('ui_button')
+0086:             self.info.text = '[b]Heartbeat frissítve[/b]\\n' + str(res)
+0087:         except Exception as e:
+0088:             self.info.text = 'Heartbeat update hiba: ' + str(e)
+0089: 
+0090:     def alerts(self):
+0091:         try:
+0092:             res = demo_core.error_alert_summary()
+0093:             lines = ['[b]Error Alert Summary[/b]', f"Alert count: {res.get('alert_count')}", '']
+0094:             for a in res.get('alerts') or []:
+0095:                 lines.append(f"{a.get('level')}: [b]{a.get('title')}[/b]")
+0096:                 lines.append(str(a.get('detail')))
+0097:                 lines.append('')
+0098:             self.info.text = '\\n'.join(lines)
+0099:         except Exception as e:
+0100:             self.info.text = 'Alerts hiba: ' + str(e)
+0101: 
+0102:     def recovery(self):
+0103:         try:
+0104:             res = demo_core.crash_recovery_status()
+0105:             lines = ['[b]Crash Recovery Status[/b]', '']
+0106:             for k in ['crash_recovery_enabled','resume_after_restart_enabled','can_resume','running','safe_mode','open_positions','order_endpoint_used']:
+0107:                 lines.append(f"{k}: {res.get(k)}")
+0108:             lines.append('')
+0109:             lines.append('[b]Blockers[/b]')
+0110:             for x in res.get('blockers') or []:
+0111:                 lines.append('🟡 ' + str(x))
+0112:             lines.append('')
+0113:             lines.append('[b]Recommended actions[/b]')
+0114:             for x in res.get('recommended_actions') or []:
+0115:                 lines.append('- ' + str(x))
+0116:             self.info.text = '\\n'.join(lines)
+0117:         except Exception as e:
+0118:             self.info.text = 'Recovery hiba: ' + str(e)
+0119: 
+0120:     def export_report(self):
+0121:         try:
+0122:             res = demo_core.export_health_report()
+0123:             self.info.text = '[b]Health report export[/b]\\n' + str(res)
+0124:         except Exception as e:
+0125:             self.info.text = 'Health export hiba: ' + str(e)
+0126: 
+0127: 
+0128: 
+
+OK: alap KPI szövegek megtalálhatók.
+
+======================================================================
+SUMMARY
+======================================================================
+Hard error: False
+APK build NEM indult.
+Commit NEM történt.

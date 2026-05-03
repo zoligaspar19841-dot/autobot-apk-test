@@ -5159,53 +5159,91 @@ class DemoCoreSettingsScreen(Screen):
 class TrendMiniChart(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.values = [100.0]
+        self.values = [100.0, 100.0]
         self.bind(pos=lambda *_: self.redraw(), size=lambda *_: self.redraw())
 
     def set_values(self, values):
         try:
-            vals = [float(v) for v in values if v is not None]
+            vals = []
+            for v in values or []:
+                if v is None:
+                    continue
+                try:
+                    vals.append(float(v))
+                except Exception:
+                    pass
+
             if len(vals) < 2:
                 vals = [100.0, 100.0]
-            self.values = vals[-40:]
+
+            self.values = vals[-60:]
         except Exception:
             self.values = [100.0, 100.0]
+
         self.redraw()
 
     def redraw(self):
         self.canvas.clear()
-        with self.canvas:
-            Color(0.04, 0.04, 0.04, 1)
-            Rectangle(pos=self.pos, size=self.size)
 
+        vals = self.values or [100.0, 100.0]
+        if len(vals) < 2:
+            vals = [100.0, 100.0]
+
+        with self.canvas:
             x, y = self.pos
             w, h = self.size
 
-            Color(0.22, 0.22, 0.22, 1)
-            for i in range(1, 4):
-                yy = y + h * i / 4
-                Line(points=[x, yy, x + w, yy], width=1)
+            # háttér
+            Color(0.025, 0.025, 0.025, 1)
+            Rectangle(pos=self.pos, size=self.size)
 
-            vals = self.values or [100.0, 100.0]
+            pad_x = 10
+            pad_y = 10
+            gx0 = x + pad_x
+            gy0 = y + pad_y
+            gw = max(1, w - pad_x * 2)
+            gh = max(1, h - pad_y * 2)
+
+            # finom rács
+            Color(0.16, 0.16, 0.16, 1)
+            for i in range(1, 4):
+                yy = gy0 + gh * i / 4
+                Line(points=[gx0, yy, gx0 + gw, yy], width=1)
+
+            for i in range(1, 4):
+                xx = gx0 + gw * i / 4
+                Line(points=[xx, gy0, xx, gy0 + gh], width=0.8)
+
             mn, mx = min(vals), max(vals)
-            if mx - mn < 0.00001:
+            if abs(mx - mn) < 0.00001:
                 mx = mn + 1.0
 
             pts = []
             for i, v in enumerate(vals):
-                px = x + (w * i / max(1, len(vals) - 1))
-                py = y + 8 + ((v - mn) / (mx - mn)) * max(1, h - 16)
+                px = gx0 + (gw * i / max(1, len(vals) - 1))
+                py = gy0 + ((v - mn) / (mx - mn)) * gh
                 pts.extend([px, py])
 
-            Color(1.0, 0.78, 0.10, 1)
+            # trendvonal
+            Color(1.0, 0.74, 0.10, 1)
             if len(pts) >= 4:
-                Line(points=pts, width=2)
+                Line(points=pts, width=2.2)
+
+            # induló pont
+            if len(pts) >= 2:
+                Color(0.65, 0.65, 0.65, 1)
+                sx, sy = pts[0], pts[1]
+                Line(circle=(sx, sy, 3), width=1.3)
 
             # utolsó pont jelölés
             if len(pts) >= 2:
-                Color(0.0, 0.85, 0.35, 1)
+                Color(0.0, 0.86, 0.35, 1)
                 px, py = pts[-2], pts[-1]
-                Line(circle=(px, py, 4), width=2)
+                Line(circle=(px, py, 4.5), width=2)
+
+            # border
+            Color(0.28, 0.28, 0.28, 1)
+            Line(points=[x, y, x + w, y, x + w, y + h, x, y + h, x, y], width=1)
 
 
 class DemoCoreScreen(Screen):

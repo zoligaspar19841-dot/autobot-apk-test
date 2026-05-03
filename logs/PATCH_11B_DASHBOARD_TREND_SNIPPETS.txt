@@ -1,0 +1,885 @@
+PATCH 11B DASHBOARD / TREND SNIPPETS
+APK build: NEM indult
+Commit: NEM történt
+
+============================================================
+main.py fontos dashboard/trend rész
+============================================================
+        except Exception as e:
+            self.info.text = 'Registry hiba: ' + str(e)
+
+    def menu_routes(self):
+        try:
+            res = demo_core.ui_menu_route_check()
+            lines = ['[b]UI Menu Routes[/b]', '']
+            lines.append(f"OK: [b]{res.get('ok')}[/b]")
+            for r in res.get('routes') or []:
+                mark = '✅' if r.get('ok') else '🔴'
+                lines.append(f"{mark} {r.get('function')} -> {r.get('route')}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Menu route hiba: ' + str(e)
+
+    def missing(self):
+        try:
+            res = demo_core.ui_missing_screen_report()
+            lines = ['[b]Missing Screen Report[/b]', '']
+            lines.append(f"OK: [b]{res.get('ok')}[/b]")
+            lines.append(f"Registry score: {res.get('registry_score_pct')}%")
+            lines.append('')
+            lines.append('[b]Registry missing[/b]')
+            for r in res.get('registry_missing') or []:
+                lines.append('🔴 ' + str(r.get('name')) + ' / ' + str(r.get('class')))
+            lines.append('')
+            lines.append('[b]Menu missing[/b]')
+            for r in res.get('menu_missing') or []:
+                lines.append('🔴 ' + str(r))
+            lines.append('')
+            lines.append(str(res.get('recommendation')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Missing report hiba: ' + str(e)
+
+    def export_report(self):
+        try:
+            res = demo_core.export_ui_route_report()
+            self.info.text = '[b]UI route report export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Export hiba: ' + str(e)
+
+
+
+class DemoCoreReleaseCandidateScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]RELEASE CANDIDATE / ROLLBACK / BUILD PREVIEW[/b]\n[size=14]Stabil pont, rollback terv, APK build előnézet. Build nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=86
+        ))
+
+        self.info = Label(text='Release candidate...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
+        buttons = [
+            ('RC STATUS', self.rc_status),
+            ('ROLLBACK PLAN', self.rollback),
+            ('BUILD INPUT', self.build_input),
+            ('BUILD PREVIEW', self.build_preview),
+            ('EXPORT REPORT', self.export_report),
+            ('FULL CHECK', lambda: self.manager.go_to('firstrun_readiness')),
+            ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            ba_style_button(b)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.rc_status()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def rc_status(self):
+        try:
+            res = demo_core.release_candidate_status()
+            lines = ['[b]Release Candidate Status[/b]', '']
+            for k in ['release_candidate_name','rc_ok','full_system_report_exists','firstrun_report_exists','preapk_report_exists','apk_build_allowed','apk_build_touched','order_endpoint_used']:
+                lines.append(f"{k}: [b]{res.get(k)}[/b]")
+            lines.append('')
+            lines.append('[b]Latest stable tags[/b]')
+            for t in res.get('latest_tags') or []:
+                lines.append('- ' + str(t))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'RC status hiba: ' + str(e)
+
+    def rollback(self):
+        try:
+            res = demo_core.rollback_plan_status()
+            lines = ['[b]Rollback Plan[/b]', '']
+            lines.append(f"Recommended tag: [b]{res.get('recommended_tag')}[/b]")
+            lines.append('')
+            lines.append('[b]Commands preview[/b]')
+            for c in res.get('rollback_commands_preview') or []:
+                lines.append(c)
+            lines.append('')
+            lines.append(str(res.get('danger_note')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Rollback hiba: ' + str(e)
+
+    def build_input(self):
+        try:
+            res = demo_core.build_input_preview()
+            lines = ['[b]Build Input Preview[/b]', '']
+            for row in res.get('files') or []:
+                mark = '✅' if row.get('exists') else '🔴'
+                lines.append(f"{mark} {row.get('path')} | size={row.get('size', 0)}")
+            lines.append('')
+            lines.append(str(res.get('message')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Build input hiba: ' + str(e)
+
+    def build_preview(self):
+        try:
+            res = demo_core.safe_build_command_preview()
+            lines = ['[b]Safe Build Command Preview[/b]', '']
+            lines.append(f"apk_build_allowed: {res.get('apk_build_allowed')}")
+            lines.append(f"will_build_now: {res.get('will_build_now')}")
+            lines.append('')
+            for c in res.get('commands_preview') or []:
+                lines.append(c)
+            lines.append('')
+            lines.append(str(res.get('warning')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Build preview hiba: ' + str(e)
+
+    def export_report(self):
+        try:
+            res = demo_core.export_release_candidate_report()
+            self.info.text = '[b]Release candidate report export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Export hiba: ' + str(e)
+
+
+
+class DemoCoreFirstRunReadinessScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]FIRST-RUN / SETUP READINESS[/b]\n[size=14]Kötelező beállítások, biztonság, APK előtti readiness. Order nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=82
+        ))
+
+        self.info = Label(text='First-run readiness...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
+        buttons = [
+            ('READINESS CHECK', self.readiness),
+            ('NEXT ACTIONS', self.actions),
+            ('EXPORT REPORT', self.export_report),
+            ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+            ('PRE-APK TEST', lambda: self.manager.go_to('pre_apk_safe')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            ba_style_button(b)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.readiness()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def readiness(self):
+        try:
+            res = demo_core.firstrun_readiness_check()
+            lines = ['[b]First-Run Readiness[/b]', '']
+            lines.append(f"Complete: [b]{res.get('complete')}[/b]")
+            lines.append(f"Required OK: {res.get('required_ok_count')}/{res.get('required_count')}")
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append('')
+            lines.append('[b]Checks[/b]')
+            for c in res.get('checks') or []:
+                mark = '✅' if c.get('ok') else '🔴' if c.get('required') else '🟡'
+                lines.append(f"{mark} {c.get('title')} | required={c.get('required')}")
+            lines.append('')
+            if res.get('missing_required'):
+                lines.append('[b]Missing required[/b]')
+                for c in res.get('missing_required'):
+                    lines.append('🔴 ' + str(c.get('title')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Readiness hiba: ' + str(e)
+
+    def actions(self):
+        try:
+            res = demo_core.firstrun_next_actions()
+            lines = ['[b]Next Actions[/b]', '']
+            for a in res.get('actions') or []:
+                lines.append('- ' + str(a))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Actions hiba: ' + str(e)
+
+    def export_report(self):
+        try:
+            res = demo_core.export_firstrun_readiness_report()
+            self.info.text = '[b]First-run report export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Export hiba: ' + str(e)
+
+
+
+class DemoCoreHealthAlertRecoveryScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]HEALTH / ALERT / RECOVERY[/b]\n[size=14]Heartbeat, hibák, riasztás, crash recovery. Order nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=82
+        ))
+
+        self.info = Label(text='Health center...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
+        buttons = [
+            ('STATUS', self.status),
+            ('HEARTBEAT', self.heartbeat),
+            ('UPDATE HEARTBEAT', self.update_hb),
+            ('ALERTS', self.alerts),
+            ('RECOVERY', self.recovery),
+            ('EXPORT REPORT', self.export_report),
+            ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            ba_style_button(b)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.status()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def status(self):
+        try:
+            res = demo_core.health_alert_center_status()
+            lines = ['[b]Health Alert Recovery Center[/b]', '']
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append(str(res.get('message')))
+            lines.append('')
+            hb = res.get('heartbeat') or {}
+            lines.append('[b]Heartbeat[/b]')
+            for k in ['running','heartbeat_ok','tick_ok','heartbeat_age_sec','tick_age_sec','last_action']:
+                lines.append(f"{k}: {hb.get(k)}")
+            lines.append('')
+            al = res.get('alerts') or {}
+            lines.append(f"[b]Alerts:[/b] {al.get('alert_count')}")
+            for a in al.get('alerts') or []:
+                lines.append(f"{a.get('level')}: {a.get('title')} - {a.get('detail')}")
+            lines.append('')
+            rec = res.get('recovery') or {}
+            lines.append('[b]Recovery[/b]')
+            lines.append(f"can_resume: {rec.get('can_resume')}")
+            lines.append(f"open_positions: {rec.get('open_positions')}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Health status hiba: ' + str(e)
+
+    def heartbeat(self):
+        try:
+            res = demo_core.heartbeat_status()
+            self.info.text = '[b]Heartbeat Status[/b]\\n' + '\\n'.join([f"{k}: {v}" for k, v in res.items()])
+        except Exception as e:
+            self.info.text = 'Heartbeat hiba: ' + str(e)
+
+    def update_hb(self):
+        try:
+            res = demo_core.update_heartbeat('ui_button')
+            self.info.text = '[b]Heartbeat frissítve[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Heartbeat update hiba: ' + str(e)
+
+    def alerts(self):
+        try:
+            res = demo_core.error_alert_summary()
+            lines = ['[b]Error Alert Summary[/b]', f"Alert count: {res.get('alert_count')}", '']
+            for a in res.get('alerts') or []:
+                lines.append(f"{a.get('level')}: [b]{a.get('title')}[/b]")
+                lines.append(str(a.get('detail')))
+                lines.append('')
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Alerts hiba: ' + str(e)
+
+    def recovery(self):
+        try:
+            res = demo_core.crash_recovery_status()
+            lines = ['[b]Crash Recovery Status[/b]', '']
+            for k in ['crash_recovery_enabled','resume_after_restart_enabled','can_resume','running','safe_mode','open_positions','order_endpoint_used']:
+                lines.append(f"{k}: {res.get(k)}")
+            lines.append('')
+
+============================================================
+main.py modern/demo dashboard rész
+============================================================
+
+        self.info = Label(text='UI route check...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
+        buttons = [
+            ('SCREEN REGISTRY', self.registry),
+            ('MENU ROUTES', self.menu_routes),
+            ('MISSING REPORT', self.missing),
+            ('EXPORT REPORT', self.export_report),
+            ('RC STATUS', lambda: self.manager.go_to('release_candidate')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            ba_style_button(b)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.registry()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def registry(self):
+        try:
+            res = demo_core.ui_route_screen_registry_check()
+            lines = ['[b]UI Screen Registry[/b]', '']
+            lines.append(f"OK: [b]{res.get('ok')}[/b]")
+            lines.append(f"Score: {res.get('score_pct')}%")
+            lines.append(f"OK count: {res.get('ok_count')}/{res.get('total_count')}")
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append('')
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]HEALTH / ALERT / RECOVERY[/b]\n[size=14]Heartbeat, hibák, riasztás, crash recovery. Order nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=82
+        ))
+
+        self.info = Label(text='Health center...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
+        buttons = [
+            ('STATUS', self.status),
+            ('HEARTBEAT', self.heartbeat),
+            ('UPDATE HEARTBEAT', self.update_hb),
+            ('ALERTS', self.alerts),
+            ('RECOVERY', self.recovery),
+            ('EXPORT REPORT', self.export_report),
+            ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            ba_style_button(b)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.status()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def status(self):
+        try:
+            res = demo_core.health_alert_center_status()
+            lines = ['[b]Health Alert Recovery Center[/b]', '']
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append(str(res.get('message')))
+            lines.append('')
+            hb = res.get('heartbeat') or {}
+            lines.append('[b]Heartbeat[/b]')
+            for k in ['running','heartbeat_ok','tick_ok','heartbeat_age_sec','tick_age_sec','last_action']:
+                lines.append(f"{k}: {hb.get(k)}")
+            lines.append('')
+            al = res.get('alerts') or {}
+            lines.append(f"[b]Alerts:[/b] {al.get('alert_count')}")
+            for a in al.get('alerts') or []:
+                lines.append(f"{a.get('level')}: {a.get('title')} - {a.get('detail')}")
+            lines.append('')
+            rec = res.get('recovery') or {}
+            lines.append('[b]Recovery[/b]')
+            lines.append(f"can_resume: {rec.get('can_resume')}")
+            lines.append(f"open_positions: {rec.get('open_positions')}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Health status hiba: ' + str(e)
+
+    def heartbeat(self):
+        try:
+            res = demo_core.heartbeat_status()
+            self.info.text = '[b]Heartbeat Status[/b]\\n' + '\\n'.join([f"{k}: {v}" for k, v in res.items()])
+        except Exception as e:
+            self.info.text = 'Heartbeat hiba: ' + str(e)
+
+    def update_hb(self):
+        try:
+            res = demo_core.update_heartbeat('ui_button')
+            self.info.text = '[b]Heartbeat frissítve[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Heartbeat update hiba: ' + str(e)
+
+    def alerts(self):
+        try:
+            res = demo_core.error_alert_summary()
+            lines = ['[b]Error Alert Summary[/b]', f"Alert count: {res.get('alert_count')}", '']
+            for a in res.get('alerts') or []:
+                lines.append(f"{a.get('level')}: [b]{a.get('title')}[/b]")
+                lines.append(str(a.get('detail')))
+                lines.append('')
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Alerts hiba: ' + str(e)
+
+    def recovery(self):
+        try:
+            res = demo_core.crash_recovery_status()
+            lines = ['[b]Crash Recovery Status[/b]', '']
+            for k in ['crash_recovery_enabled','resume_after_restart_enabled','can_resume','running','safe_mode','open_positions','order_endpoint_used']:
+                lines.append(f"{k}: {res.get(k)}")
+            lines.append('')
+
+============================================================
+apk_stage/main.py fontos dashboard/trend rész
+============================================================
+        except Exception as e:
+            self.info.text = 'Registry hiba: ' + str(e)
+
+    def menu_routes(self):
+        try:
+            res = demo_core.ui_menu_route_check()
+            lines = ['[b]UI Menu Routes[/b]', '']
+            lines.append(f"OK: [b]{res.get('ok')}[/b]")
+            for r in res.get('routes') or []:
+                mark = '✅' if r.get('ok') else '🔴'
+                lines.append(f"{mark} {r.get('function')} -> {r.get('route')}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Menu route hiba: ' + str(e)
+
+    def missing(self):
+        try:
+            res = demo_core.ui_missing_screen_report()
+            lines = ['[b]Missing Screen Report[/b]', '']
+            lines.append(f"OK: [b]{res.get('ok')}[/b]")
+            lines.append(f"Registry score: {res.get('registry_score_pct')}%")
+            lines.append('')
+            lines.append('[b]Registry missing[/b]')
+            for r in res.get('registry_missing') or []:
+                lines.append('🔴 ' + str(r.get('name')) + ' / ' + str(r.get('class')))
+            lines.append('')
+            lines.append('[b]Menu missing[/b]')
+            for r in res.get('menu_missing') or []:
+                lines.append('🔴 ' + str(r))
+            lines.append('')
+            lines.append(str(res.get('recommendation')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Missing report hiba: ' + str(e)
+
+    def export_report(self):
+        try:
+            res = demo_core.export_ui_route_report()
+            self.info.text = '[b]UI route report export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Export hiba: ' + str(e)
+
+
+
+class DemoCoreReleaseCandidateScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]RELEASE CANDIDATE / ROLLBACK / BUILD PREVIEW[/b]\n[size=14]Stabil pont, rollback terv, APK build előnézet. Build nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=86
+        ))
+
+        self.info = Label(text='Release candidate...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
+        buttons = [
+            ('RC STATUS', self.rc_status),
+            ('ROLLBACK PLAN', self.rollback),
+            ('BUILD INPUT', self.build_input),
+            ('BUILD PREVIEW', self.build_preview),
+            ('EXPORT REPORT', self.export_report),
+            ('FULL CHECK', lambda: self.manager.go_to('firstrun_readiness')),
+            ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            ba_style_button(b)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.rc_status()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def rc_status(self):
+        try:
+            res = demo_core.release_candidate_status()
+            lines = ['[b]Release Candidate Status[/b]', '']
+            for k in ['release_candidate_name','rc_ok','full_system_report_exists','firstrun_report_exists','preapk_report_exists','apk_build_allowed','apk_build_touched','order_endpoint_used']:
+                lines.append(f"{k}: [b]{res.get(k)}[/b]")
+            lines.append('')
+            lines.append('[b]Latest stable tags[/b]')
+            for t in res.get('latest_tags') or []:
+                lines.append('- ' + str(t))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'RC status hiba: ' + str(e)
+
+    def rollback(self):
+        try:
+            res = demo_core.rollback_plan_status()
+            lines = ['[b]Rollback Plan[/b]', '']
+            lines.append(f"Recommended tag: [b]{res.get('recommended_tag')}[/b]")
+            lines.append('')
+            lines.append('[b]Commands preview[/b]')
+            for c in res.get('rollback_commands_preview') or []:
+                lines.append(c)
+            lines.append('')
+            lines.append(str(res.get('danger_note')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Rollback hiba: ' + str(e)
+
+    def build_input(self):
+        try:
+            res = demo_core.build_input_preview()
+            lines = ['[b]Build Input Preview[/b]', '']
+            for row in res.get('files') or []:
+                mark = '✅' if row.get('exists') else '🔴'
+                lines.append(f"{mark} {row.get('path')} | size={row.get('size', 0)}")
+            lines.append('')
+            lines.append(str(res.get('message')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Build input hiba: ' + str(e)
+
+    def build_preview(self):
+        try:
+            res = demo_core.safe_build_command_preview()
+            lines = ['[b]Safe Build Command Preview[/b]', '']
+            lines.append(f"apk_build_allowed: {res.get('apk_build_allowed')}")
+            lines.append(f"will_build_now: {res.get('will_build_now')}")
+            lines.append('')
+            for c in res.get('commands_preview') or []:
+                lines.append(c)
+            lines.append('')
+            lines.append(str(res.get('warning')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Build preview hiba: ' + str(e)
+
+    def export_report(self):
+        try:
+            res = demo_core.export_release_candidate_report()
+            self.info.text = '[b]Release candidate report export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Export hiba: ' + str(e)
+
+
+
+class DemoCoreFirstRunReadinessScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]FIRST-RUN / SETUP READINESS[/b]\n[size=14]Kötelező beállítások, biztonság, APK előtti readiness. Order nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=82
+        ))
+
+        self.info = Label(text='First-run readiness...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
+        buttons = [
+            ('READINESS CHECK', self.readiness),
+            ('NEXT ACTIONS', self.actions),
+            ('EXPORT REPORT', self.export_report),
+            ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+            ('PRE-APK TEST', lambda: self.manager.go_to('pre_apk_safe')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            ba_style_button(b)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.readiness()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def readiness(self):
+        try:
+            res = demo_core.firstrun_readiness_check()
+            lines = ['[b]First-Run Readiness[/b]', '']
+            lines.append(f"Complete: [b]{res.get('complete')}[/b]")
+            lines.append(f"Required OK: {res.get('required_ok_count')}/{res.get('required_count')}")
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append('')
+            lines.append('[b]Checks[/b]')
+            for c in res.get('checks') or []:
+                mark = '✅' if c.get('ok') else '🔴' if c.get('required') else '🟡'
+                lines.append(f"{mark} {c.get('title')} | required={c.get('required')}")
+            lines.append('')
+            if res.get('missing_required'):
+                lines.append('[b]Missing required[/b]')
+                for c in res.get('missing_required'):
+                    lines.append('🔴 ' + str(c.get('title')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Readiness hiba: ' + str(e)
+
+    def actions(self):
+        try:
+            res = demo_core.firstrun_next_actions()
+            lines = ['[b]Next Actions[/b]', '']
+            for a in res.get('actions') or []:
+                lines.append('- ' + str(a))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Actions hiba: ' + str(e)
+
+    def export_report(self):
+        try:
+            res = demo_core.export_firstrun_readiness_report()
+            self.info.text = '[b]First-run report export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Export hiba: ' + str(e)
+
+
+
+class DemoCoreHealthAlertRecoveryScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]HEALTH / ALERT / RECOVERY[/b]\n[size=14]Heartbeat, hibák, riasztás, crash recovery. Order nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=82
+        ))
+
+        self.info = Label(text='Health center...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
+        buttons = [
+            ('STATUS', self.status),
+            ('HEARTBEAT', self.heartbeat),
+            ('UPDATE HEARTBEAT', self.update_hb),
+            ('ALERTS', self.alerts),
+            ('RECOVERY', self.recovery),
+            ('EXPORT REPORT', self.export_report),
+            ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            ba_style_button(b)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.status()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def status(self):
+        try:
+            res = demo_core.health_alert_center_status()
+            lines = ['[b]Health Alert Recovery Center[/b]', '']
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append(str(res.get('message')))
+            lines.append('')
+            hb = res.get('heartbeat') or {}
+            lines.append('[b]Heartbeat[/b]')
+            for k in ['running','heartbeat_ok','tick_ok','heartbeat_age_sec','tick_age_sec','last_action']:
+                lines.append(f"{k}: {hb.get(k)}")
+            lines.append('')
+            al = res.get('alerts') or {}
+            lines.append(f"[b]Alerts:[/b] {al.get('alert_count')}")
+            for a in al.get('alerts') or []:
+                lines.append(f"{a.get('level')}: {a.get('title')} - {a.get('detail')}")
+            lines.append('')
+            rec = res.get('recovery') or {}
+            lines.append('[b]Recovery[/b]')
+            lines.append(f"can_resume: {rec.get('can_resume')}")
+            lines.append(f"open_positions: {rec.get('open_positions')}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Health status hiba: ' + str(e)
+
+    def heartbeat(self):
+        try:
+            res = demo_core.heartbeat_status()
+            self.info.text = '[b]Heartbeat Status[/b]\\n' + '\\n'.join([f"{k}: {v}" for k, v in res.items()])
+        except Exception as e:
+            self.info.text = 'Heartbeat hiba: ' + str(e)
+
+    def update_hb(self):
+        try:
+            res = demo_core.update_heartbeat('ui_button')
+            self.info.text = '[b]Heartbeat frissítve[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Heartbeat update hiba: ' + str(e)
+
+    def alerts(self):
+        try:
+            res = demo_core.error_alert_summary()
+            lines = ['[b]Error Alert Summary[/b]', f"Alert count: {res.get('alert_count')}", '']
+            for a in res.get('alerts') or []:
+                lines.append(f"{a.get('level')}: [b]{a.get('title')}[/b]")
+                lines.append(str(a.get('detail')))
+                lines.append('')
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Alerts hiba: ' + str(e)
+
+    def recovery(self):
+        try:
+            res = demo_core.crash_recovery_status()
+            lines = ['[b]Crash Recovery Status[/b]', '']
+            for k in ['crash_recovery_enabled','resume_after_restart_enabled','can_resume','running','safe_mode','open_positions','order_endpoint_used']:
+                lines.append(f"{k}: {res.get(k)}")
+            lines.append('')
+
+============================================================
+Compile check
+============================================================
+root compile OK
+apk_stage compile OK
