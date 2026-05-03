@@ -228,7 +228,10 @@
     "release_candidate_name": "Autobot DemoCore RC",
     "release_candidate_report_file": "logs/release_candidate_report.json",
     "apk_build_preview_enabled": true,
-    "apk_build_allowed": false
+    "apk_build_allowed": false,
+    "ui_route_check_enabled": true,
+    "ui_route_report_file": "logs/ui_route_report.json",
+    "ui_route_required_min_pct": 85.0
   },
   "last_action": "Heartbeat update: full_system_check",
   "safe_mode": false,

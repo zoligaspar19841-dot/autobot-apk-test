@@ -1,0 +1,306 @@
+{
+  "ts": 1777770318,
+  "app_version": "0.5.8-demo-core",
+  "registry": {
+    "ok": true,
+    "score_pct": 95.65,
+    "required_min_pct": 85.0,
+    "ok_count": 22,
+    "total_count": 23,
+    "missing": [
+      {
+        "name": "binance_readonly_real",
+        "label": "Binance Real Readonly",
+        "class": "DemoCoreBinanceReadonlyRealScreen",
+        "class_exists": false,
+        "registered": false,
+        "route_reference": true,
+        "ok": false
+      }
+    ],
+    "screens": [
+      {
+        "name": "modern_dashboard",
+        "label": "Modern Dashboard",
+        "class": "DemoCoreModernDashboardScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "trend_history",
+        "label": "Trend History",
+        "class": "DemoCoreTrendHistoryScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "trade_simple_advanced",
+        "label": "Trade Simple / Advanced",
+        "class": "DemoCoreTradeSimpleAdvancedScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "readonly_balance",
+        "label": "Read-only Balance",
+        "class": "DemoCoreReadonlyBalanceScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "profit_report",
+        "label": "Profit Report",
+        "class": "DemoCoreProfitReportScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "health_alert",
+        "label": "Health Alert",
+        "class": "DemoCoreHealthAlertRecoveryScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "firstrun_readiness",
+        "label": "First-Run Readiness",
+        "class": "DemoCoreFirstRunReadinessScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "release_candidate",
+        "label": "Release Candidate",
+        "class": "DemoCoreReleaseCandidateScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "master_status",
+        "label": "Master Status",
+        "class": "DemoCoreMasterStatusScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "integration_tests",
+        "label": "Integration Tests",
+        "class": "DemoCoreIntegrationTestCenterScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "pre_apk_safe",
+        "label": "Pre-APK Safe Test",
+        "class": "DemoCorePreApkSafeTestScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "secrets",
+        "label": "Secrets",
+        "class": "DemoCoreSecretsScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "binance_live",
+        "label": "Binance Live Check",
+        "class": "DemoCoreBinanceLiveScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "binance_account",
+        "label": "Binance Account",
+        "class": "DemoCoreBinanceAccountScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "binance_signed",
+        "label": "Binance Signed Readonly",
+        "class": "DemoCoreBinanceSignedScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "binance_readonly_real",
+        "label": "Binance Real Readonly",
+        "class": "DemoCoreBinanceReadonlyRealScreen",
+        "class_exists": false,
+        "registered": false,
+        "route_reference": true,
+        "ok": false
+      },
+      {
+        "name": "spot_portfolio",
+        "label": "Spot Portfolio",
+        "class": "DemoCoreSpotPortfolioScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "ai_advisor",
+        "label": "AI Advisor",
+        "class": "DemoCoreAIScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "schedules",
+        "label": "Schedules",
+        "class": "DemoCoreSchedulesScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "launchpool",
+        "label": "Launchpool",
+        "class": "DemoCoreLaunchpoolScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "sync",
+        "label": "PC / Drive Sync",
+        "class": "DemoCoreSyncScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "admin",
+        "label": "Admin",
+        "class": "DemoCoreAdminScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      },
+      {
+        "name": "patch_manager",
+        "label": "Patch Manager",
+        "class": "DemoCorePatchManagerScreen",
+        "class_exists": true,
+        "registered": true,
+        "route_reference": true,
+        "ok": true
+      }
+    ],
+    "order_endpoint_used": false,
+    "apk_build_touched": false,
+    "message": "UI route/screen registry check kész."
+  },
+  "menu_routes": {
+    "ok": true,
+    "routes": [
+      {
+        "function": "open_release_candidate",
+        "route": "release_candidate",
+        "function_exists": true,
+        "route_exists": true,
+        "ok": true
+      },
+      {
+        "function": "open_firstrun_readiness",
+        "route": "firstrun_readiness",
+        "function_exists": true,
+        "route_exists": true,
+        "ok": true
+      },
+      {
+        "function": "open_health_alert",
+        "route": "health_alert",
+        "function_exists": true,
+        "route_exists": true,
+        "ok": true
+      },
+      {
+        "function": "open_profit_report",
+        "route": "profit_report",
+        "function_exists": true,
+        "route_exists": true,
+        "ok": true
+      },
+      {
+        "function": "open_readonly_balance",
+        "route": "readonly_balance",
+        "function_exists": true,
+        "route_exists": true,
+        "ok": true
+      },
+      {
+        "function": "open_trade_simple_advanced",
+        "route": "trade_simple_advanced",
+        "function_exists": true,
+        "route_exists": true,
+        "ok": true
+      }
+    ],
+    "missing": [],
+    "order_endpoint_used": false,
+    "apk_build_touched": false,
+    "message": "UI menu route check kész."
+  },
+  "missing_report": {
+    "ok": true,
+    "registry_score_pct": 95.65,
+    "registry_missing": [
+      {
+        "name": "binance_readonly_real",
+        "label": "Binance Real Readonly",
+        "class": "DemoCoreBinanceReadonlyRealScreen",
+        "class_exists": false,
+        "registered": false,
+        "route_reference": true,
+        "ok": false
+      }
+    ],
+    "menu_missing": [],
+    "recommendation": "Ha hiányzó screen van, APK build előtt route patch kell.",
+    "order_endpoint_used": false,
+    "apk_build_touched": false
+  },
+  "order_endpoint_used": false,
+  "apk_build_touched": false
+}

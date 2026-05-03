@@ -1,4 +1,4 @@
-APP_VERSION = "0.5.7-demo-core"
+APP_VERSION = "0.5.8-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -79,6 +79,13 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+UI_ROUTE_CHECK_DEFAULTS = {
+    "ui_route_check_enabled": True,
+    "ui_route_report_file": "logs/ui_route_report.json",
+    "ui_route_required_min_pct": 85.0,
+}
 
 RELEASE_CANDIDATE_DEFAULTS = {
     "release_candidate_enabled": True,
@@ -452,6 +459,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "UI_ROUTE_CHECK_DEFAULTS" in globals():
+        for k, v in UI_ROUTE_CHECK_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -7191,6 +7204,197 @@ def export_release_candidate_report(path=None):
         "order_endpoint_used": False,
         "apk_build_touched": False,
         "message": "Release candidate report export kész.",
+    }
+
+
+
+def ui_route_expected_screens():
+    """
+    Elvárt fő képernyők listája.
+    Ez csak szöveges main.py ellenőrzés, Kivy import nélkül.
+    """
+    return [
+        {"name": "modern_dashboard", "class": "DemoCoreModernDashboardScreen", "label": "Modern Dashboard"},
+        {"name": "trend_history", "class": "DemoCoreTrendHistoryScreen", "label": "Trend History"},
+        {"name": "trade_simple_advanced", "class": "DemoCoreTradeSimpleAdvancedScreen", "label": "Trade Simple / Advanced"},
+        {"name": "readonly_balance", "class": "DemoCoreReadonlyBalanceScreen", "label": "Read-only Balance"},
+        {"name": "profit_report", "class": "DemoCoreProfitReportScreen", "label": "Profit Report"},
+        {"name": "health_alert", "class": "DemoCoreHealthAlertRecoveryScreen", "label": "Health Alert"},
+        {"name": "firstrun_readiness", "class": "DemoCoreFirstRunReadinessScreen", "label": "First-Run Readiness"},
+        {"name": "release_candidate", "class": "DemoCoreReleaseCandidateScreen", "label": "Release Candidate"},
+        {"name": "master_status", "class": "DemoCoreMasterStatusScreen", "label": "Master Status"},
+        {"name": "integration_tests", "class": "DemoCoreIntegrationTestCenterScreen", "label": "Integration Tests"},
+        {"name": "pre_apk_safe", "class": "DemoCorePreApkSafeTestScreen", "label": "Pre-APK Safe Test"},
+        {"name": "secrets", "class": "DemoCoreSecretsScreen", "label": "Secrets"},
+        {"name": "binance_live", "class": "DemoCoreBinanceLiveScreen", "label": "Binance Live Check"},
+        {"name": "binance_account", "class": "DemoCoreBinanceAccountScreen", "label": "Binance Account"},
+        {"name": "binance_signed", "class": "DemoCoreBinanceSignedScreen", "label": "Binance Signed Readonly"},
+        {"name": "binance_readonly_real", "class": "DemoCoreBinanceReadonlyRealScreen", "label": "Binance Real Readonly"},
+        {"name": "spot_portfolio", "class": "DemoCoreSpotPortfolioScreen", "label": "Spot Portfolio"},
+        {"name": "ai_advisor", "class": "DemoCoreAIScreen", "label": "AI Advisor"},
+        {"name": "schedules", "class": "DemoCoreSchedulesScreen", "label": "Schedules"},
+        {"name": "launchpool", "class": "DemoCoreLaunchpoolScreen", "label": "Launchpool"},
+        {"name": "sync", "class": "DemoCoreSyncScreen", "label": "PC / Drive Sync"},
+        {"name": "admin", "class": "DemoCoreAdminScreen", "label": "Admin"},
+        {"name": "patch_manager", "class": "DemoCorePatchManagerScreen", "label": "Patch Manager"},
+    ]
+
+
+def ui_route_screen_registry_check():
+    """
+    main.py szöveges UI registry ellenőrzés.
+    Nem indít UI-t, nem buildel APK-t.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+    main_path = "main.py"
+
+    if not os.path.exists(main_path):
+        return {
+            "ok": False,
+            "error": "main.py missing",
+            "order_endpoint_used": False,
+            "apk_build_touched": False,
+        }
+
+    with open(main_path, "r", encoding="utf-8") as f:
+        txt = f.read()
+
+    rows = []
+    for item in ui_route_expected_screens():
+        cls = item["class"]
+        name = item["name"]
+        class_exists = ("class " + cls) in txt
+        add_exists = (cls + '(name="' + name + '")') in txt or (cls + "(name='" + name + "')") in txt
+        route_exists = ("go_to(\"" + name + "\")") in txt or ("go_to('" + name + "')") in txt or ("current = \"" + name + "\"") in txt or ("current = '" + name + "'") in txt
+        rows.append({
+            "name": name,
+            "label": item["label"],
+            "class": cls,
+            "class_exists": class_exists,
+            "registered": add_exists,
+            "route_reference": route_exists,
+            "ok": class_exists and add_exists,
+        })
+
+    ok_count = sum(1 for r in rows if r.get("ok"))
+    total = len(rows)
+    score_pct = round((ok_count / total) * 100.0, 2) if total else 0.0
+    required_min = float(settings.get("ui_route_required_min_pct", 85.0) or 85.0)
+
+    missing = [r for r in rows if not r.get("ok")]
+
+    return {
+        "ok": score_pct >= required_min,
+        "score_pct": score_pct,
+        "required_min_pct": required_min,
+        "ok_count": ok_count,
+        "total_count": total,
+        "missing": missing,
+        "screens": rows,
+        "order_endpoint_used": False,
+        "apk_build_touched": False,
+        "message": "UI route/screen registry check kész.",
+    }
+
+
+def ui_menu_route_check():
+    """
+    Menü gomb / open_* route ellenőrzés szövegesen.
+    """
+    if not os.path.exists("main.py"):
+        return {"ok": False, "error": "main.py missing", "order_endpoint_used": False}
+
+    with open("main.py", "r", encoding="utf-8") as f:
+        txt = f.read()
+
+    expected = [
+        ("open_release_candidate", "release_candidate"),
+        ("open_firstrun_readiness", "firstrun_readiness"),
+        ("open_health_alert", "health_alert"),
+        ("open_profit_report", "profit_report"),
+        ("open_readonly_balance", "readonly_balance"),
+        ("open_trade_simple_advanced", "trade_simple_advanced"),
+    ]
+
+    rows = []
+    for fn, route in expected:
+        fn_exists = ("def " + fn + "(") in txt
+        route_exists = route in txt
+        rows.append({
+            "function": fn,
+            "route": route,
+            "function_exists": fn_exists,
+            "route_exists": route_exists,
+            "ok": fn_exists and route_exists,
+        })
+
+    bad = [r for r in rows if not r.get("ok")]
+
+    return {
+        "ok": len(bad) == 0,
+        "routes": rows,
+        "missing": bad,
+        "order_endpoint_used": False,
+        "apk_build_touched": False,
+        "message": "UI menu route check kész.",
+    }
+
+
+def ui_missing_screen_report():
+    """
+    Hiányzó UI képernyők rövid report.
+    """
+    reg = ui_route_screen_registry_check()
+    menu = ui_menu_route_check()
+
+    return {
+        "ok": bool(reg.get("ok")) and bool(menu.get("ok")),
+        "registry_score_pct": reg.get("score_pct"),
+        "registry_missing": reg.get("missing", []),
+        "menu_missing": menu.get("missing", []),
+        "recommendation": "Ha hiányzó screen van, APK build előtt route patch kell.",
+        "order_endpoint_used": False,
+        "apk_build_touched": False,
+    }
+
+
+def export_ui_route_report(path=None):
+    """
+    UI route/screen report export.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if path is None:
+        path = settings.get("ui_route_report_file", "logs/ui_route_report.json") or "logs/ui_route_report.json"
+
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    report = {
+        "ts": int(time.time()),
+        "app_version": globals().get("APP_VERSION", "unknown"),
+        "registry": ui_route_screen_registry_check(),
+        "menu_routes": ui_menu_route_check(),
+        "missing_report": ui_missing_screen_report(),
+        "order_endpoint_used": False,
+        "apk_build_touched": False,
+    }
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    audit_event("UI_ROUTE_REPORT_EXPORT", "UI route report export", {
+        "path": path,
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "path": path,
+        "order_endpoint_used": False,
+        "apk_build_touched": False,
+        "message": "UI route report export kész.",
     }
 
 

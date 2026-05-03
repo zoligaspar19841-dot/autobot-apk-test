@@ -684,6 +684,110 @@ class TrendCanvasWidget(Widget):
 
 
 
+
+class DemoCoreUiRouteCheckScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]UI ROUTE / SCREEN CHECK[/b]\n[size=14]Képernyő registry, menü route, hiányzó screen report. APK build nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=86
+        ))
+
+        self.info = Label(text='UI route check...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        buttons = [
+            ('SCREEN REGISTRY', self.registry),
+            ('MENU ROUTES', self.menu_routes),
+            ('MISSING REPORT', self.missing),
+            ('EXPORT REPORT', self.export_report),
+            ('RC STATUS', lambda: self.manager.go_to('release_candidate')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.registry()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def registry(self):
+        try:
+            res = demo_core.ui_route_screen_registry_check()
+            lines = ['[b]UI Screen Registry[/b]', '']
+            lines.append(f"OK: [b]{res.get('ok')}[/b]")
+            lines.append(f"Score: {res.get('score_pct')}%")
+            lines.append(f"OK count: {res.get('ok_count')}/{res.get('total_count')}")
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append('')
+            for r in res.get('screens') or []:
+                mark = '✅' if r.get('ok') else '🔴'
+                lines.append(f"{mark} {r.get('name')} | class={r.get('class_exists')} | registered={r.get('registered')}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Registry hiba: ' + str(e)
+
+    def menu_routes(self):
+        try:
+            res = demo_core.ui_menu_route_check()
+            lines = ['[b]UI Menu Routes[/b]', '']
+            lines.append(f"OK: [b]{res.get('ok')}[/b]")
+            for r in res.get('routes') or []:
+                mark = '✅' if r.get('ok') else '🔴'
+                lines.append(f"{mark} {r.get('function')} -> {r.get('route')}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Menu route hiba: ' + str(e)
+
+    def missing(self):
+        try:
+            res = demo_core.ui_missing_screen_report()
+            lines = ['[b]Missing Screen Report[/b]', '']
+            lines.append(f"OK: [b]{res.get('ok')}[/b]")
+            lines.append(f"Registry score: {res.get('registry_score_pct')}%")
+            lines.append('')
+            lines.append('[b]Registry missing[/b]')
+            for r in res.get('registry_missing') or []:
+                lines.append('🔴 ' + str(r.get('name')) + ' / ' + str(r.get('class')))
+            lines.append('')
+            lines.append('[b]Menu missing[/b]')
+            for r in res.get('menu_missing') or []:
+                lines.append('🔴 ' + str(r))
+            lines.append('')
+            lines.append(str(res.get('recommendation')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Missing report hiba: ' + str(e)
+
+    def export_report(self):
+        try:
+            res = demo_core.export_ui_route_report()
+            self.info.text = '[b]UI route report export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Export hiba: ' + str(e)
+
+
+
 class DemoCoreReleaseCandidateScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -4477,6 +4581,9 @@ class DemoCoreSettingsScreen(Screen):
             ('release_candidate_report_file', 'Release candidate report file'),
             ('apk_build_preview_enabled', 'APK build preview enabled true/false'),
             ('apk_build_allowed', 'APK build allowed true/false'),
+            ('ui_route_check_enabled', 'UI route check enabled true/false'),
+            ('ui_route_report_file', 'UI route report file'),
+            ('ui_route_required_min_pct', 'UI route required min pct'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -4733,6 +4840,9 @@ class DemoCoreSettingsScreen(Screen):
             cfg['release_candidate_report_file'] = self.inputs['release_candidate_report_file'].text.strip() or 'logs/release_candidate_report.json'
             cfg['apk_build_preview_enabled'] = self.inputs['apk_build_preview_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['apk_build_allowed'] = self.inputs['apk_build_allowed'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['ui_route_check_enabled'] = self.inputs['ui_route_check_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['ui_route_report_file'] = self.inputs['ui_route_report_file'].text.strip() or 'logs/ui_route_report.json'
+            cfg['ui_route_required_min_pct'] = float(self.inputs['ui_route_required_min_pct'].text.replace(',', '.'))
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -5016,6 +5126,12 @@ class DemoCoreScreen(Screen):
             self.manager.go_to("pre_apk_safe")
         except Exception:
             self.manager.current = "pre_apk_safe"
+
+    def open_ui_route_check(self):
+        try:
+            self.manager.go_to("ui_route_check")
+        except Exception:
+            self.manager.current = "ui_route_check"
 
     def open_release_candidate(self):
         try:
@@ -5367,6 +5483,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreHealthAlertRecoveryScreen(name="health_alert"))
         sm.add_widget(DemoCoreFirstRunReadinessScreen(name="firstrun_readiness"))
         sm.add_widget(DemoCoreReleaseCandidateScreen(name="release_candidate"))
+        sm.add_widget(DemoCoreUiRouteCheckScreen(name="ui_route_check"))
         return sm
 
 if __name__ == "__main__":

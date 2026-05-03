@@ -721,3 +721,4 @@ ts,event,detail,data
 1777769274,BINANCE_LIVE_STATUS,Live státusz ellenőrzés,"{""ok"": true, ""has_api_key"": false, ""has_api_secret"": false, ""live_mode_enabled"": false, ""live_require_confirm"": true, ""live_warning_ack"": false, ""live_allow_buy"": false, ""live_allow_sell"": false, ""live_max_order_usdt"": 10.0, ""execution_mode"": ""AUTO"", ""safe_mode"": false, ""ready_for_live"": false, ""warnings"": [""Binance API key hiányzik."", ""Binance API secret hiányzik.""]}"
 1777769274,HEALTHCHECK,OK,"{""warnings"": [], ""running"": false, ""safe_mode"": false}"
 1777769275,RELEASE_CANDIDATE_REPORT_EXPORT,Release candidate report export,"{""path"": ""logs/release_candidate_report.json"", ""order_endpoint_used"": false}"
+1777770318,UI_ROUTE_REPORT_EXPORT,UI route report export,"{""path"": ""logs/ui_route_report.json"", ""order_endpoint_used"": false}"
