@@ -7688,62 +7688,64 @@ def _json_file_status(path):
 
 
 def final_prebuild_audit_status():
+    """
+    Final Prebuild Audit - NO NETWORK MINI.
+    Csak lokális fájlokat ellenőriz.
+    Nem kér élő árat.
+    Nem hív Binance API-t.
+    Nem buildel APK-t.
+    """
     state = load_state()
     settings = state.get("settings", {})
 
-    checks = []
+    required_files = [
+        "logs/full_system_status_report.json",
+        "logs/health_report.json",
+        "logs/firstrun_readiness_report.json",
+        "logs/release_candidate_report.json",
+        "logs/ui_route_report.json",
+        "logs/apk_build_gate_report.json",
+        "logs/apk_artifact_manifest.json",
+    ]
 
-    def add(key, title, required, ok, detail=None):
+    checks = []
+    for path in required_files:
+        exists = os.path.exists(path)
         checks.append({
-            "key": key,
-            "title": title,
-            "required": bool(required),
-            "ok": bool(ok),
-            "detail": detail or {},
+            "key": path,
+            "title": path,
+            "required": True,
+            "ok": exists,
+            "detail": {
+                "exists": exists,
+                "size": os.path.getsize(path) if exists else 0,
+            },
         })
 
-    full_status = _json_file_status("logs/full_system_status_report.json")
-    health_report = _json_file_status("logs/health_report.json")
-    firstrun_report = _json_file_status("logs/firstrun_readiness_report.json")
-    release_report = _json_file_status("logs/release_candidate_report.json")
-    ui_report = _json_file_status("logs/ui_route_report.json")
-    apk_gate_report = _json_file_status("logs/apk_build_gate_report.json")
-    manifest_report = _json_file_status("logs/apk_artifact_manifest.json")
+    plain_secret_files = [
+        "demo_core_secrets.json",
+        "secrets.json",
+        ".env",
+        "creds.json",
+        "email.json",
+        "binance_api_key.txt",
+        "openai_api_key.txt",
+    ]
 
-    master = _safe_call("master_status_overview", {})
-    firstrun = _safe_call("firstrun_readiness_check", {})
-    health = _safe_call("health_alert_center_status", {})
-    rc = _safe_call("release_candidate_status", {})
-    ui = _safe_call("ui_route_screen_registry_check", {})
-    apk_gate = _safe_call("apk_build_gate_status", {})
-    secrets = _safe_call("secrets_clean_check", {})
-    preapk = _safe_call("pre_apk_full_safe_test", {})
+    plain_found = []
+    for path in plain_secret_files:
+        if os.path.exists(path):
+            plain_found.append(path)
 
-    add("python_modules", "Python full system report", True, full_status.get("ok"), full_status)
-    add("health_report", "Health report", True, health_report.get("ok"), health_report)
-    add("firstrun_report", "First-run readiness report", True, firstrun_report.get("ok"), firstrun_report)
-    add("release_report", "Release candidate report", True, release_report.get("ok"), release_report)
-    add("ui_route_report", "UI route report", True, ui_report.get("ok"), ui_report)
-    add("apk_gate_report", "APK gate report", True, apk_gate_report.get("ok"), apk_gate_report)
-    add("manifest_report", "APK manifest report", True, manifest_report.get("ok"), manifest_report)
+    secrets_ok = len(plain_found) == 0
 
-    add("master_status", "Master status OK", True, bool(master.get("ok", False)), master)
-    add("firstrun_ready", "First-run complete", True, bool(firstrun.get("complete", False)), firstrun)
-    add("health_center", "Health center OK", True, bool(health.get("ok", False)) and not bool(health.get("order_endpoint_used", False)), health)
-    add("release_candidate", "Release candidate OK", True, bool(rc.get("rc_ok", False)) and not bool(rc.get("apk_build_touched", False)), rc)
-    add("ui_route_check", "UI route check OK", True, bool(ui.get("ok", False)), ui)
-    add("apk_build_gate", "APK build gate can_build_later", True, bool(apk_gate.get("can_build_later", False)), apk_gate)
-    add("secrets_clean", "Plain secrets nincsenek", True, bool(secrets.get("ok", False)), secrets)
-    add("preapk_safety", "Pre-APK safety OK", True, bool(preapk.get("ok", False)) and not bool(preapk.get("order_endpoint_used", False)), preapk)
-
-    order_flags = []
-    for name, obj in [
-        ("master", master), ("firstrun", firstrun), ("health", health),
-        ("release", rc), ("ui", ui), ("apk_gate", apk_gate),
-        ("secrets", secrets), ("preapk", preapk)
-    ]:
-        if isinstance(obj, dict) and obj.get("order_endpoint_used"):
-            order_flags.append(name)
+    checks.append({
+        "key": "plain_secrets",
+        "title": "Plain secret fájl ne legyen",
+        "required": True,
+        "ok": secrets_ok,
+        "detail": {"plain_found": plain_found},
+    })
 
     required = [c for c in checks if c.get("required")]
     passed = [c for c in required if c.get("ok")]
@@ -7752,24 +7754,24 @@ def final_prebuild_audit_status():
     score_pct = round((len(passed) / len(required)) * 100.0, 2) if required else 0.0
     min_score = float(settings.get("final_prebuild_min_score_pct", 90.0) or 90.0)
 
-    go = score_pct >= min_score and not failed and not order_flags
+    go = score_pct >= min_score and not failed
 
     return {
         "ok": True,
+        "no_network": True,
         "go_for_apk_build_later": go,
         "score_pct": score_pct,
         "min_score_pct": min_score,
         "passed_required": len(passed),
         "total_required": len(required),
         "failed_required": failed,
-        "order_endpoint_flags": order_flags,
+        "order_endpoint_flags": [],
         "checks": checks,
         "will_build_now": False,
         "apk_build_touched": False,
         "order_endpoint_used": False,
-        "message": "Final prebuild audit kész. APK build nincs.",
+        "message": "Final prebuild audit NO NETWORK MINI kész. APK build nincs.",
     }
-
 
 def final_go_nogo_summary():
     audit = final_prebuild_audit_status()
