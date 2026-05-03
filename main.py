@@ -528,58 +528,124 @@ class Scanner(Screen):
 
 
 class MasterMenu(Screen):
-    def __init__(self, **kw):
-        super().__init__(**kw)
-        root = BoxLayout(orientation="vertical", padding=10, spacing=8)
-        root.add_widget(Label(text="MASTER LISTA", font_size=34, bold=True, color=(1,.75,0,1), size_hint_y=.12))
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-        grid = GridLayout(cols=1, spacing=7, size_hint_y=None)
-        ba_bind_grid_height(grid)
-        grid.bind(minimum_height=grid.setter("height"))
+        root = BoxLayout(
+            orientation='vertical',
+            padding=[8, 18, 8, 10],
+            spacing=10
+        )
 
-        items = [
-            ("1. Általános működés", "main"),
-            ("2. Dashboard", "demo"),
-            ("3. Trade Simple", "trade_simple"),
-            ("4. Strategy Advanced", "strategy_advanced"),
-            ("5. Schedules", "schedules"),
-            ("6. Launchpool / Airdrop", "launchpool"),
-            ("7. Patch / Snapshot", "patch_snapshot"),
-            ("8. Trades / Export", "logs"),
-            ("9. Settings / Security", "settings"),
-            ("10. PC + Google Drive Sync", "pc_drive_sync"),
-            ("11. Diagnostics / Tests", "diagnostics"),
-            ("12. Patch Manager UI", "patch_manager_ui"),
-            ("13. Demo Reset", "demo_reset"),
-            ("14. Fájlszerkezet", "file_structure"),
-            ("15. Extra fejlesztések", "extra_features"),
-            ("16. AI / MI kereskedés", "strategy"),
-            ("17. Multi-symbol Scanner", "scanner"),
-            ("18. Safety Guards", "safety_guards"),
-            ("19. Healthcheck", "healthcheck"),
-            ("20. Backtest / Replay", "backtest"),
-            ("21. Audit log", "audit_log"),
-            ("22. UI Mockup / Megjelenés", "ui_mockup"),
-            ("23. Fee / Adózás", "fee_tax"),
-            ("24. Profit-Hold AI", "profit_hold_ai"),
-        ]
+        title = Label(
+            text='BINANCE AUTOBOT',
+            color=(1.0, 0.72, 0.10, 1),
+            bold=True,
+            font_size=22,
+            size_hint_y=None,
+            height=52,
+            halign='center',
+            valign='middle'
+        )
+        title.bind(size=lambda w, *_: setattr(w, 'text_size', w.size))
+        root.add_widget(title)
 
-        for txt, scr in items:
-            b = button(txt, CARD, 20)
-            b.size_hint_y = None
-            b.height = 58
-            b.bind(on_press=lambda x, sc=scr: go_to(self.manager, sc))
+        sub = Label(
+            text='Stabil alap + óvatos patch rendszer',
+            color=(0.78, 0.78, 0.78, 1),
+            font_size=12,
+            size_hint_y=None,
+            height=24,
+            halign='center',
+            valign='middle'
+        )
+        sub.bind(size=lambda w, *_: setattr(w, 'text_size', w.size))
+        root.add_widget(sub)
+
+        scroll = ScrollView(size_hint=(1, 1))
+
+        grid = GridLayout(
+            cols=1,
+            spacing=8,
+            padding=[2, 4, 2, 10],
+            size_hint_y=None
+        )
+        grid.bind(minimum_height=grid.setter('height'))
+
+        def add_btn(text, target, accent='yellow'):
+            b = Button(
+                text=text,
+                size_hint_y=None,
+                height=58,
+                font_size=16,
+                bold=True,
+                halign='center',
+                valign='middle'
+            )
+            b.bind(size=lambda w, *_: setattr(w, 'text_size', w.size))
+
+            try:
+                if accent == 'blue':
+                    b.background_color = (0.05, 0.18, 0.75, 1)
+                elif accent == 'red':
+                    b.background_color = (0.55, 0.05, 0.05, 1)
+                elif accent == 'green':
+                    b.background_color = (0.05, 0.45, 0.16, 1)
+                else:
+                    b.background_color = (0.34, 0.34, 0.34, 1)
+                b.color = (1, 1, 1, 1)
+            except Exception:
+                pass
+
+            def go(_btn):
+                try:
+                    if self.manager and self.manager.has_screen(target):
+                        self.manager.current = target
+                    elif self.manager and self.manager.has_screen('demo_core'):
+                        self.manager.current = 'demo_core'
+                except Exception:
+                    pass
+
+            b.bind(on_press=go)
             grid.add_widget(b)
 
-        sv = ScrollView()
-        sv.add_widget(grid)
-        root.add_widget(sv)
+        # Fő, működéshez fontos menük
+        add_btn('📊 DEMO CORE / DASHBOARD', 'demo_core', 'yellow')
+        add_btn('📈 MODERN DASHBOARD / TREND', 'modern_dashboard', 'yellow')
+        add_btn('💰 TRADE SIMPLE', 'trade_simple', 'green')
+        add_btn('📉 STRATEGY ADVANCED', 'strategy_advanced', 'blue')
+        add_btn('🧪 SCANNER / MULTI SYMBOL', 'scanner', 'blue')
 
-        back = button("VISSZA", (.35,.35,.35,1), 24)
-        back.size_hint_y = .11
-        back.bind(on_press=lambda x: go_back(self.manager))
-        root.add_widget(back)
+        # Biztonság / beállítások
+        add_btn('🔐 SETTINGS / SECURITY', 'settings', 'yellow')
+        add_btn('🔑 SECRETS / API / EMAIL', 'secrets', 'yellow')
+        add_btn('🛡️ PANIC / SAFE MODE', 'safety_guards', 'red')
+
+        # Export / audit / fejlesztői részek
+        add_btn('📄 TRADES / EXPORT', 'trades_export', 'green')
+        add_btn('📦 PACKAGE / SNAPSHOT', 'package', 'blue')
+        add_btn('🩺 HEALTHCHECK', 'health_alert', 'blue')
+        add_btn('🛠 PATCH MANAGER', 'patch_manager', 'blue')
+        add_btn('✅ PRE-APK SAFE TEST', 'pre_apk_safe', 'green')
+        add_btn('📋 RELEASE CANDIDATE', 'release_candidate', 'green')
+
+        scroll.add_widget(grid)
+        root.add_widget(scroll)
+
+        footer = Label(
+            text='DEMO mód: biztonságos teszt | LIVE csak API ellenőrzés után',
+            color=(0.70, 0.70, 0.70, 1),
+            font_size=11,
+            size_hint_y=None,
+            height=30,
+            halign='center',
+            valign='middle'
+        )
+        footer.bind(size=lambda w, *_: setattr(w, 'text_size', w.size))
+        root.add_widget(footer)
+
         self.add_widget(root)
+
 
 class SkeletonScreen(Screen):
     def __init__(self, title, body, **kw):
