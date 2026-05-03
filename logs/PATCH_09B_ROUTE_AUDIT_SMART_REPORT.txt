@@ -1,0 +1,171 @@
+
+======================================================================
+FILE: main.py
+======================================================================
+Registered count: 69
+Routes count: 28
+Registered screens/routes:
+  - admin
+  - advanced
+  - ai_advisor
+  - ai_coin
+  - apk_build_gate
+  - approval_executor
+  - audit_log
+  - background_service
+  - backtest
+  - binance_account
+  - binance_live
+  - binance_readonly_real
+  - binance_signed
+  - demo
+  - demo_core
+  - demo_logs
+  - demo_reset
+  - demo_settings
+  - diagnostics
+  - extra_features
+  - fee_tax
+  - file_structure
+  - first_run
+  - firstrun_readiness
+  - health_alert
+  - healthcheck
+  - integration_tests
+  - integrations
+  - launchpool
+  - live
+  - live_gate
+  - live_settings
+  - logs
+  - main
+  - master_status
+  - modern_dashboard
+  - package
+  - patch_manager
+  - patch_manager_ui
+  - patch_snapshot
+  - pc_drive_sync
+  - pre_apk_safe
+  - profit_hold_ai
+  - profit_report
+  - readonly_balance
+  - release_candidate
+  - safety_guards
+  - scanner
+  - schedules
+  - secrets
+  - security
+  - security_api
+  - security_email
+  - security_encrypt
+  - security_pin
+  - settings
+  - settings_base
+  - spot_portfolio
+  - startup_safety
+  - strategy
+  - strategy_advanced
+  - sync
+  - trade_logic
+  - trade_simple
+  - trade_simple_advanced
+  - trades_export
+  - trend_history
+  - ui_mockup
+  - ui_route_check
+
+Duplicate registered used routes: {'scanner': 4, 'demo_settings': 2, 'demo_core': 2, 'trade_logic': 2, 'ai_advisor': 2, 'secrets': 2, 'binance_live': 2, 'backtest': 3, 'sync': 2, 'admin': 2, 'patch_manager': 2, 'approval_executor': 2, 'live_gate': 2, 'binance_account': 2, 'binance_signed': 2, 'binance_readonly_real': 2, 'integrations': 2, 'spot_portfolio': 2, 'trend_history': 2, 'master_status': 2, 'pre_apk_safe': 2, 'integration_tests': 2, 'firstrun_readiness': 2, 'release_candidate': 2, 'ui_route_check': 2, 'apk_build_gate': 2}
+Real missing routes: nincs
+Planned / placeholder missing routes: ['home']
+Main/Home/DemoCore exists: True
+HARD ERROR: duplikált aktív screen route van.
+
+======================================================================
+FILE: apk_stage/main.py
+======================================================================
+Registered count: 69
+Routes count: 28
+Registered screens/routes:
+  - admin
+  - advanced
+  - ai_advisor
+  - ai_coin
+  - apk_build_gate
+  - approval_executor
+  - audit_log
+  - background_service
+  - backtest
+  - binance_account
+  - binance_live
+  - binance_readonly_real
+  - binance_signed
+  - demo
+  - demo_core
+  - demo_logs
+  - demo_reset
+  - demo_settings
+  - diagnostics
+  - extra_features
+  - fee_tax
+  - file_structure
+  - first_run
+  - firstrun_readiness
+  - health_alert
+  - healthcheck
+  - integration_tests
+  - integrations
+  - launchpool
+  - live
+  - live_gate
+  - live_settings
+  - logs
+  - main
+  - master_status
+  - modern_dashboard
+  - package
+  - patch_manager
+  - patch_manager_ui
+  - patch_snapshot
+  - pc_drive_sync
+  - pre_apk_safe
+  - profit_hold_ai
+  - profit_report
+  - readonly_balance
+  - release_candidate
+  - safety_guards
+  - scanner
+  - schedules
+  - secrets
+  - security
+  - security_api
+  - security_email
+  - security_encrypt
+  - security_pin
+  - settings
+  - settings_base
+  - spot_portfolio
+  - startup_safety
+  - strategy
+  - strategy_advanced
+  - sync
+  - trade_logic
+  - trade_simple
+  - trade_simple_advanced
+  - trades_export
+  - trend_history
+  - ui_mockup
+  - ui_route_check
+
+Duplicate registered used routes: {'scanner': 4, 'demo_settings': 2, 'demo_core': 2, 'trade_logic': 2, 'ai_advisor': 2, 'secrets': 2, 'binance_live': 2, 'backtest': 3, 'sync': 2, 'admin': 2, 'patch_manager': 2, 'approval_executor': 2, 'live_gate': 2, 'binance_account': 2, 'binance_signed': 2, 'binance_readonly_real': 2, 'integrations': 2, 'spot_portfolio': 2, 'trend_history': 2, 'master_status': 2, 'pre_apk_safe': 2, 'integration_tests': 2, 'firstrun_readiness': 2, 'release_candidate': 2, 'ui_route_check': 2, 'apk_build_gate': 2}
+Real missing routes: nincs
+Planned / placeholder missing routes: ['home']
+Main/Home/DemoCore exists: True
+HARD ERROR: duplikált aktív screen route van.
+
+======================================================================
+SUMMARY
+======================================================================
+Hard error: True
+APK build NEM indult.
+Commit NEM történt.

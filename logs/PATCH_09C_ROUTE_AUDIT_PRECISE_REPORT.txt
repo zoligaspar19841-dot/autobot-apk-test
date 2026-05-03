@@ -1,0 +1,31 @@
+
+======================================================================
+FILE: main.py
+======================================================================
+Real registered screens: ['admin', 'ai_advisor', 'apk_build_gate', 'approval_executor', 'audit_log', 'backtest', 'binance_account', 'binance_live', 'binance_readonly_real', 'binance_signed', 'demo_core', 'demo_logs', 'demo_reset', 'demo_settings', 'diagnostics', 'fee_tax', 'first_run', 'firstrun_readiness', 'health_alert', 'integration_tests', 'integrations', 'launchpool', 'live_gate', 'main', 'master_status', 'modern_dashboard', 'package', 'patch_manager', 'pre_apk_safe', 'profit_report', 'readonly_balance', 'release_candidate', 'scanner', 'schedules', 'secrets', 'spot_portfolio', 'startup_safety', 'strategy_advanced', 'sync', 'trade_logic', 'trade_simple', 'trade_simple_advanced', 'trend_history', 'ui_route_check']
+Real registered count: 44
+Routes used count: 28
+True duplicate registered screens: {'main': 2, 'scanner': 2}
+Real missing routes: nincs
+Planned / placeholder missing routes: ['healthcheck', 'home']
+Main/Home/DemoCore exists: True
+INFO: duplikált regisztráció látszik, de safe_add_screen védelem jelen van.
+
+======================================================================
+FILE: apk_stage/main.py
+======================================================================
+Real registered screens: ['admin', 'ai_advisor', 'apk_build_gate', 'approval_executor', 'audit_log', 'backtest', 'binance_account', 'binance_live', 'binance_readonly_real', 'binance_signed', 'demo_core', 'demo_logs', 'demo_reset', 'demo_settings', 'diagnostics', 'fee_tax', 'first_run', 'firstrun_readiness', 'health_alert', 'integration_tests', 'integrations', 'launchpool', 'live_gate', 'main', 'master_status', 'modern_dashboard', 'package', 'patch_manager', 'pre_apk_safe', 'profit_report', 'readonly_balance', 'release_candidate', 'scanner', 'schedules', 'secrets', 'spot_portfolio', 'startup_safety', 'strategy_advanced', 'sync', 'trade_logic', 'trade_simple', 'trade_simple_advanced', 'trend_history', 'ui_route_check']
+Real registered count: 44
+Routes used count: 28
+True duplicate registered screens: {'main': 2, 'scanner': 2}
+Real missing routes: nincs
+Planned / placeholder missing routes: ['healthcheck', 'home']
+Main/Home/DemoCore exists: True
+INFO: duplikált regisztráció látszik, de safe_add_screen védelem jelen van.
+
+======================================================================
+SUMMARY
+======================================================================
+Hard error: False
+APK build NEM indult.
+Commit NEM történt.

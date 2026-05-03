@@ -1,0 +1,26 @@
+PATCH 09 SCREEN / ROUTE FINAL AUDIT
+======================================================================
+OK: False
+APK build: NEM indult
+Commit: NEM történt
+
+----------------------------------------------------------------------
+FILE: main.py
+EXISTS: True
+OK: False
+SCREEN COUNT: 0
+REGISTERED SCREENS:
+
+DUPLICATES: {}
+MISSING ROUTES: ['admin', 'ai_advisor', 'apk_build_gate', 'approval_executor', 'backtest', 'binance_account', 'binance_live', 'binance_readonly_real', 'binance_signed', 'demo_core', 'demo_settings', 'firstrun_readiness', 'healthcheck', 'home', 'integration_tests', 'integrations', 'live_gate', 'master_status', 'patch_manager', 'pre_apk_safe', 'release_candidate', 'scanner', 'secrets', 'spot_portfolio', 'sync', 'trade_logic', 'trend_history', 'ui_route_check']
+WARNINGS: ['Nincs home vagy main screen regisztrálva.']
+----------------------------------------------------------------------
+FILE: apk_stage/main.py
+EXISTS: True
+OK: False
+SCREEN COUNT: 0
+REGISTERED SCREENS:
+
+DUPLICATES: {}
+MISSING ROUTES: ['admin', 'ai_advisor', 'apk_build_gate', 'approval_executor', 'backtest', 'binance_account', 'binance_live', 'binance_readonly_real', 'binance_signed', 'demo_core', 'demo_settings', 'firstrun_readiness', 'healthcheck', 'home', 'integration_tests', 'integrations', 'live_gate', 'master_status', 'patch_manager', 'pre_apk_safe', 'release_candidate', 'scanner', 'secrets', 'spot_portfolio', 'sync', 'trade_logic', 'trend_history', 'ui_route_check']
+WARNINGS: ['Nincs home vagy main screen regisztrálva.']
