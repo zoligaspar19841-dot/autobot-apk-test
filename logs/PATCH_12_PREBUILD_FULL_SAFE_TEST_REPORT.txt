@@ -1,0 +1,199 @@
+PATCH 12 PRE-BUILD FULL SAFE TEST
+APK build: NEM indult
+Commit: NEM történt
+Idő: Sun May  3 16:15:48 CEST 2026
+
+============================================================
+1) Python compile teszt
+============================================================
+OK: root compile jó
+OK: apk_stage compile jó
+
+============================================================
+2) buildozer.spec gyors ellenőrzés
+============================================================
+--- root buildozer.spec ---
+2:title = Binance Autobot
+3:package.name = binanceautobot
+4:package.domain = org.autobot
+6:source.include_exts = py,png,jpg,jpeg,kv,atlas,json,txt,csv
+10:version = 0.7.2
+15:android.api = 35
+16:android.minapi = 23
+17:android.archs = arm64-v8a
+22:icon.filename = icon.png
+
+--- apk_stage/buildozer.spec ---
+2:title = Binance Autobot
+3:package.name = binanceautobot
+4:package.domain = org.autobot
+6:source.include_exts = py,png,jpg,jpeg,kv,atlas,json,txt,csv
+10:version = 0.7.2
+15:android.api = 35
+16:android.minapi = 23
+17:android.archs = arm64-v8a
+22:icon.filename = icon.png
+
+Duplikált buildozer kulcsok root:
+FILE: buildozer.spec
+DUP: {'log_level': 2, 'warn_on_root': 2}
+FILE: apk_stage/buildozer.spec
+DUP: {'log_level': 2, 'warn_on_root': 2}
+
+============================================================
+3) Ikon ellenőrzés
+============================================================
+-rw-------. 1 u0_a593 u0_a593 4.7K May  3 15:34 apk_stage/icon.png
+-rw-------. 1 u0_a593 u0_a593 4.7K May  3 15:34 icon.png
+icon.png exists: True size: 4712
+apk_stage/icon.png exists: True size: 4712
+
+============================================================
+4) main.py és apk_stage/main.py egyezés gyors diff
+============================================================
+OK: main.py és apk_stage/main.py azonos
+
+============================================================
+5) Screen / route audit gyors
+============================================================
+FILE: main.py
+  registered: 44
+  duplicates: {'main': 2, 'scanner': 2}
+  main/home/demo_core: True
+  safe_add_screen: True
+FILE: apk_stage/main.py
+  registered: 44
+  duplicates: {'main': 2, 'scanner': 2}
+  main/home/demo_core: True
+  safe_add_screen: True
+Hard route error: False
+
+============================================================
+6) Android target ellenőrzés
+============================================================
+FILE: buildozer.spec
+  android.api: 35
+  android.minapi: 23
+  icon.filename: icon.png
+FILE: apk_stage/buildozer.spec
+  android.api: 35
+  android.minapi: 23
+  icon.filename: icon.png
+OK: android target és ikon beállítás rendben
+
+============================================================
+7) Git rövid állapot
+============================================================
+?? CHECK_APK_BUILD_RESOURCES.sh
+?? CHECK_APK_STAGE_BUILD_READY.sh
+?? CHECK_FULL_SYSTEM_STATUS.sh
+?? CLEAN_APK_STAGE_BEFORE_BUILD.sh
+?? FINAL_FIX_BUILD.sh
+?? FIX_APK_STAGE_BLOCKED_CHECK.sh
+?? FIX_BUILDOZER_MINIMAL_VALID_SPEC.sh
+?? FIX_BUILD_TOOLS_37.sh
+?? FIX_DEMO_CORE_KPI_SYNTAX.sh
+?? FIX_DOCKER_BUILD.sh
+?? FIX_DOCKER_ENTRYPOINT.sh
+?? FIX_DOCKER_ROOT_PROMPT.sh
+?? FIX_FINAL_ARM64_DOCKER.sh
+?? FIX_GET_PRICES_FOR_TRADE_LOGIC.sh
+?? FIX_LITERAL_BACKSLASH_N_FINAL_PREBUILD.sh
+?? FIX_MULTI_SYMBOL_SCANNER_RETRY.sh
+?? FIX_PINNED_STABLE_BUILD.sh
+?? FIX_PROFIT_HOLD_NULL_VALUES.sh
+?? FIX_PROFIT_HOLD_STATE_MERGE.sh
+?? FIX_SCANNER_NULL_FINAL.sh
+?? FIX_SHOW_REAL_ERROR.sh
+?? PATCH_08_EXPORT_PROJECT_TXT_NO_BUILD.sh
+?? PATCH_12_PREBUILD_FULL_SAFE_TEST_NO_BUILD.sh
+?? PATCH_ADMIN_PATCHMANAGER_BASE.sh
+?? PATCH_AI_ADVISOR_BASE.sh
+?? PATCH_APK_BUILD_DRY_RUN_PLAN.sh
+?? PATCH_APK_BUILD_GATE_ARTIFACT_MANIFEST.sh
+?? PATCH_APK_STAGE_CLEAN_PACKAGE.sh
+?? PATCH_APPROVAL_DRYRUN_EXECUTOR.sh
+?? PATCH_AUDIT_LOG_UI.sh
+?? PATCH_BACKTEST_DIAGNOSTICS_CHECKPOINT.sh
+?? PATCH_BACK_NAVIGATION.sh
+?? PATCH_BINANCE_ACCOUNT_TESTORDER.sh
+?? PATCH_BINANCE_LIVE_CHECK_AND_CHECKPOINT.sh
+?? PATCH_BINANCE_READONLY_REAL_ACCOUNT.sh
+?? PATCH_BINANCE_SIGNED_READONLY_ACCOUNT.sh
+?? PATCH_BINANCE_TRADE_SCREEN_LOGIC.sh
+?? PATCH_BUILDOZER_SPEC_CLEAN_DUPLICATES.sh
+?? PATCH_BUILDOZER_SPEC_SAFE_PREP.sh
+?? PATCH_DASHBOARD_KPI_TREND_HISTORY.sh
+?? PATCH_DASHBOARD_MODERN_KPI_CARDS.sh
+?? PATCH_DECISION_AFTER_TAX_PROFIT.sh
+?? PATCH_DEMO_BUTTON_ROUTE.sh
+?? PATCH_DEMO_CORE_API.sh
+?? PATCH_DEMO_CORE_AUTO_TICK.sh
+?? PATCH_DEMO_CORE_KIVY_UI.sh
+?? PATCH_DEMO_CORE_LOGS_UI.sh
+?? PATCH_DEMO_CORE_SETTINGS_UI.sh
+?? PATCH_DEMO_CORE_UI_KPI.sh
+?? PATCH_DEMO_MENU_TARGET.sh
+?? PATCH_EMAIL_NOTIFY_BASE.sh
+?? PATCH_ENCRYPTED_SECRETS.sh
+?? PATCH_EXECUTION_MODE.sh
+?? PATCH_FEE_TAX_MODULE.sh
+?? PATCH_FINAL_PREBUILD_AUDIT_MASTER_REPORT.sh
+?? PATCH_FINAL_PREBUILD_AUDIT_MASTER_REPORT_RETRY.sh
+?? PATCH_FIRSTRUN_SETUP_READINESS_FINAL.sh
+?? PATCH_FIRST_RUN_STARTUP_SAFETY.sh
+?? PATCH_HEALTHCHECK_HEARTBEAT.sh
+?? PATCH_HEALTH_ALERT_RECOVERY_CENTER.sh
+?? PATCH_INTEGRATION_TEST_CENTER.sh
+?? PATCH_LIVE_EXECUTOR_SAFETY_GATE.sh
+?? PATCH_MASTER_STATUS_OVERVIEW.sh
+?? PATCH_MULTI_SYMBOL_SCANNER.sh
+?? PATCH_OPENAI_ADVISOR_API_BASE.sh
+?? PATCH_PACKAGE_SNAPSHOT_APK_REFERENCE.sh
+?? PATCH_PANIC_SAFE_MODE.sh
+?? PATCH_PRE_APK_FULL_SAFE_TEST.sh
+?? PATCH_PROFIT_HOLD_ENGINE.sh
+?? PATCH_PROFIT_TRADES_REPORT_CENTER.sh
+?? PATCH_READONLY_BALANCE_TEST_FLOW.sh
+?? PATCH_RELEASE_CANDIDATE_ROLLBACK_PREVIEW.sh
+?? PATCH_SAFE_MODE_OFF_BUTTON.sh
+?? PATCH_SCHEDULES_LAUNCHPOOL_BASE.sh
+?? PATCH_SECRETS_INTEGRATIONS_UI.sh
+?? PATCH_SECRETS_READONLY_WARNING_UI.sh
+?? PATCH_SPOT_BALANCE_PORTFOLIO_SYNC.sh
+?? PATCH_SYNC_FIRSTRUN_BASE.sh
+?? PATCH_TRADE_SIMPLE_ADVANCED_UI.sh
+?? PATCH_TREND_AUTO_REFRESH_TIMER.sh
+?? PATCH_TREND_CANVAS_DASHBOARD_WIDGET.sh
+?? PATCH_TREND_CHART_CROSSHAIR_DATA.sh
+?? PATCH_TREND_CROSSHAIR_NAVIGATION.sh
+?? PATCH_TREND_TIME_EXPORT_STATS.sh
+?? PATCH_UI_ROUTE_SCREEN_REGISTRY_CHECK.sh
+?? RESTORE_WORKING_APK_ARTIFACT.sh
+?? RESTORE_WORKING_APK_BUILD.sh
+?? RESTORE_WORKING_PLUS_EXTENDED.sh
+?? SAVE_DEV_CHECKPOINT.sh
+?? SAVE_FULL_DEV_STATUS_CHECKPOINT.sh
+?? SAVE_SECURITY_CORE_CHECKPOINT.sh
+?? _chatgpt_export/
+?? apk_stage/FIX_BUILDOZER_ANDROID_INDENT_AFTER_ZLIB.sh
+?? apk_stage/FIX_BUILDOZER_ZLIB_DISABLE_CHECK.sh
+?? apk_stage/FIX_BUILDOZER_ZLIB_TERMUX_STRONG.sh
+?? apk_stage/FIX_TERMINUX_BUILDOZER_ZLIB_CHECK.sh
+?? export_project_for_chatgpt.py
+?? fix_apk_ci.sh
+?? fix_build_license_final.sh
+?? fix_buildozer.sh
+?? fix_ci_exact.sh
+?? fix_full_ci.sh
+?? fix_sdk_v2.sh
+?? fix_sdk_v3.sh
+?? logs/PATCH_12_PREBUILD_FULL_SAFE_TEST_REPORT.txt
+?? main.py.BROKEN_20260502_173103
+
+============================================================
+SUMMARY
+============================================================
+PREBUILD_SAFE_TEST: OK
+APK build NEM indult.
+Commit NEM történt.
