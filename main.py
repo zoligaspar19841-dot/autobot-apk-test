@@ -136,6 +136,47 @@ def go_back(sm, fallback="main"):
 
 
 # === PATCH 06C SAFE SCREEN ADD ===
+
+
+# === PATCH 10B SETTINGS MOBILE UI HELPERS ===
+def ba_style_textinput(widget, height=46):
+    """Mobilbarát sötét TextInput stílus."""
+    try:
+        widget.size_hint_y = None
+        widget.height = height
+        widget.multiline = False
+        widget.font_size = 16
+        widget.foreground_color = (1, 1, 1, 1)
+        widget.background_color = (0.08, 0.08, 0.08, 1)
+        widget.cursor_color = (1.0, 0.72, 0.12, 1)
+        widget.padding = [10, 10, 10, 10]
+    except Exception:
+        pass
+    return widget
+
+def ba_style_button(widget, height=48):
+    """Mobilbarát sötét/sárga gombstílus."""
+    try:
+        widget.size_hint_y = None
+        widget.height = height
+        widget.font_size = 15
+        widget.background_color = (0.22, 0.22, 0.22, 1)
+        widget.color = (1, 1, 1, 1)
+    except Exception:
+        pass
+    return widget
+
+def ba_bind_grid_height(grid):
+    """GridLayout magasság fix ScrollView-hoz."""
+    try:
+        grid.size_hint_y = None
+        grid.bind(minimum_height=grid.setter('height'))
+    except Exception:
+        pass
+    return grid
+# === END PATCH 10B SETTINGS MOBILE UI HELPERS ===
+
+
 def safe_add_screen(sm, screen):
     try:
         name = getattr(screen, "name", None)
@@ -353,6 +394,7 @@ class Main(Screen):
         ))
 
         grid = GridLayout(cols=2, spacing=10, size_hint_y=.78)
+        ba_bind_grid_height(grid)
         items = [
             ("DEMO", "demo_core", ORANGE),
             ("LIVE", "live", BLUE),
@@ -393,6 +435,7 @@ class Dashboard(Screen):
         root.add_widget(self.trend)
 
         kpi = GridLayout(cols=2, spacing=8, size_hint_y=.25)
+        ba_bind_grid_height(kpi)
         self.k1 = Label(text="Ár: ...", font_size=23)
         self.k2 = Label(text="Total: 100", font_size=23)
         self.k3 = Label(text="Free: 100", font_size=23)
@@ -409,6 +452,7 @@ class Dashboard(Screen):
         root.add_widget(self.msg)
 
         controls = GridLayout(cols=2, spacing=8, size_hint_y=.22)
+        ba_bind_grid_height(controls)
         for txt, col, fn in [
             ("START", (.05, .55, .1, 1), self.start),
             ("STOP", (.65, 0, 0, 1), self.stop),
@@ -490,6 +534,7 @@ class MasterMenu(Screen):
         root.add_widget(Label(text="MASTER LISTA", font_size=34, bold=True, color=(1,.75,0,1), size_hint_y=.12))
 
         grid = GridLayout(cols=1, spacing=7, size_hint_y=None)
+        ba_bind_grid_height(grid)
         grid.bind(minimum_height=grid.setter("height"))
 
         items = [
@@ -602,9 +647,13 @@ class TradeSimpleScreen(Screen):
         root.add_widget(Label(text="TRADE SIMPLE", font_size=32, bold=True, color=(1,.75,0,1), size_hint_y=.12))
 
         self.symbol = TextInput(text="BTCUSDT", multiline=False, font_size=22, size_hint_y=.09)
+        ba_style_textinput(self.symbol)
         self.risk = TextInput(text="10", multiline=False, font_size=22, size_hint_y=.09)
+        ba_style_textinput(self.risk)
         self.min_profit = TextInput(text="1.5", multiline=False, font_size=22, size_hint_y=.09)
+        ba_style_textinput(self.min_profit)
         self.max_coin = TextInput(text="3", multiline=False, font_size=22, size_hint_y=.09)
+        ba_style_textinput(self.max_coin)
 
         root.add_widget(Label(text="Symbol", font_size=20, size_hint_y=.06))
         root.add_widget(self.symbol)
@@ -659,11 +708,17 @@ class StrategyAdvancedScreen(Screen):
         root.add_widget(Label(text="STRATEGY ADVANCED", font_size=32, bold=True, color=(1,.75,0,1), size_hint_y=.11))
 
         self.profile = TextInput(text="normal", multiline=False, font_size=22, size_hint_y=.08)
+        ba_style_textinput(self.profile)
         self.sma_fast = TextInput(text="9", multiline=False, font_size=22, size_hint_y=.08)
+        ba_style_textinput(self.sma_fast)
         self.sma_slow = TextInput(text="21", multiline=False, font_size=22, size_hint_y=.08)
+        ba_style_textinput(self.sma_slow)
         self.rsi_buy = TextInput(text="52", multiline=False, font_size=22, size_hint_y=.08)
+        ba_style_textinput(self.rsi_buy)
         self.rsi_sell = TextInput(text="70", multiline=False, font_size=22, size_hint_y=.08)
+        ba_style_textinput(self.rsi_sell)
         self.atr_mult = TextInput(text="1.0", multiline=False, font_size=22, size_hint_y=.08)
+        ba_style_textinput(self.atr_mult)
 
         fields = [
             ("Profil: normal / hybrid / sniper", self.profile),
@@ -711,6 +766,7 @@ class SectionScreen(Screen):
         ))
 
         grid = GridLayout(cols=1, spacing=8, size_hint_y=.74)
+        ba_bind_grid_height(grid)
 
         for txt, scr in items:
             b = button(txt, CARD, 22)
@@ -866,6 +922,7 @@ class DemoCoreFinalPrebuildAuditScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('FINAL AUDIT', self.audit),
             ('GO / NO-GO', self.go_nogo),
@@ -877,6 +934,7 @@ class DemoCoreFinalPrebuildAuditScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -956,6 +1014,7 @@ class DemoCoreApkBuildGateScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('BUILD GATE', self.gate),
             ('MANIFEST', self.manifest),
@@ -969,6 +1028,7 @@ class DemoCoreApkBuildGateScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -1076,6 +1136,7 @@ class DemoCoreUiRouteCheckScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('SCREEN REGISTRY', self.registry),
             ('MENU ROUTES', self.menu_routes),
@@ -1087,6 +1148,7 @@ class DemoCoreUiRouteCheckScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -1179,6 +1241,7 @@ class DemoCoreReleaseCandidateScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('RC STATUS', self.rc_status),
             ('ROLLBACK PLAN', self.rollback),
@@ -1192,6 +1255,7 @@ class DemoCoreReleaseCandidateScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -1293,6 +1357,7 @@ class DemoCoreFirstRunReadinessScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('READINESS CHECK', self.readiness),
             ('NEXT ACTIONS', self.actions),
@@ -1304,6 +1369,7 @@ class DemoCoreFirstRunReadinessScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -1379,6 +1445,7 @@ class DemoCoreHealthAlertRecoveryScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('STATUS', self.status),
             ('HEARTBEAT', self.heartbeat),
@@ -1392,6 +1459,7 @@ class DemoCoreHealthAlertRecoveryScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -1505,6 +1573,7 @@ class DemoCoreProfitReportScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('STATUS', self.status),
             ('SUMMARY', self.summary),
@@ -1518,6 +1587,7 @@ class DemoCoreProfitReportScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -1622,6 +1692,7 @@ class DemoCoreReadonlyBalanceScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('PLAN', self.plan),
             ('GATE CHECK', self.gate),
@@ -1635,6 +1706,7 @@ class DemoCoreReadonlyBalanceScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -1749,11 +1821,17 @@ class DemoCoreTradeSimpleAdvancedScreen(Screen):
         ))
 
         form = GridLayout(cols=2, size_hint_y=None, height=210, spacing=6)
+        ba_bind_grid_height(form)
         self.symbol = TextInput(text='BTCUSDT', multiline=False)
+        ba_style_textinput(self.symbol)
         self.side = TextInput(text='BUY', multiline=False)
+        ba_style_textinput(self.side)
         self.amount = TextInput(text='10', multiline=False)
+        ba_style_textinput(self.amount)
         self.risk = TextInput(text='10', multiline=False)
+        ba_style_textinput(self.risk)
         self.minprofit = TextInput(text='0.10', multiline=False)
+        ba_style_textinput(self.minprofit)
 
         for label, widget in [
             ('Symbol', self.symbol),
@@ -1774,6 +1852,7 @@ class DemoCoreTradeSimpleAdvancedScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('LOAD', self.load_values),
             ('SAVE SIMPLE', self.save_simple),
@@ -1787,6 +1866,7 @@ class DemoCoreTradeSimpleAdvancedScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -1926,6 +2006,7 @@ class DemoCoreModernDashboardScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('REFRESH', self.refresh),
             ('KPI CARDS', self.kpis),
@@ -1939,6 +2020,7 @@ class DemoCoreModernDashboardScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -2047,6 +2129,7 @@ class DemoCoreIntegrationTestCenterScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('STATUS', self.status),
             ('SAFE TESTS', self.safe_tests),
@@ -2060,6 +2143,7 @@ class DemoCoreIntegrationTestCenterScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -2152,6 +2236,7 @@ class DemoCorePreApkSafeTestScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('RUN SAFE TEST', self.run_test),
             ('ORDER SCAN', self.order_scan),
@@ -2163,6 +2248,7 @@ class DemoCorePreApkSafeTestScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -2267,6 +2353,7 @@ class DemoCoreMasterStatusScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('REFRESH', self.refresh),
             ('MODULES', self.modules),
@@ -2281,6 +2368,7 @@ class DemoCoreMasterStatusScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -2412,6 +2500,7 @@ class DemoCoreTrendHistoryScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('REFRESH', self.refresh),
             ('ADD SNAPSHOT', self.snapshot),
@@ -2431,6 +2520,7 @@ class DemoCoreTrendHistoryScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -2616,6 +2706,7 @@ class DemoCoreSpotPortfolioScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('STATUS', self.refresh),
             ('SYNC NOW', self.sync_now),
@@ -2628,6 +2719,7 @@ class DemoCoreSpotPortfolioScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -2701,6 +2793,7 @@ class DemoCoreStartupSafetyScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('REFRESH', self.refresh),
             ('FIRST RUN', self.first_run),
@@ -2713,6 +2806,7 @@ class DemoCoreStartupSafetyScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -2791,6 +2885,7 @@ class DemoCoreIntegrationOverviewScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('STATUS', self.refresh),
             ('SECRETS', lambda: self.manager.go_to('secrets')),
@@ -2804,6 +2899,7 @@ class DemoCoreIntegrationOverviewScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -2868,6 +2964,7 @@ class DemoCoreBinanceReadOnlyRealScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('STATUS', self.refresh),
             ('READONLY HELP', self.help),
@@ -2880,6 +2977,7 @@ class DemoCoreBinanceReadOnlyRealScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -2968,6 +3066,7 @@ class DemoCoreBinanceSignedScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('STATUS', self.refresh),
             ('SIGNED PREVIEW', self.preview),
@@ -2980,6 +3079,7 @@ class DemoCoreBinanceSignedScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -3048,6 +3148,7 @@ class DemoCoreBinanceAccountScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('STATUS', self.refresh),
             ('ACCOUNT CHECK', self.account_check),
@@ -3060,6 +3161,7 @@ class DemoCoreBinanceAccountScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -3139,6 +3241,7 @@ class DemoCoreLiveGateScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('STATUS', self.refresh),
             ('TEST LATEST', self.test_latest),
@@ -3151,6 +3254,7 @@ class DemoCoreLiveGateScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -3224,14 +3328,18 @@ class DemoCoreApprovalExecutorScreen(Screen):
         root.add_widget(self.info)
 
         self.symbol = TextInput(text='BTCUSDT', hint_text='symbol', multiline=False, size_hint_y=None, height=44)
+        ba_style_textinput(self.symbol)
         self.side = TextInput(text='BUY', hint_text='BUY/SELL', multiline=False, size_hint_y=None, height=44)
+        ba_style_textinput(self.side)
         self.amount = TextInput(text='10', hint_text='amount', multiline=False, size_hint_y=None, height=44)
+        ba_style_textinput(self.amount)
 
         root.add_widget(self.symbol)
         root.add_widget(self.side)
         root.add_widget(self.amount)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        ba_bind_grid_height(btns)
 
         buttons = [
             ('STATUS', self.refresh),
@@ -3246,6 +3354,7 @@ class DemoCoreApprovalExecutorScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -3334,14 +3443,18 @@ class DemoCoreAdminScreen(Screen):
         root.add_widget(self.info)
 
         self.user = TextInput(text='admin', multiline=False, size_hint_y=None, height=44)
+        ba_style_textinput(self.user)
         self.pw = TextInput(text='', hint_text='password', password=True, multiline=False, size_hint_y=None, height=44)
+        ba_style_textinput(self.pw)
         self.new_pw = TextInput(text='', hint_text='new password', password=True, multiline=False, size_hint_y=None, height=44)
+        ba_style_textinput(self.new_pw)
 
         root.add_widget(self.user)
         root.add_widget(self.pw)
         root.add_widget(self.new_pw)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('LOGIN', self.login),
             ('LOGOUT', self.logout),
@@ -3352,6 +3465,7 @@ class DemoCoreAdminScreen(Screen):
         ]
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -3412,14 +3526,18 @@ class DemoCorePatchManagerScreen(Screen):
         root.add_widget(self.info)
 
         self.path_inp = TextInput(text='main.py', hint_text='path', multiline=False, size_hint_y=None, height=44)
+        ba_style_textinput(self.path_inp)
         self.desc_inp = TextInput(text='', hint_text='patch leírás', multiline=False, size_hint_y=None, height=44)
+        ba_style_textinput(self.desc_inp)
         self.preview_inp = TextInput(text='', hint_text='preview / megjegyzés', multiline=True, size_hint_y=None, height=100)
+        ba_style_textinput(self.preview_inp)
 
         root.add_widget(self.path_inp)
         root.add_widget(self.desc_inp)
         root.add_widget(self.preview_inp)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=180, spacing=8)
+        ba_bind_grid_height(btns)
         buttons = [
             ('STATUS', self.refresh),
             ('QUEUE PATCH', self.queue),
@@ -3429,6 +3547,7 @@ class DemoCorePatchManagerScreen(Screen):
         ]
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda x, f=fn: f())
             btns.add_widget(b)
 
@@ -3494,14 +3613,22 @@ class DemoCoreSyncScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
 
         b_status = Button(text='SYNC STATUS')
+        ba_style_button(b_status)
         b_drive = Button(text='EXPORT DRIVE')
+        ba_style_button(b_drive)
         b_pc = Button(text='EXPORT PC')
+        ba_style_button(b_pc)
         b_import_drive = Button(text='IMPORT DRIVE')
+        ba_style_button(b_import_drive)
         b_import_pc = Button(text='IMPORT PC')
+        ba_style_button(b_import_pc)
         b_settings = Button(text='SETTINGS')
+        ba_style_button(b_settings)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
 
         b_status.bind(on_press=lambda x: self.refresh())
         b_drive.bind(on_press=lambda x: self.export('drive'))
@@ -3585,12 +3712,18 @@ class DemoCoreFirstRunScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=180, spacing=8)
+        ba_bind_grid_height(btns)
 
         b_check = Button(text='ELLENŐRZÉS')
+        ba_style_button(b_check)
         b_done = Button(text='KÉSZRE ÁLLÍT')
+        ba_style_button(b_done)
         b_secrets = Button(text='SECRETS')
+        ba_style_button(b_secrets)
         b_sync = Button(text='SYNC')
+        ba_style_button(b_sync)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
 
         b_check.bind(on_press=lambda x: self.refresh())
         b_done.bind(on_press=lambda x: self.done())
@@ -3663,11 +3796,16 @@ class DemoCorePackageScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=180, spacing=8)
+        ba_bind_grid_height(btns)
 
         b_pkg = Button(text='EXPORT PACKAGE')
+        ba_style_button(b_pkg)
         b_snap = Button(text='EXPORT SNAPSHOT')
+        ba_style_button(b_snap)
         b_ref = Button(text='APK REF')
+        ba_style_button(b_ref)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
 
         b_pkg.bind(on_press=lambda x: self.export_package())
         b_snap.bind(on_press=lambda x: self.export_snapshot())
@@ -3745,10 +3883,15 @@ class DemoCoreSchedulesScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=180, spacing=8)
+        ba_bind_grid_height(btns)
         b_run = Button(text='RUN SCHEDULES')
+        ba_style_button(b_run)
         b_snapshot = Button(text='SNAPSHOT')
+        ba_style_button(b_snapshot)
         b_settings = Button(text='SETTINGS')
+        ba_style_button(b_settings)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
 
         b_run.bind(on_press=lambda x: self.run())
         b_snapshot.bind(on_press=lambda x: self.snapshot())
@@ -3825,10 +3968,15 @@ class DemoCoreLaunchpoolScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=180, spacing=8)
+        ba_bind_grid_height(btns)
         b_scan = Button(text='SCAN NOW')
+        ba_style_button(b_scan)
         b_settings = Button(text='SETTINGS')
+        ba_style_button(b_settings)
         b_health = Button(text='HEALTHCHECK')
+        ba_style_button(b_health)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
 
         b_scan.bind(on_press=lambda x: self.scan())
         b_settings.bind(on_press=lambda x: self.manager.go_to('demo_settings'))
@@ -3891,10 +4039,15 @@ class DemoCoreBacktestScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=180, spacing=8)
+        ba_bind_grid_height(btns)
         b_run = Button(text='RUN BACKTEST')
+        ba_style_button(b_run)
         b_report = Button(text='REPORT CSV')
+        ba_style_button(b_report)
         b_settings = Button(text='SETTINGS')
+        ba_style_button(b_settings)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
 
         b_run.bind(on_press=lambda x: self.run_backtest())
         b_report.bind(on_press=lambda x: self.report())
@@ -3974,10 +4127,15 @@ class DemoCoreDiagnosticsScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=140, spacing=8)
+        ba_bind_grid_height(btns)
         b_refresh = Button(text='FRISSÍTÉS')
+        ba_style_button(b_refresh)
         b_health = Button(text='HEALTHCHECK')
+        ba_style_button(b_health)
         b_backtest = Button(text='BACKTEST')
+        ba_style_button(b_backtest)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
 
         b_refresh.bind(on_press=lambda x: self.refresh())
         b_health.bind(on_press=lambda x: self.manager.go_to('healthcheck'))
@@ -4049,12 +4207,19 @@ class DemoCoreBinanceLiveScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        ba_bind_grid_height(btns)
         b_refresh = Button(text='LIVE CHECK')
+        ba_style_button(b_refresh)
         b_ack = Button(text='FIGYELMEZTETÉS OK')
+        ba_style_button(b_ack)
         b_checkonly = Button(text='CHECK ONLY ON')
+        ba_style_button(b_checkonly)
         b_disable = Button(text='LIVE OFF')
+        ba_style_button(b_disable)
         b_secrets = Button(text='SECRETS')
+        ba_style_button(b_secrets)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
 
         b_refresh.bind(on_press=lambda x: self.refresh())
         b_ack.bind(on_press=lambda x: self.ack())
@@ -4153,6 +4318,7 @@ class DemoCoreSecretsScreen(Screen):
 
         form_scroll = ScrollView()
         form = GridLayout(cols=1, size_hint_y=None, spacing=6)
+        ba_bind_grid_height(form)
         form.bind(minimum_height=form.setter('height'))
 
         self.inputs = {}
@@ -4186,6 +4352,7 @@ class DemoCoreSecretsScreen(Screen):
                 size_hint_y=None,
                 height=44
             )
+            ba_style_textinput(inp)
             self.inputs[key] = inp
             form.add_widget(inp)
 
@@ -4193,15 +4360,24 @@ class DemoCoreSecretsScreen(Screen):
         root.add_widget(form_scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=250, spacing=8)
+        ba_bind_grid_height(btns)
 
         b_save = Button(text='MENTÉS')
+        ba_style_button(b_save)
         b_refresh = Button(text='STÁTUSZ')
+        ba_style_button(b_refresh)
         b_binance = Button(text='TESZT BINANCE')
+        ba_style_button(b_binance)
         b_openai = Button(text='TESZT OPENAI')
+        ba_style_button(b_openai)
         b_email = Button(text='TESZT EMAIL')
+        ba_style_button(b_email)
         b_drive = Button(text='TESZT DRIVE')
+        ba_style_button(b_drive)
         b_pc = Button(text='TESZT PC')
+        ba_style_button(b_pc)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
 
         b_save.bind(on_press=lambda x: self.save())
         b_refresh.bind(on_press=lambda x: self.refresh())
@@ -4307,10 +4483,15 @@ class DemoCoreAIScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=170, spacing=8)
+        ba_bind_grid_height(btns)
         b_run = Button(text='AI ELEMZÉS')
+        ba_style_button(b_run)
         b_scan = Button(text='SCANNER')
+        ba_style_button(b_scan)
         b_trade = Button(text='TRADE LOGIKA')
+        ba_style_button(b_trade)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
 
         b_run.bind(on_press=lambda x: self.run_ai())
         b_scan.bind(on_press=lambda x: self.manager.go_to('scanner'))
@@ -4397,10 +4578,15 @@ class DemoCoreTradeScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=170, spacing=8)
+        ba_bind_grid_height(btns)
         b_check = Button(text='BBO CHECK')
+        ba_style_button(b_check)
         b_scan = Button(text='SCANNER')
+        ba_style_button(b_scan)
         b_settings = Button(text='SETTINGS')
+        ba_style_button(b_settings)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
 
         b_check.bind(on_press=lambda x: self.check())
         b_scan.bind(on_press=lambda x: self.manager.go_to('scanner'))
@@ -4470,10 +4656,15 @@ class DemoCoreFeeTaxScreen(Screen):
         root.add_widget(self.info)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=160, spacing=8)
+        ba_bind_grid_height(btns)
         b_refresh = Button(text='FRISSÍTÉS')
+        ba_style_button(b_refresh)
         b_settings = Button(text='SETTINGS')
+        ba_style_button(b_settings)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
         b_health = Button(text='HEALTHCHECK')
+        ba_style_button(b_health)
 
         b_refresh.bind(on_press=lambda x: self.refresh())
         b_settings.bind(on_press=lambda x: self.manager.go_to('demo_settings'))
@@ -4549,10 +4740,15 @@ class DemoCoreScannerScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=170, spacing=8)
+        ba_bind_grid_height(btns)
         b_scan = Button(text='SCAN NOW')
+        ba_style_button(b_scan)
         b_tick = Button(text='SCAN + TICK')
+        ba_style_button(b_tick)
         b_settings = Button(text='SETTINGS')
+        ba_style_button(b_settings)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
 
         b_scan.bind(on_press=lambda x: self.scan())
         b_tick.bind(on_press=lambda x: self.scan_tick())
@@ -4623,10 +4819,15 @@ class DemoCoreAuditScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=160, spacing=8)
+        ba_bind_grid_height(btns)
         b_refresh = Button(text='FRISSÍTÉS')
+        ba_style_button(b_refresh)
         b_health = Button(text='HEALTHCHECK + LOG')
+        ba_style_button(b_health)
         b_clear = Button(text='AUDIT NAPLÓ NULLÁZÁS')
+        ba_style_button(b_clear)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
         b_refresh.bind(on_press=lambda x: self.refresh())
         b_health.bind(on_press=lambda x: self.health_and_refresh())
         b_clear.bind(on_press=lambda x: self.clear_audit())
@@ -4693,10 +4894,15 @@ class DemoCoreLogsScreen(Screen):
         root.add_widget(scroll)
 
         btns = GridLayout(cols=2, size_hint_y=None, height=170, spacing=8)
+        ba_bind_grid_height(btns)
         b_refresh = Button(text='FRISSÍTÉS')
+        ba_style_button(b_refresh)
         b_tick = Button(text='TICK + FRISSÍTÉS')
+        ba_style_button(b_tick)
         b_clear = Button(text='NAPLÓ NULLÁZÁS')
+        ba_style_button(b_clear)
         b_back = Button(text='VISSZA')
+        ba_style_button(b_back)
 
         b_refresh.bind(on_press=lambda x: self.refresh())
         b_tick.bind(on_press=lambda x: self.tick_and_refresh())
@@ -4831,6 +5037,7 @@ class DemoCoreSettingsScreen(Screen):
                 cursor_color=(1, 0.82, 0.18, 1),
                 padding=[10, 10, 10, 10]
             )
+            ba_style_textinput(ti)
             self.inputs[key] = ti
 
             row.add_widget(lab)
@@ -4852,20 +5059,25 @@ class DemoCoreSettingsScreen(Screen):
         root.add_widget(self.info)
 
         btns = GridLayout(cols=2, spacing=6, size_hint_y=None, height=156)
+        ba_bind_grid_height(btns)
 
         b = Button(text="BETÖLTÉS")
+        ba_style_button(b)
         b.bind(on_press=lambda *_: self.load_values())
         btns.add_widget(b)
 
         b = Button(text="MENTÉS")
+        ba_style_button(b)
         b.bind(on_press=lambda *_: self.save_values())
         btns.add_widget(b)
 
         b = Button(text="ALAPÉRTÉK")
+        ba_style_button(b)
         b.bind(on_press=lambda *_: self.reset_defaults())
         btns.add_widget(b)
 
         b = Button(text="VISSZA")
+        ba_style_button(b)
         b.bind(on_press=lambda *_: safe_go_back(self.manager, "main"))
         btns.add_widget(b)
 
@@ -5016,6 +5228,7 @@ class DemoCoreScreen(Screen):
         root.add_widget(title)
 
         kpi = GridLayout(cols=2, spacing=6, size_hint_y=None, height=132)
+        ba_bind_grid_height(kpi)
         for key, title_text in [
             ("balance", "Balance"),
             ("equity", "Equity"),
@@ -5094,6 +5307,7 @@ class DemoCoreScreen(Screen):
         root.add_widget(self.positions_text)
 
         btns = GridLayout(cols=2, spacing=6, size_hint_y=None, height=210)
+        ba_bind_grid_height(btns)
 
         buttons = [
             ("FRISSÍTÉS", self.refresh),
@@ -5108,6 +5322,7 @@ class DemoCoreScreen(Screen):
 
         for text, fn in buttons:
             b = Button(text=text)
+            ba_style_button(b)
             b.bind(on_press=lambda btn, f=fn: f())
             btns.add_widget(b)
 
