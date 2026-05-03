@@ -1,4 +1,4 @@
-APP_VERSION = "0.5.6-demo-core"
+APP_VERSION = "0.5.7-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -78,6 +78,15 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+RELEASE_CANDIDATE_DEFAULTS = {
+    "release_candidate_enabled": True,
+    "release_candidate_name": "Autobot DemoCore RC",
+    "release_candidate_report_file": "logs/release_candidate_report.json",
+    "apk_build_preview_enabled": True,
+    "apk_build_allowed": False,
+}
 
 FIRSTRUN_READY_DEFAULTS = {
     "firstrun_ready_enabled": True,
@@ -443,6 +452,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "RELEASE_CANDIDATE_DEFAULTS" in globals():
+        for k, v in RELEASE_CANDIDATE_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -6984,6 +6999,198 @@ def export_firstrun_readiness_report(path=None):
         "path": path,
         "order_endpoint_used": False,
         "message": "First-run readiness report export kész.",
+    }
+
+
+
+def _git_cmd_preview(args):
+    """
+    Biztonságos git parancs olvasó módra.
+    """
+    try:
+        import subprocess
+        out = subprocess.check_output(["git"] + list(args), stderr=subprocess.STDOUT, text=True)
+        return {"ok": True, "output": out.strip(), "order_endpoint_used": False}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "order_endpoint_used": False}
+
+
+def release_candidate_status():
+    """
+    Release Candidate státusz.
+    Nem buildel, nem kereskedik.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    head = _git_cmd_preview(["log", "--oneline", "-1"])
+    tags = _git_cmd_preview(["tag", "--sort=-creatordate"])
+
+    tag_lines = []
+    if tags.get("ok"):
+        tag_lines = [x for x in tags.get("output", "").splitlines() if x.strip()][:10]
+
+    full_check_exists = os.path.exists("logs/full_system_status_report.json")
+    firstrun_exists = os.path.exists("logs/firstrun_readiness_report.json")
+    preapk_exists = os.path.exists("logs/pre_apk_safe_report.json")
+
+    readiness = _safe_call("firstrun_readiness_check", {})
+    preapk = _safe_call("pre_apk_full_safe_test", {})
+    master = _safe_call("master_status_overview", {})
+
+    rc_ok = (
+        bool(readiness.get("ok", False))
+        and bool(preapk.get("ok", False))
+        and not bool(preapk.get("order_endpoint_used", False))
+        and full_check_exists
+    )
+
+    return {
+        "ok": True,
+        "release_candidate_enabled": bool(settings.get("release_candidate_enabled", True)),
+        "release_candidate_name": settings.get("release_candidate_name", "Autobot DemoCore RC"),
+        "rc_ok": rc_ok,
+        "head": head,
+        "latest_tags": tag_lines,
+        "full_system_report_exists": full_check_exists,
+        "firstrun_report_exists": firstrun_exists,
+        "preapk_report_exists": preapk_exists,
+        "readiness": readiness,
+        "preapk": preapk,
+        "master": master,
+        "apk_build_allowed": bool(settings.get("apk_build_allowed", False)),
+        "apk_build_touched": False,
+        "order_endpoint_used": False,
+        "message": "Release Candidate státusz kész. APK build nincs.",
+    }
+
+
+def rollback_plan_status():
+    """
+    Rollback terv: utolsó stabil tagek és parancsok.
+    """
+    tags = _git_cmd_preview(["tag", "--sort=-creatordate"])
+    tag_lines = []
+    if tags.get("ok"):
+        tag_lines = [x for x in tags.get("output", "").splitlines() if x.strip() and x.startswith("stable-")][:12]
+
+    best = tag_lines[0] if tag_lines else ""
+
+    commands = []
+    if best:
+        commands.append("git checkout " + best)
+        commands.append("python -m py_compile demo_core_engine.py main.py")
+        commands.append("# visszatérés fejlesztéshez: git checkout main")
+    else:
+        commands.append("Nincs stable tag találat.")
+
+    return {
+        "ok": True,
+        "latest_stable_tags": tag_lines,
+        "recommended_tag": best,
+        "rollback_commands_preview": commands,
+        "danger_note": "Rollback csak akkor fusson, ha tényleg vissza akarsz állni. Most csak előnézet.",
+        "order_endpoint_used": False,
+    }
+
+
+def build_input_preview():
+    """
+    Build bemeneti fájlok előnézete.
+    Nem buildel APK-t.
+    """
+    files = [
+        "main.py",
+        "demo_core_engine.py",
+        "demo_core_state.json",
+        "logs/full_system_status_report.json",
+        "logs/firstrun_readiness_report.json",
+        "logs/pre_apk_safe_report.json",
+        "logs/release_candidate_report.json",
+    ]
+
+    rows = []
+    for f in files:
+        try:
+            rows.append({
+                "path": f,
+                "exists": os.path.exists(f),
+                "size": os.path.getsize(f) if os.path.exists(f) else 0,
+            })
+        except Exception as e:
+            rows.append({"path": f, "exists": False, "error": str(e)})
+
+    return {
+        "ok": True,
+        "files": rows,
+        "apk_build_touched": False,
+        "order_endpoint_used": False,
+        "message": "Build input preview kész. APK build nincs.",
+    }
+
+
+def safe_build_command_preview():
+    """
+    APK build parancs előnézet.
+    Nem futtatja.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    allowed = bool(settings.get("apk_build_allowed", False))
+    commands = [
+        "python -m py_compile demo_core_engine.py main.py",
+        "./CHECK_FULL_SYSTEM_STATUS.sh",
+        "# csak külön engedéllyel később:",
+        "# buildozer android debug",
+    ]
+
+    return {
+        "ok": True,
+        "apk_build_allowed": allowed,
+        "will_build_now": False,
+        "commands_preview": commands,
+        "warning": "Ez csak build előnézet. APK buildhez nem nyúl.",
+        "order_endpoint_used": False,
+    }
+
+
+def export_release_candidate_report(path=None):
+    """
+    Release candidate report export.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if path is None:
+        path = settings.get("release_candidate_report_file", "logs/release_candidate_report.json") or "logs/release_candidate_report.json"
+
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    report = {
+        "ts": int(time.time()),
+        "app_version": globals().get("APP_VERSION", "unknown"),
+        "release_candidate": release_candidate_status(),
+        "rollback": rollback_plan_status(),
+        "build_input": build_input_preview(),
+        "build_preview": safe_build_command_preview(),
+        "order_endpoint_used": False,
+    }
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    audit_event("RELEASE_CANDIDATE_REPORT_EXPORT", "Release candidate report export", {
+        "path": path,
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "path": path,
+        "order_endpoint_used": False,
+        "apk_build_touched": False,
+        "message": "Release candidate report export kész.",
     }
 
 

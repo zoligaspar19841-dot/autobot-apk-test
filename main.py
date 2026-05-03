@@ -683,6 +683,121 @@ class TrendCanvasWidget(Widget):
 
 
 
+
+class DemoCoreReleaseCandidateScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]RELEASE CANDIDATE / ROLLBACK / BUILD PREVIEW[/b]\n[size=14]Stabil pont, rollback terv, APK build előnézet. Build nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=86
+        ))
+
+        self.info = Label(text='Release candidate...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        buttons = [
+            ('RC STATUS', self.rc_status),
+            ('ROLLBACK PLAN', self.rollback),
+            ('BUILD INPUT', self.build_input),
+            ('BUILD PREVIEW', self.build_preview),
+            ('EXPORT REPORT', self.export_report),
+            ('FULL CHECK', lambda: self.manager.go_to('firstrun_readiness')),
+            ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.rc_status()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def rc_status(self):
+        try:
+            res = demo_core.release_candidate_status()
+            lines = ['[b]Release Candidate Status[/b]', '']
+            for k in ['release_candidate_name','rc_ok','full_system_report_exists','firstrun_report_exists','preapk_report_exists','apk_build_allowed','apk_build_touched','order_endpoint_used']:
+                lines.append(f"{k}: [b]{res.get(k)}[/b]")
+            lines.append('')
+            lines.append('[b]Latest stable tags[/b]')
+            for t in res.get('latest_tags') or []:
+                lines.append('- ' + str(t))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'RC status hiba: ' + str(e)
+
+    def rollback(self):
+        try:
+            res = demo_core.rollback_plan_status()
+            lines = ['[b]Rollback Plan[/b]', '']
+            lines.append(f"Recommended tag: [b]{res.get('recommended_tag')}[/b]")
+            lines.append('')
+            lines.append('[b]Commands preview[/b]')
+            for c in res.get('rollback_commands_preview') or []:
+                lines.append(c)
+            lines.append('')
+            lines.append(str(res.get('danger_note')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Rollback hiba: ' + str(e)
+
+    def build_input(self):
+        try:
+            res = demo_core.build_input_preview()
+            lines = ['[b]Build Input Preview[/b]', '']
+            for row in res.get('files') or []:
+                mark = '✅' if row.get('exists') else '🔴'
+                lines.append(f"{mark} {row.get('path')} | size={row.get('size', 0)}")
+            lines.append('')
+            lines.append(str(res.get('message')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Build input hiba: ' + str(e)
+
+    def build_preview(self):
+        try:
+            res = demo_core.safe_build_command_preview()
+            lines = ['[b]Safe Build Command Preview[/b]', '']
+            lines.append(f"apk_build_allowed: {res.get('apk_build_allowed')}")
+            lines.append(f"will_build_now: {res.get('will_build_now')}")
+            lines.append('')
+            for c in res.get('commands_preview') or []:
+                lines.append(c)
+            lines.append('')
+            lines.append(str(res.get('warning')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Build preview hiba: ' + str(e)
+
+    def export_report(self):
+        try:
+            res = demo_core.export_release_candidate_report()
+            self.info.text = '[b]Release candidate report export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Export hiba: ' + str(e)
+
+
+
 class DemoCoreFirstRunReadinessScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -4357,6 +4472,11 @@ class DemoCoreSettingsScreen(Screen):
             ('firstrun_require_safety_check', 'First-run require safety check true/false'),
             ('firstrun_require_full_system_check', 'First-run require full system check true/false'),
             ('firstrun_report_file', 'First-run report file'),
+            ('release_candidate_enabled', 'Release candidate enabled true/false'),
+            ('release_candidate_name', 'Release candidate name'),
+            ('release_candidate_report_file', 'Release candidate report file'),
+            ('apk_build_preview_enabled', 'APK build preview enabled true/false'),
+            ('apk_build_allowed', 'APK build allowed true/false'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -4608,6 +4728,11 @@ class DemoCoreSettingsScreen(Screen):
             cfg['firstrun_require_safety_check'] = self.inputs['firstrun_require_safety_check'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['firstrun_require_full_system_check'] = self.inputs['firstrun_require_full_system_check'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['firstrun_report_file'] = self.inputs['firstrun_report_file'].text.strip() or 'logs/firstrun_readiness_report.json'
+            cfg['release_candidate_enabled'] = self.inputs['release_candidate_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['release_candidate_name'] = self.inputs['release_candidate_name'].text.strip() or 'Autobot DemoCore RC'
+            cfg['release_candidate_report_file'] = self.inputs['release_candidate_report_file'].text.strip() or 'logs/release_candidate_report.json'
+            cfg['apk_build_preview_enabled'] = self.inputs['apk_build_preview_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['apk_build_allowed'] = self.inputs['apk_build_allowed'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -4891,6 +5016,12 @@ class DemoCoreScreen(Screen):
             self.manager.go_to("pre_apk_safe")
         except Exception:
             self.manager.current = "pre_apk_safe"
+
+    def open_release_candidate(self):
+        try:
+            self.manager.go_to("release_candidate")
+        except Exception:
+            self.manager.current = "release_candidate"
 
     def open_firstrun_readiness(self):
         try:
@@ -5235,6 +5366,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreProfitReportScreen(name="profit_report"))
         sm.add_widget(DemoCoreHealthAlertRecoveryScreen(name="health_alert"))
         sm.add_widget(DemoCoreFirstRunReadinessScreen(name="firstrun_readiness"))
+        sm.add_widget(DemoCoreReleaseCandidateScreen(name="release_candidate"))
         return sm
 
 if __name__ == "__main__":
