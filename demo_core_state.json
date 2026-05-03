@@ -182,12 +182,16 @@
     "pre_apk_require_compile_ok": true,
     "pre_apk_require_master_status_ok": true,
     "pre_apk_min_readiness_score_pct": 70.0,
-    "pre_apk_report_file": "logs/pre_apk_safe_report.json"
+    "pre_apk_report_file": "logs/pre_apk_safe_report.json",
+    "integration_test_center_enabled": true,
+    "integration_test_allow_network": false,
+    "integration_test_allow_email_send": false,
+    "integration_test_report_file": "logs/integration_test_report.json"
   },
   "last_action": "Spot portfolio sync OK",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
-  "last_heartbeat_ts": 1777767235,
+  "last_heartbeat_ts": 1777767336,
   "cooldowns": {},
   "spot_balances_cache": [
     {

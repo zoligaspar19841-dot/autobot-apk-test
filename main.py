@@ -676,6 +676,112 @@ class TrendCanvasWidget(Widget):
 
 
 
+
+class DemoCoreIntegrationTestCenterScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]INTEGRATION TEST CENTER[/b]\n[size=14]Binance / OpenAI / E-mail / Drive / PC státusz. Order nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=78
+        ))
+
+        self.info = Label(text='Integration tests...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        buttons = [
+            ('STATUS', self.status),
+            ('SAFE TESTS', self.safe_tests),
+            ('NETWORK GATE', self.network_gate),
+            ('EXPORT REPORT', self.export_report),
+            ('SECRETS', lambda: self.manager.go_to('secrets')),
+            ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+            ('PRE APK SAFE', lambda: self.manager.go_to('pre_apk_safe')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.status()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def status(self):
+        try:
+            res = demo_core.integration_test_center_status()
+            lines = []
+            lines.append('[b]Integration Test Center[/b]')
+            lines.append(f"Score: {res.get('score_pct')}% ({res.get('ok_count')}/{res.get('total_count')})")
+            lines.append(f"Network allowed: {res.get('allow_network')}")
+            lines.append(f"Email send allowed: {res.get('allow_email_send')}")
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append('')
+            for row in res.get('rows') or []:
+                mark = '✅' if row.get('ok') else '🟡'
+                lines.append(f"{mark} [b]{row.get('title')}[/b]")
+                lines.append(f"   {row.get('detail')}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Integration status hiba: ' + str(e)
+
+    def safe_tests(self):
+        try:
+            res = demo_core.run_integration_safe_tests()
+            lines = ['[b]Safe Integration Tests[/b]', '']
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append(str(res.get('message')))
+            lines.append('')
+            for a in res.get('actions') or []:
+                mark = '✅' if a.get('ran') else '⏸️'
+                lines.append(f"{mark} {a.get('name')}: ran={a.get('ran')}")
+                if a.get('reason'):
+                    lines.append(f"   reason: {a.get('reason')}")
+                if a.get('result'):
+                    lines.append(f"   result: {a.get('result')}")
+            for w in res.get('warnings') or []:
+                lines.append('🟡 ' + str(w))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Safe tests hiba: ' + str(e)
+
+    def network_gate(self):
+        try:
+            res = demo_core.integration_network_gate_status()
+            lines = ['[b]Network Gate[/b]', '']
+            for k, v in res.items():
+                lines.append(f"{k}: {v}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Network gate hiba: ' + str(e)
+
+    def export_report(self):
+        try:
+            res = demo_core.export_integration_test_report()
+            self.info.text = '[b]Integration report export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Integration report export hiba: ' + str(e)
+
+
+
 class DemoCorePreApkSafeTestScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -3450,6 +3556,10 @@ class DemoCoreSettingsScreen(Screen):
             ('pre_apk_require_master_status_ok', 'Pre APK require master status OK true/false'),
             ('pre_apk_min_readiness_score_pct', 'Pre APK min readiness score %'),
             ('pre_apk_report_file', 'Pre APK report file'),
+            ('integration_test_center_enabled', 'Integration test center enabled true/false'),
+            ('integration_test_allow_network', 'Integration test allow network true/false'),
+            ('integration_test_allow_email_send', 'Integration test allow email send true/false'),
+            ('integration_test_report_file', 'Integration test report file'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -3658,6 +3768,10 @@ class DemoCoreSettingsScreen(Screen):
             cfg['pre_apk_require_master_status_ok'] = self.inputs['pre_apk_require_master_status_ok'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['pre_apk_min_readiness_score_pct'] = float(self.inputs['pre_apk_min_readiness_score_pct'].text.replace(',', '.'))
             cfg['pre_apk_report_file'] = self.inputs['pre_apk_report_file'].text.strip() or 'logs/pre_apk_safe_report.json'
+            cfg['integration_test_center_enabled'] = self.inputs['integration_test_center_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['integration_test_allow_network'] = self.inputs['integration_test_allow_network'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['integration_test_allow_email_send'] = self.inputs['integration_test_allow_email_send'].text.strip().lower() in ['1', 'true', 'igen', 'yes', 'on']
+            cfg['integration_test_report_file'] = self.inputs['integration_test_report_file'].text.strip() or 'logs/integration_test_report.json'
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -3929,6 +4043,12 @@ class DemoCoreScreen(Screen):
         except Exception as e:
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
+
+    def open_integration_tests(self):
+        try:
+            self.manager.go_to("integration_tests")
+        except Exception:
+            self.manager.current = "integration_tests"
 
     def open_pre_apk_safe(self):
         try:
@@ -4236,6 +4356,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreTrendHistoryScreen(name="trend_history"))
         sm.add_widget(DemoCoreMasterStatusScreen(name="master_status"))
         sm.add_widget(DemoCorePreApkSafeTestScreen(name="pre_apk_safe"))
+        sm.add_widget(DemoCoreIntegrationTestCenterScreen(name="integration_tests"))
         return sm
 
 if __name__ == "__main__":

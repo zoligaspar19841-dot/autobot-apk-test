@@ -1,4 +1,4 @@
-APP_VERSION = "0.4.9-demo-core"
+APP_VERSION = "0.5.0-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -71,6 +71,14 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+INTEGRATION_TEST_DEFAULTS = {
+    "integration_test_center_enabled": True,
+    "integration_test_allow_network": False,
+    "integration_test_allow_email_send": False,
+    "integration_test_report_file": "logs/integration_test_report.json",
+}
 
 PRE_APK_SAFE_TEST_DEFAULTS = {
     "pre_apk_safe_test_enabled": True,
@@ -374,6 +382,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "INTEGRATION_TEST_DEFAULTS" in globals():
+        for k, v in INTEGRATION_TEST_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -5453,6 +5467,179 @@ def pre_apk_full_safe_test():
         "apk_build_touched": False,
         "order_endpoint_used": False,
         "message": "Pre-APK full safe test lefutott. Ez még nem APK build.",
+    }
+
+
+
+def integration_test_center_status():
+    """
+    Integrációs központ státusz.
+    Alapból nem hív hálózatot és nem küld e-mailt.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    secrets = _safe_call("secrets_status", {})
+    email = _safe_call("email_config_status", {})
+    openai = _safe_call("openai_config_status", {})
+    live = _safe_call("binance_live_status", {})
+    readonly = _safe_call("binance_readonly_real_status", {})
+    sync = _safe_call("sync_status", {})
+    first = _safe_call("first_run_status", {})
+    health = _safe_call("healthcheck", {})
+
+    allow_network = bool(settings.get("integration_test_allow_network", False))
+    allow_email = bool(settings.get("integration_test_allow_email_send", False))
+
+    rows = []
+
+    def add(key, title, ok, detail="", safe=True):
+        rows.append({
+            "key": key,
+            "title": title,
+            "ok": bool(ok),
+            "detail": detail,
+            "safe": bool(safe),
+        })
+
+    add("secrets", "Titkosított secrets", secrets.get("encrypted_file") or secrets.get("openai_ok"), "secrets.enc / key státusz")
+    add("email_config", "E-mail config", email.get("ok") if isinstance(email, dict) else False, str(email))
+    add("openai_config", "OpenAI config", openai.get("has_key") if isinstance(openai, dict) else secrets.get("openai_ok"), str(openai))
+    add("binance_live_check", "Binance live readiness", live.get("ok") if isinstance(live, dict) else False, "csak státusz, nem order")
+    add("binance_readonly", "Binance read-only", readonly.get("ok") if isinstance(readonly, dict) else False, str(readonly.get("message", readonly.get("reason", ""))) if isinstance(readonly, dict) else "")
+    add("sync", "PC / Drive sync", sync.get("ok") if isinstance(sync, dict) else False, str(sync))
+    add("first_run", "First-run wizard státusz", first.get("ok") if isinstance(first, dict) else False, str(first))
+    add("health", "Healthcheck", health.get("ok") if isinstance(health, dict) else False, str(health.get("status", "")) if isinstance(health, dict) else "")
+
+    ok_count = sum(1 for r in rows if r.get("ok"))
+    total = len(rows)
+
+    return {
+        "ok": True,
+        "enabled": bool(settings.get("integration_test_center_enabled", True)),
+        "allow_network": allow_network,
+        "allow_email_send": allow_email,
+        "ok_count": ok_count,
+        "total_count": total,
+        "score_pct": round((ok_count / max(1, total)) * 100.0, 2),
+        "rows": rows,
+        "order_endpoint_used": False,
+        "message": "Integration Test Center státusz kész. Alapból nincs hálózati hívás.",
+    }
+
+
+def integration_network_gate_status():
+    """
+    Megmutatja, hogy szabad-e valódi külső tesztet futtatni.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    return {
+        "ok": True,
+        "network_allowed": bool(settings.get("integration_test_allow_network", False)),
+        "email_send_allowed": bool(settings.get("integration_test_allow_email_send", False)),
+        "binance_order_allowed": False,
+        "safe_note": "Binance order továbbra sem engedélyezett. Hálózat és email külön kapcsolóval.",
+        "order_endpoint_used": False,
+    }
+
+
+def run_integration_safe_tests():
+    """
+    Safe integrációs teszt.
+    Alapból csak státuszteszt. Ha network engedélyezve van, csak read-only típusú tesztek jöhetnek.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    status = integration_test_center_status()
+    gate = integration_network_gate_status()
+
+    actions = []
+    warnings = []
+
+    if not gate.get("network_allowed"):
+        actions.append({
+            "name": "network_tests",
+            "ran": False,
+            "reason": "integration_test_allow_network false",
+        })
+    else:
+        # Csak read-only jellegű próba, ha ilyen függvény van.
+        try:
+            ro = _safe_call("binance_account_readonly_check", {"ok": False, "reason": "readonly_check_missing"})
+            actions.append({
+                "name": "binance_readonly_check",
+                "ran": True,
+                "result": ro,
+            })
+        except Exception as e:
+            warnings.append("binance_readonly_check hiba: " + str(e))
+
+    if not gate.get("email_send_allowed"):
+        actions.append({
+            "name": "email_test_send",
+            "ran": False,
+            "reason": "integration_test_allow_email_send false",
+        })
+    else:
+        try:
+            mail = _safe_call("send_test_email", {"ok": False, "reason": "send_test_email_missing"})
+            actions.append({
+                "name": "send_test_email",
+                "ran": True,
+                "result": mail,
+            })
+        except Exception as e:
+            warnings.append("send_test_email hiba: " + str(e))
+
+    return {
+        "ok": True,
+        "status": status,
+        "gate": gate,
+        "actions": actions,
+        "warnings": warnings,
+        "order_endpoint_used": False,
+        "message": "Safe integration tests lefutott. Binance order nincs.",
+    }
+
+
+def export_integration_test_report(path=None):
+    """
+    Integrációs report export JSON-be.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if path is None:
+        path = settings.get("integration_test_report_file", "logs/integration_test_report.json") or "logs/integration_test_report.json"
+
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    report = {
+        "ts": int(time.time()),
+        "app_version": globals().get("APP_VERSION", "unknown"),
+        "integration_status": integration_test_center_status(),
+        "network_gate": integration_network_gate_status(),
+        "safe_tests": run_integration_safe_tests(),
+        "master_status": master_status_overview() if "master_status_overview" in globals() else {},
+        "order_endpoint_used": False,
+    }
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    audit_event("INTEGRATION_REPORT_EXPORT", "Integration test report export", {
+        "path": path,
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "path": path,
+        "order_endpoint_used": False,
+        "message": "Integration test report export kész.",
     }
 
 
