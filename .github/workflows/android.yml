@@ -7,7 +7,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
+    env:
+      ACLOCAL_PATH: /usr/share/aclocal
+      LIBTOOLIZE: libtoolize
 
     steps:
       - name: Checkout repo
@@ -27,7 +31,7 @@ jobs:
       - name: Install system packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip python3-setuptools python3-wheel autoconf automake autotools-dev libtool libtool-bin pkg-config m4 gettext autopoint zlib1g-dev libncurses6 libstdc++6
+          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip python3-setuptools python3-wheel autoconf automake autotools-dev libtool libtool-bin pkg-config m4 gettext autopoint zlib1g-dev libncurses5 libncurses6 libstdc++6
 
       - name: Install Python build tools
         run: |

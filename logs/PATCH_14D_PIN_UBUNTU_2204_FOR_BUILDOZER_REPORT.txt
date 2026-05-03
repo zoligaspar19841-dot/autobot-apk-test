@@ -1,0 +1,7 @@
+PATCH 14D OK
+Date: Sun May  3 19:16:52 CEST 2026
+Fix:
+- GitHub Actions runner pin: ubuntu-22.04
+- Buildozer/p4a autoreconf/libtool hibák ellen stabilabb környezet
+- ACLOCAL_PATH és LIBTOOLIZE env beállítva
+- APK build helyben nem indult
