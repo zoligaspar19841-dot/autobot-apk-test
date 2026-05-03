@@ -176,12 +176,18 @@
     "master_status_enabled": true,
     "master_status_show_next_steps": true,
     "master_status_show_modules": true,
-    "master_status_show_missing": true
+    "master_status_show_missing": true,
+    "pre_apk_safe_test_enabled": true,
+    "pre_apk_require_no_order_endpoint": true,
+    "pre_apk_require_compile_ok": true,
+    "pre_apk_require_master_status_ok": true,
+    "pre_apk_min_readiness_score_pct": 70.0,
+    "pre_apk_report_file": "logs/pre_apk_safe_report.json"
   },
   "last_action": "Spot portfolio sync OK",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
-  "last_heartbeat_ts": 1777767075,
+  "last_heartbeat_ts": 1777767235,
   "cooldowns": {},
   "spot_balances_cache": [
     {

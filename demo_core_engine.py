@@ -1,4 +1,4 @@
-APP_VERSION = "0.4.8-demo-core"
+APP_VERSION = "0.4.9-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -70,6 +70,16 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+PRE_APK_SAFE_TEST_DEFAULTS = {
+    "pre_apk_safe_test_enabled": True,
+    "pre_apk_require_no_order_endpoint": True,
+    "pre_apk_require_compile_ok": True,
+    "pre_apk_require_master_status_ok": True,
+    "pre_apk_min_readiness_score_pct": 70.0,
+    "pre_apk_report_file": "logs/pre_apk_safe_report.json",
+}
 
 MASTER_STATUS_DEFAULTS = {
     "master_status_enabled": True,
@@ -364,6 +374,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "PRE_APK_SAFE_TEST_DEFAULTS" in globals():
+        for k, v in PRE_APK_SAFE_TEST_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -5235,6 +5251,208 @@ def master_status_overview():
         "modules": modules.get("modules", []),
         "next_steps": steps.get("steps", []),
         "order_endpoint_used": False,
+    }
+
+
+
+def order_endpoint_safety_scan():
+    """
+    Biztonsági scan: van-e éles order küldésre utaló bekötés.
+    Ez csak szöveget/állapotot vizsgál, nem hív hálózatot.
+    """
+    suspicious = []
+    files = ["demo_core_engine.py", "main.py"]
+
+    patterns = [
+        "api/v3/order",
+        "/api/v3/order",
+        "create_order",
+        "new_order",
+        "order/test",
+        "signed_order",
+        "LIVE ORDER SENT",
+    ]
+
+    for fn in files:
+        try:
+            with open(fn, "r", encoding="utf-8") as f:
+                text = f.read()
+            for pat in patterns:
+                if pat in text:
+                    suspicious.append({
+                        "file": fn,
+                        "pattern": pat,
+                        "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is.",
+                    })
+        except Exception as e:
+            suspicious.append({
+                "file": fn,
+                "pattern": "READ_ERROR",
+                "note": str(e),
+            })
+
+    safe = True
+    hard_blocks = []
+
+    # A jelenlegi rendszerben az order/test szöveg validáció miatt elfogadható,
+    # de valódi /api/v3/order endpoint használat nem lehet engedélyezett.
+    for x in suspicious:
+        pat = x.get("pattern")
+        if pat in ["api/v3/order", "/api/v3/order", "create_order", "new_order", "signed_order", "LIVE ORDER SENT"]:
+            hard_blocks.append(x)
+            safe = False
+
+    return {
+        "ok": True,
+        "safe": safe,
+        "suspicious_count": len(suspicious),
+        "hard_block_count": len(hard_blocks),
+        "suspicious": suspicious,
+        "hard_blocks": hard_blocks,
+        "order_endpoint_used": False,
+        "message": "Order endpoint safety scan lefutott.",
+    }
+
+
+def compile_status_check():
+    """
+    Runtime oldalról csak import/függvény jelenlét check.
+    A shell py_compile külön fut.
+    """
+    required = [
+        "master_status_overview",
+        "module_readiness_status",
+        "missing_setup_status",
+        "next_recommended_steps",
+        "healthcheck",
+        "trend_auto_refresh_status",
+        "spot_portfolio_status",
+    ]
+
+    missing = [x for x in required if x not in globals()]
+
+    return {
+        "ok": len(missing) == 0,
+        "missing": missing,
+        "checked": required,
+        "order_endpoint_used": False,
+    }
+
+
+def export_module_status_report(path=None):
+    """
+    Master/module/missing/next_steps JSON report.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if path is None:
+        path = settings.get("pre_apk_report_file", "logs/pre_apk_safe_report.json") or "logs/pre_apk_safe_report.json"
+
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    report = {
+        "ts": int(time.time()),
+        "app_version": globals().get("APP_VERSION", "unknown"),
+        "compile_status": compile_status_check(),
+        "order_scan": order_endpoint_safety_scan(),
+        "master_status": master_status_overview(),
+        "module_readiness": module_readiness_status(),
+        "missing_setup": missing_setup_status(),
+        "next_steps": next_recommended_steps(),
+        "order_endpoint_used": False,
+    }
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    audit_event("PRE_APK_REPORT_EXPORT", "Pre-APK safe report export", {
+        "path": path,
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "path": path,
+        "order_endpoint_used": False,
+        "message": "Module status report export kész.",
+    }
+
+
+def stable_checkpoint_summary():
+    """
+    Aktuális stabil checkpoint összefoglaló.
+    Git tag shellből pontosabb, itt app szintű summary.
+    """
+    st = master_status_overview()
+
+    return {
+        "ok": True,
+        "app_version": st.get("app_version"),
+        "mode": st.get("mode"),
+        "readiness": st.get("readiness"),
+        "safety": st.get("safety"),
+        "portfolio": st.get("portfolio"),
+        "trend": st.get("trend"),
+        "recommended_next_patch": (st.get("next_steps") or [{}])[0].get("patch"),
+        "apk_build_touched": False,
+        "order_endpoint_used": False,
+    }
+
+
+def pre_apk_full_safe_test():
+    """
+    Build előtti teljes safe gate.
+    Nem buildel APK-t.
+    Nem küld ordert.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    compile_check = compile_status_check()
+    order_scan = order_endpoint_safety_scan()
+    master = master_status_overview()
+    modules = module_readiness_status()
+    missing = missing_setup_status()
+
+    min_score = float(settings.get("pre_apk_min_readiness_score_pct", 70.0) or 70.0)
+    score = float(modules.get("score_pct", 0.0) or 0.0)
+
+    blockers = []
+    warnings = []
+
+    if bool(settings.get("pre_apk_require_compile_ok", True)) and not compile_check.get("ok"):
+        blockers.append("compile/runtime required function missing")
+
+    if bool(settings.get("pre_apk_require_no_order_endpoint", True)) and not order_scan.get("safe"):
+        blockers.append("order endpoint suspicious hard block found")
+
+    if bool(settings.get("pre_apk_require_master_status_ok", True)) and not master.get("ok"):
+        blockers.append("master status not ok")
+
+    if score < min_score:
+        warnings.append(f"readiness score alacsony: {score}% < {min_score}%")
+
+    if missing.get("critical_missing_count", 0) > 0:
+        blockers.append("critical missing setup exists")
+
+    report_export = export_module_status_report(settings.get("pre_apk_report_file", "logs/pre_apk_safe_report.json"))
+
+    ready_for_apk_test_build = len(blockers) == 0
+
+    return {
+        "ok": True,
+        "ready_for_apk_test_build": ready_for_apk_test_build,
+        "blockers": blockers,
+        "warnings": warnings,
+        "compile": compile_check,
+        "order_scan": order_scan,
+        "readiness_score_pct": score,
+        "min_required_score_pct": min_score,
+        "report": report_export,
+        "apk_build_touched": False,
+        "order_endpoint_used": False,
+        "message": "Pre-APK full safe test lefutott. Ez még nem APK build.",
     }
 
 

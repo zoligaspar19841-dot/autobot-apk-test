@@ -675,6 +675,122 @@ class TrendCanvasWidget(Widget):
 
 
 
+
+class DemoCorePreApkSafeTestScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]PRE-APK FULL SAFE TEST[/b]\n[size=14]Build előtti biztonsági átvilágítás. Nem buildel APK-t.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=76
+        ))
+
+        self.info = Label(text='Pre-APK safe test...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        buttons = [
+            ('RUN SAFE TEST', self.run_test),
+            ('ORDER SCAN', self.order_scan),
+            ('EXPORT REPORT', self.export_report),
+            ('CHECKPOINT SUMMARY', self.checkpoint_summary),
+            ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.run_test()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def run_test(self):
+        try:
+            res = demo_core.pre_apk_full_safe_test()
+            lines = []
+            lines.append('[b]Pre-APK Full Safe Test[/b]')
+            lines.append(f"Ready for APK test build: [b]{res.get('ready_for_apk_test_build')}[/b]")
+            lines.append(f"Readiness: {res.get('readiness_score_pct')}% / min {res.get('min_required_score_pct')}%")
+            lines.append(f"APK build touched: {res.get('apk_build_touched')}")
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append('')
+            lines.append('[b]Blockers[/b]')
+            bl = res.get('blockers') or []
+            if bl:
+                for x in bl:
+                    lines.append('🔴 ' + str(x))
+            else:
+                lines.append('✅ Nincs blocker')
+            lines.append('')
+            lines.append('[b]Warnings[/b]')
+            wr = res.get('warnings') or []
+            if wr:
+                for x in wr:
+                    lines.append('🟡 ' + str(x))
+            else:
+                lines.append('✅ Nincs warning')
+            lines.append('')
+            rep = res.get('report') or {}
+            lines.append(f"Report: {rep.get('path')}")
+            lines.append('')
+            lines.append('[size=12]' + str(res.get('message')) + '[/size]')
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Pre-APK safe test hiba: ' + str(e)
+
+    def order_scan(self):
+        try:
+            res = demo_core.order_endpoint_safety_scan()
+            lines = ['[b]Order endpoint safety scan[/b]', '']
+            lines.append(f"Safe: {res.get('safe')}")
+            lines.append(f"Suspicious: {res.get('suspicious_count')}")
+            lines.append(f"Hard blocks: {res.get('hard_block_count')}")
+            lines.append('')
+            for x in res.get('hard_blocks') or []:
+                lines.append('🔴 ' + str(x))
+            for x in res.get('suspicious') or []:
+                lines.append('🟡 ' + str(x))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Order scan hiba: ' + str(e)
+
+    def export_report(self):
+        try:
+            res = demo_core.export_module_status_report()
+            self.info.text = '[b]Report export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Report export hiba: ' + str(e)
+
+    def checkpoint_summary(self):
+        try:
+            res = demo_core.stable_checkpoint_summary()
+            lines = ['[b]Stable checkpoint summary[/b]', '']
+            for k, v in res.items():
+                lines.append(f"{k}: {v}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Checkpoint summary hiba: ' + str(e)
+
+
+
 class DemoCoreMasterStatusScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -3328,6 +3444,12 @@ class DemoCoreSettingsScreen(Screen):
             ('master_status_show_next_steps', 'Master status show next steps true/false'),
             ('master_status_show_modules', 'Master status show modules true/false'),
             ('master_status_show_missing', 'Master status show missing true/false'),
+            ('pre_apk_safe_test_enabled', 'Pre APK safe test enabled true/false'),
+            ('pre_apk_require_no_order_endpoint', 'Pre APK require no order endpoint true/false'),
+            ('pre_apk_require_compile_ok', 'Pre APK require compile OK true/false'),
+            ('pre_apk_require_master_status_ok', 'Pre APK require master status OK true/false'),
+            ('pre_apk_min_readiness_score_pct', 'Pre APK min readiness score %'),
+            ('pre_apk_report_file', 'Pre APK report file'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -3530,6 +3652,12 @@ class DemoCoreSettingsScreen(Screen):
             cfg['master_status_show_next_steps'] = self.inputs['master_status_show_next_steps'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['master_status_show_modules'] = self.inputs['master_status_show_modules'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['master_status_show_missing'] = self.inputs['master_status_show_missing'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['pre_apk_safe_test_enabled'] = self.inputs['pre_apk_safe_test_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['pre_apk_require_no_order_endpoint'] = self.inputs['pre_apk_require_no_order_endpoint'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['pre_apk_require_compile_ok'] = self.inputs['pre_apk_require_compile_ok'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['pre_apk_require_master_status_ok'] = self.inputs['pre_apk_require_master_status_ok'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['pre_apk_min_readiness_score_pct'] = float(self.inputs['pre_apk_min_readiness_score_pct'].text.replace(',', '.'))
+            cfg['pre_apk_report_file'] = self.inputs['pre_apk_report_file'].text.strip() or 'logs/pre_apk_safe_report.json'
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -3801,6 +3929,12 @@ class DemoCoreScreen(Screen):
         except Exception as e:
             self.info.text = "Safe mode kikapcsolás hiba: " + str(e)
 
+
+    def open_pre_apk_safe(self):
+        try:
+            self.manager.go_to("pre_apk_safe")
+        except Exception:
+            self.manager.current = "pre_apk_safe"
 
     def open_master_status(self):
         try:
@@ -4101,6 +4235,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreSpotPortfolioScreen(name="spot_portfolio"))
         sm.add_widget(DemoCoreTrendHistoryScreen(name="trend_history"))
         sm.add_widget(DemoCoreMasterStatusScreen(name="master_status"))
+        sm.add_widget(DemoCorePreApkSafeTestScreen(name="pre_apk_safe"))
         return sm
 
 if __name__ == "__main__":
