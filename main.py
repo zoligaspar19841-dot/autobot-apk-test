@@ -133,6 +133,27 @@ def go_back(sm, fallback="main"):
 
 
 # === PATCH 02 BACK NAVIGATION HELPERS ===
+
+
+# === PATCH 06C SAFE SCREEN ADD ===
+def safe_add_screen(sm, screen):
+    try:
+        name = getattr(screen, "name", None)
+        if not name:
+            sm.add_widget(screen)
+            return True
+        try:
+            if sm.has_screen(name):
+                return False
+        except Exception:
+            pass
+        sm.add_widget(screen)
+        return True
+    except Exception:
+        return False
+# === END PATCH 06C SAFE SCREEN ADD ===
+
+
 def safe_go_back(sm, fallback="main"):
     """
     Egységes vissza navigáció.
@@ -5313,10 +5334,10 @@ class AppMain(App):
     def build(self):
         Window.clearcolor = (0, 0, 0, 1)
         sm = HistoryScreenManager()
-        sm.add_widget(Main(name="main"))
+        safe_add_screen(sm, Main(name="main"))
         sm.add_widget(Dashboard("demo", ORANGE, name="demo"))
         sm.add_widget(Dashboard("live", BLUE, name="live"))
-        sm.add_widget(Scanner(name="scanner"))
+        safe_add_screen(sm, Scanner(name="scanner"))
         sm.add_widget(SectionScreen("BEÁLLÍTÁSOK", [("Alap beállítások", "settings_base"), ("Demo beállítások", "demo_settings"), ("Live beállítások", "live_settings"), ("Megjelenés / betűméret", "ui_mockup"), ("Fee / adózás", "fee_tax")], name="settings"))
         sm.add_widget(SectionScreen("BIZTONSÁG / API", [("App jelszó / PIN", "security_pin"), ("Binance API kulcs", "security_api"), ("E-mail beállítás", "security_email"), ("Titkosítás", "security_encrypt"), ("Healthcheck", "healthcheck")], name="security"))
         sm.add_widget(SectionScreen("AI / STRATÉGIA", [("Strategy Advanced", "strategy_advanced"), ("AI coin választás", "ai_coin"), ("Profit-Hold AI", "profit_hold_ai"), ("Backtest / Replay", "backtest"), ("Safety Guards", "safety_guards")], name="strategy"))
@@ -5324,16 +5345,16 @@ class AppMain(App):
         sm.add_widget(SectionScreen("HALADÓ", [("Schedules", "schedules"),
                 ("Háttérfutás / értesítések", "background_service"), ("Launchpool / Airdrop", "launchpool"), ("Patch Manager UI", "patch_manager_ui"), ("Diagnostics / Tests", "diagnostics"), ("PC + Google Drive Sync", "pc_drive_sync"), ("Fájlszerkezet", "file_structure"), ("Extra fejlesztések", "extra_features")], name="advanced"))
 
-        sm.add_widget(MasterMenu(name="main"))
+        # PATCH 06B: duplikált screen eltávolítva: safe_add_screen(sm, MasterMenu(name="main"))
         sm.add_widget(SkeletonScreen("TRADE SIMPLE", "Symbol, Risk/trade %, minimum nettó profit %, SL/TP ATR szorzók.\nBekötés később.", name="trade_simple"))
-        sm.add_widget(StrategyAdvancedScreen(name="strategy_advanced"))
+        safe_add_screen(sm, StrategyAdvancedScreen(name="strategy_advanced"))
         sm.add_widget(SkeletonScreen("SCHEDULES", "Snapshot 08:00, ár-trigger, automata state mentés, bővíthető szabályok.\nBekötés később.", name="schedules"))
         sm.add_widget(SkeletonScreen("LAUNCHPOOL / AIRDROP", "Enabled, Min APR, Watchlist, Scan now, Status.\nBekötés később.", name="launchpool"))
         sm.add_widget(SkeletonScreen("PATCH / SNAPSHOT", "Import ZIP, Export package.zip, Snapshot.zip, path-traversal védelem.\nBekötés később.", name="patch_snapshot"))
         sm.add_widget(SkeletonScreen("PC + GOOGLE DRIVE SYNC", "Primary/Secondary, Push to PC, Drive backup/import/export.\nBekötés később.", name="pc_drive_sync"))
         sm.add_widget(SkeletonScreen("DIAGNOSTICS / TESTS", "Routes, state, build/version, OpenAPI, toast visszajelzés.\nBekötés később.", name="diagnostics"))
         sm.add_widget(SkeletonScreen("PATCH MANAGER UI", "Beépített UI, JSON validáció, piros/zöld jelzés, real-time mentés.\nBekötés később.", name="patch_manager_ui"))
-        sm.add_widget(DemoResetScreen(name="demo_reset"))
+        safe_add_screen(sm, DemoResetScreen(name="demo_reset"))
         sm.add_widget(SkeletonScreen("FÁJLSZERKEZET", "main.py, autobot_core.py, settings, state, trades, logs, patch.sh.\nStruktúra később részletezve.", name="file_structure"))
         sm.add_widget(SkeletonScreen("EXTRA FEJLESZTÉSEK", "Smart cooldown, volatility filter, max drawdown, auto parameter tuning.\nBekötés később.", name="extra_features"))
         sm.add_widget(SkeletonScreen("SAFETY GUARDS", "Spread guard, slippage guard, API rate-limit, Panic Stop-All, Safe Mode.\nBekötés később.", name="safety_guards"))
@@ -5344,9 +5365,9 @@ class AppMain(App):
         sm.add_widget(SkeletonScreen("FEE / ADÓZÁS", "Maker/taker díjak nettó PnL-ben, opcionális HU 15% adózott profit nézet.\nNem adótanácsadás.", name="fee_tax"))
         sm.add_widget(SkeletonScreen("PROFIT-HOLD AI", "Profit tartás: hold idő, trailing take profit, edge keep, cooldown.\nBekötés később.", name="profit_hold_ai"))
 
-        sm.add_widget(TradeSimpleScreen(name="trade_simple"))
+        safe_add_screen(sm, TradeSimpleScreen(name="trade_simple"))
         sm.add_widget(SkeletonScreen("ALAP BEÁLLÍTÁSOK", "Alap pénznem, nyelv, téma, értesítések, rendszer működés.\nBekötés később.", name="settings_base"))
-        sm.add_widget(DemoCoreSettingsScreen(name="demo_settings"))
+        safe_add_screen(sm, DemoCoreSettingsScreen(name="demo_settings"))
         sm.add_widget(SkeletonScreen("LIVE BEÁLLÍTÁSOK", "Live API mód, max kitettség, safety guard, slippage, stop-all.\nBekötés később.", name="live_settings"))
         sm.add_widget(SkeletonScreen("APP JELSZÓ / PIN", "Belépési PIN, admin mód, később biometria.\nBekötés később.", name="security_pin"))
         sm.add_widget(SkeletonScreen("BINANCE API KULCS", "API key / secret mentés, read-only ellenőrzés, live engedély később.\nBekötés később.", name="security_api"))
@@ -5357,45 +5378,45 @@ class AppMain(App):
         sm.add_widget(SkeletonScreen("PROFIT REPORT", "Profit trend, napi/heti összesítés, grafikon később.\nBekötés később.", name="profit_report"))
 
         sm.add_widget(SkeletonScreen("HÁTTÉRFUTÁS / ÉRTESÍTÉSEK", "Később itt lesz:\n- háttérben futó bot\n- állandó értesítés\n- trade riasztások\n- hibaértesítés\n- Android foreground service alap.\nBekötés később.", name="background_service"))
-        sm.add_widget(DemoCoreScreen(name="demo_core"))
-        sm.add_widget(DemoCoreLogsScreen(name="demo_logs"))
-        sm.add_widget(DemoCoreAuditScreen(name="audit_log"))
-        sm.add_widget(DemoCoreScannerScreen(name="scanner"))
-        sm.add_widget(DemoCoreFeeTaxScreen(name="fee_tax"))
-        sm.add_widget(DemoCoreTradeScreen(name="trade_logic"))
-        sm.add_widget(DemoCoreAIScreen(name="ai_advisor"))
-        sm.add_widget(DemoCoreSecretsScreen(name="secrets"))
-        sm.add_widget(DemoCoreBinanceLiveScreen(name="binance_live"))
-        sm.add_widget(DemoCoreBacktestScreen(name="backtest"))
-        sm.add_widget(DemoCoreDiagnosticsScreen(name="diagnostics"))
-        sm.add_widget(DemoCoreSchedulesScreen(name="schedules"))
-        sm.add_widget(DemoCoreLaunchpoolScreen(name="launchpool"))
-        sm.add_widget(DemoCorePackageScreen(name="package"))
-        sm.add_widget(DemoCoreSyncScreen(name="sync"))
-        sm.add_widget(DemoCoreFirstRunScreen(name="first_run"))
-        sm.add_widget(DemoCoreAdminScreen(name="admin"))
-        sm.add_widget(DemoCorePatchManagerScreen(name="patch_manager"))
-        sm.add_widget(DemoCoreApprovalExecutorScreen(name="approval_executor"))
-        sm.add_widget(DemoCoreLiveGateScreen(name="live_gate"))
-        sm.add_widget(DemoCoreBinanceAccountScreen(name="binance_account"))
-        sm.add_widget(DemoCoreBinanceSignedScreen(name="binance_signed"))
-        sm.add_widget(DemoCoreBinanceReadOnlyRealScreen(name="binance_readonly_real"))
-        sm.add_widget(DemoCoreIntegrationOverviewScreen(name="integrations"))
-        sm.add_widget(DemoCoreStartupSafetyScreen(name="startup_safety"))
-        sm.add_widget(DemoCoreSpotPortfolioScreen(name="spot_portfolio"))
-        sm.add_widget(DemoCoreTrendHistoryScreen(name="trend_history"))
-        sm.add_widget(DemoCoreMasterStatusScreen(name="master_status"))
-        sm.add_widget(DemoCorePreApkSafeTestScreen(name="pre_apk_safe"))
-        sm.add_widget(DemoCoreIntegrationTestCenterScreen(name="integration_tests"))
-        sm.add_widget(DemoCoreModernDashboardScreen(name="modern_dashboard"))
-        sm.add_widget(DemoCoreTradeSimpleAdvancedScreen(name="trade_simple_advanced"))
-        sm.add_widget(DemoCoreReadonlyBalanceScreen(name="readonly_balance"))
-        sm.add_widget(DemoCoreProfitReportScreen(name="profit_report"))
-        sm.add_widget(DemoCoreHealthAlertRecoveryScreen(name="health_alert"))
-        sm.add_widget(DemoCoreFirstRunReadinessScreen(name="firstrun_readiness"))
-        sm.add_widget(DemoCoreReleaseCandidateScreen(name="release_candidate"))
-        sm.add_widget(DemoCoreUiRouteCheckScreen(name="ui_route_check"))
-        sm.add_widget(DemoCoreApkBuildGateScreen(name="apk_build_gate"))
+        safe_add_screen(sm, DemoCoreScreen(name="demo_core"))
+        safe_add_screen(sm, DemoCoreLogsScreen(name="demo_logs"))
+        safe_add_screen(sm, DemoCoreAuditScreen(name="audit_log"))
+        # PATCH 06B: duplikált screen eltávolítva: safe_add_screen(sm, DemoCoreScannerScreen(name="scanner"))
+        safe_add_screen(sm, DemoCoreFeeTaxScreen(name="fee_tax"))
+        safe_add_screen(sm, DemoCoreTradeScreen(name="trade_logic"))
+        safe_add_screen(sm, DemoCoreAIScreen(name="ai_advisor"))
+        safe_add_screen(sm, DemoCoreSecretsScreen(name="secrets"))
+        safe_add_screen(sm, DemoCoreBinanceLiveScreen(name="binance_live"))
+        safe_add_screen(sm, DemoCoreBacktestScreen(name="backtest"))
+        safe_add_screen(sm, DemoCoreDiagnosticsScreen(name="diagnostics"))
+        safe_add_screen(sm, DemoCoreSchedulesScreen(name="schedules"))
+        safe_add_screen(sm, DemoCoreLaunchpoolScreen(name="launchpool"))
+        safe_add_screen(sm, DemoCorePackageScreen(name="package"))
+        safe_add_screen(sm, DemoCoreSyncScreen(name="sync"))
+        safe_add_screen(sm, DemoCoreFirstRunScreen(name="first_run"))
+        safe_add_screen(sm, DemoCoreAdminScreen(name="admin"))
+        safe_add_screen(sm, DemoCorePatchManagerScreen(name="patch_manager"))
+        safe_add_screen(sm, DemoCoreApprovalExecutorScreen(name="approval_executor"))
+        safe_add_screen(sm, DemoCoreLiveGateScreen(name="live_gate"))
+        safe_add_screen(sm, DemoCoreBinanceAccountScreen(name="binance_account"))
+        safe_add_screen(sm, DemoCoreBinanceSignedScreen(name="binance_signed"))
+        safe_add_screen(sm, DemoCoreBinanceReadOnlyRealScreen(name="binance_readonly_real"))
+        safe_add_screen(sm, DemoCoreIntegrationOverviewScreen(name="integrations"))
+        safe_add_screen(sm, DemoCoreStartupSafetyScreen(name="startup_safety"))
+        safe_add_screen(sm, DemoCoreSpotPortfolioScreen(name="spot_portfolio"))
+        safe_add_screen(sm, DemoCoreTrendHistoryScreen(name="trend_history"))
+        safe_add_screen(sm, DemoCoreMasterStatusScreen(name="master_status"))
+        safe_add_screen(sm, DemoCorePreApkSafeTestScreen(name="pre_apk_safe"))
+        safe_add_screen(sm, DemoCoreIntegrationTestCenterScreen(name="integration_tests"))
+        safe_add_screen(sm, DemoCoreModernDashboardScreen(name="modern_dashboard"))
+        safe_add_screen(sm, DemoCoreTradeSimpleAdvancedScreen(name="trade_simple_advanced"))
+        safe_add_screen(sm, DemoCoreReadonlyBalanceScreen(name="readonly_balance"))
+        safe_add_screen(sm, DemoCoreProfitReportScreen(name="profit_report"))
+        safe_add_screen(sm, DemoCoreHealthAlertRecoveryScreen(name="health_alert"))
+        safe_add_screen(sm, DemoCoreFirstRunReadinessScreen(name="firstrun_readiness"))
+        safe_add_screen(sm, DemoCoreReleaseCandidateScreen(name="release_candidate"))
+        safe_add_screen(sm, DemoCoreUiRouteCheckScreen(name="ui_route_check"))
+        safe_add_screen(sm, DemoCoreApkBuildGateScreen(name="apk_build_gate"))
         return sm
 
 if __name__ == "__main__":
