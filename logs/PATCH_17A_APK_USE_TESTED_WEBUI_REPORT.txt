@@ -1,0 +1,17 @@
+PATCH 17A OK
+Date: Sun May  3 22:36:43 CEST 2026
+
+Cél:
+- APK a tesztelt webui/index.html felületet indítsa.
+- APK belső 127.0.0.1:8080 szervert indít.
+- Androidon WebView nyitja meg.
+- Demo API válaszok vannak.
+- Live order tiltva.
+- Binance order NEM történt.
+- APK build NEM indult.
+- Commit NEM történt.
+
+Módosított:
+- apk_stage/main.py
+- apk_stage/buildozer.spec
+- apk_stage/webui/index.html másolat

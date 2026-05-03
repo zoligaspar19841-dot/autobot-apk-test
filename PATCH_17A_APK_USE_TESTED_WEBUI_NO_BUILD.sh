@@ -1,3 +1,32 @@
+#!/usr/bin/env bash
+set -e
+
+echo "=== PATCH 17A: APK A TESZTELT WEB UI-T INDÍTSA - APK BUILD NÉLKÜL ==="
+echo "Nem buildel, nem pushol, nem küld Binance ordert."
+
+mkdir -p backups logs apk_stage/webui
+TS=$(date +%Y%m%d_%H%M%S)
+
+if [ ! -f webui/index.html ]; then
+  echo "HIBA: nincs webui/index.html - ez kell, amit most teszteltünk."
+  exit 1
+fi
+
+if [ -f apk_stage/main.py ]; then
+  cp apk_stage/main.py "backups/apk_stage_main.py.bak_patch17a_$TS"
+fi
+
+if [ -f apk_stage/buildozer.spec ]; then
+  cp apk_stage/buildozer.spec "backups/apk_stage_buildozer.spec.bak_patch17a_$TS"
+fi
+
+echo "=== 1) Tesztelt Web UI bemásolása APK stage-be ==="
+rm -rf apk_stage/webui
+mkdir -p apk_stage/webui
+cp -a webui/. apk_stage/webui/
+
+echo "=== 2) APK main.py átállítása WebUI launcher módra ==="
+cat > apk_stage/main.py <<'PY'
 # PATCH 17A APK WEBUI LAUNCHER
 # Cél: az APK ugyanazt a webui/index.html felületet mutassa, mint amit Termuxban teszteltünk.
 # Biztonság: live order tiltott; csak helyi demo API válaszok.
@@ -216,3 +245,69 @@ class AutobotWebUIApp(App):
 
 if __name__ == "__main__":
     AutobotWebUIApp().run()
+PY
+
+echo "=== 3) buildozer.spec webui fájlok engedélyezése ==="
+python3 - <<'PY'
+from pathlib import Path
+
+p = Path("apk_stage/buildozer.spec")
+if not p.exists():
+    print("WARN: nincs apk_stage/buildozer.spec")
+    raise SystemExit(0)
+
+s = p.read_text(encoding="utf-8", errors="ignore")
+
+def set_line(prefix, value):
+    global s
+    lines = s.splitlines()
+    done = False
+    out = []
+    for line in lines:
+        if line.strip().startswith(prefix):
+            out.append(value)
+            done = True
+        else:
+            out.append(line)
+    if not done:
+        out.append(value)
+    s = "\n".join(out) + "\n"
+
+set_line("source.include_exts", "source.include_exts = py,png,jpg,jpeg,kv,atlas,json,txt,csv,html,css,js,svg,ico")
+set_line("requirements", "requirements = python3,kivy")
+set_line("android.permissions", "android.permissions = INTERNET")
+
+p.write_text(s, encoding="utf-8")
+print("OK patched:", p)
+PY
+
+echo "=== 4) Ellenőrzés ==="
+python3 -m py_compile apk_stage/main.py
+
+grep -nE "source.include_exts|requirements|android.permissions" apk_stage/buildozer.spec || true
+ls -lah apk_stage/webui/index.html
+grep -nE "PATCH 17A|ThreadingHTTPServer|WebView|live_order_enabled|blocked_live_order" apk_stage/main.py || true
+
+cat > logs/PATCH_17A_APK_USE_TESTED_WEBUI_REPORT.txt <<EOF
+PATCH 17A OK
+Date: $(date)
+
+Cél:
+- APK a tesztelt webui/index.html felületet indítsa.
+- APK belső 127.0.0.1:8080 szervert indít.
+- Androidon WebView nyitja meg.
+- Demo API válaszok vannak.
+- Live order tiltva.
+- Binance order NEM történt.
+- APK build NEM indult.
+- Commit NEM történt.
+
+Módosított:
+- apk_stage/main.py
+- apk_stage/buildozer.spec
+- apk_stage/webui/index.html másolat
+EOF
+
+echo "=== PATCH 17A KÉSZ ==="
+echo "Jelentés: logs/PATCH_17A_APK_USE_TESTED_WEBUI_REPORT.txt"
+echo "APK build NEM indult. Commit NEM történt."
