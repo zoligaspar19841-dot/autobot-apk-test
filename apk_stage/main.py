@@ -22,6 +22,99 @@ BLUE = (0, 0.25, 0.85, 1)
 DARK = (0.07, 0.07, 0.08, 1)
 CARD = (0.16, 0.16, 0.17, 1)
 
+
+
+# === PATCH 05 DARK/YELLOW GLOBAL UI STYLE ===
+try:
+    from kivy.lang import Builder
+
+    Builder.load_string("""
+<Button>:
+    background_normal: ''
+    background_down: ''
+    background_color: 0.30, 0.30, 0.30, 1
+    color: 1, 1, 1, 1
+    font_size: '18sp'
+
+<TextInput>:
+    background_normal: ''
+    background_active: ''
+    background_color: 0.08, 0.08, 0.08, 1
+    foreground_color: 1, 1, 1, 1
+    cursor_color: 1, 0.82, 0.18, 1
+    hint_text_color: 0.62, 0.62, 0.62, 1
+    font_size: '17sp'
+    padding: [10, 10, 10, 10]
+
+<Label>:
+    color: 1, 1, 1, 1
+""")
+except Exception:
+    pass
+
+
+APP_BG = (0.0, 0.0, 0.0, 1)
+APP_YELLOW = (1.0, 0.78, 0.10, 1)
+APP_DARK_CARD = (0.08, 0.08, 0.08, 1)
+APP_BUTTON = (0.30, 0.30, 0.30, 1)
+
+
+def make_title(text, subtitle=""):
+    try:
+        if subtitle:
+            return Label(
+                text="[b]" + text + "[/b]\\n[size=13]" + subtitle + "[/size]",
+                markup=True,
+                color=APP_YELLOW,
+                size_hint_y=None,
+                height=64,
+                halign="center",
+                valign="middle"
+            )
+        return Label(
+            text="[b]" + text + "[/b]",
+            markup=True,
+            color=APP_YELLOW,
+            size_hint_y=None,
+            height=48,
+            halign="center",
+            valign="middle"
+        )
+    except Exception:
+        return Label(text=text)
+
+
+def make_dark_input(default_text=""):
+    try:
+        return TextInput(
+            text="",
+            hint_text=str(default_text),
+            multiline=False,
+            size_hint_y=None,
+            height=48,
+            foreground_color=(1, 1, 1, 1),
+            background_color=(0.08, 0.08, 0.08, 1),
+            cursor_color=(1, 0.82, 0.18, 1),
+            hint_text_color=(0.62, 0.62, 0.62, 1),
+            padding=[10, 10, 10, 10]
+        )
+    except Exception:
+        return TextInput(text=str(default_text))
+
+
+def style_button(btn):
+    try:
+        btn.background_normal = ""
+        btn.background_down = ""
+        btn.background_color = APP_BUTTON
+        btn.color = (1, 1, 1, 1)
+        btn.font_size = "18sp"
+    except Exception:
+        pass
+    return btn
+# === END PATCH 05 DARK/YELLOW GLOBAL UI STYLE ===
+
+
 NAV_STACK = []
 
 def go_to(sm, screen):
