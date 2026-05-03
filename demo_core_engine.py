@@ -1,4 +1,4 @@
-APP_VERSION = "0.5.1-demo-core"
+APP_VERSION = "0.5.2-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -73,6 +73,19 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+TRADE_UI_DEFAULTS = {
+    "trade_ui_enabled": True,
+    "trade_simple_symbol": "BTCUSDT",
+    "trade_simple_side": "BUY",
+    "trade_simple_quote_amount": 10.0,
+    "trade_simple_risk_pct": 10.0,
+    "trade_simple_min_net_profit_pct": 0.10,
+    "strategy_advanced_enabled": True,
+    "strategy_validation_enabled": True,
+    "strategy_safety_preview_enabled": True,
+}
 
 DASHBOARD_MODERN_DEFAULTS = {
     "dashboard_modern_enabled": True,
@@ -391,6 +404,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "TRADE_UI_DEFAULTS" in globals():
+        for k, v in TRADE_UI_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -5841,6 +5860,257 @@ def dashboard_modern_overview_data():
         "order_endpoint_used": False,
         "message": "Modern dashboard adatcsomag kész.",
     }
+
+
+
+def trade_simple_ui_status():
+    """
+    Trade Simple képernyő adat.
+    Nem küld ordert.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    symbol = str(settings.get("trade_simple_symbol", settings.get("symbol", "BTCUSDT")) or "BTCUSDT").upper()
+    side = str(settings.get("trade_simple_side", "BUY") or "BUY").upper()
+    quote_amount = float(settings.get("trade_simple_quote_amount", 10.0) or 10.0)
+
+    guard = {}
+    try:
+        guard = trade_screen_check(symbol, side, settings) if "trade_screen_check" in globals() else {}
+    except Exception as e:
+        guard = {"ok": False, "error": str(e)}
+
+    ai = {}
+    try:
+        ai = ai_advisor(symbol) if "ai_advisor" in globals() else {}
+    except Exception as e:
+        ai = {"ok": False, "error": str(e)}
+
+    tax = {}
+    try:
+        tax = profit_pct_breakdown(float(settings.get("min_after_tax_profit_pct", 0.10) or 0.10), settings)
+    except Exception as e:
+        tax = {"ok": False, "error": str(e)}
+
+    return {
+        "ok": True,
+        "enabled": bool(settings.get("trade_ui_enabled", True)),
+        "symbol": symbol,
+        "side": side,
+        "quote_amount": quote_amount,
+        "risk_pct": settings.get("risk_pct"),
+        "max_positions": settings.get("max_positions"),
+        "min_profit_pct": settings.get("min_profit_pct"),
+        "min_after_tax_profit_pct": settings.get("min_after_tax_profit_pct"),
+        "execution_mode": settings.get("execution_mode"),
+        "order_type": settings.get("order_type"),
+        "use_bbo": settings.get("use_bbo"),
+        "guard": guard,
+        "ai": ai,
+        "tax_preview": tax,
+        "order_endpoint_used": False,
+    }
+
+
+def strategy_advanced_ui_status():
+    """
+    Strategy Advanced beállítások egyben.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    keys = [
+        "sma_fast",
+        "sma_slow",
+        "rsi_len",
+        "atr_len",
+        "atr_mult",
+        "stop_loss_pct",
+        "trailing_drop_pct",
+        "hold_profit_minutes",
+        "trailing_take_profit_pct",
+        "time_in_trend_minutes_max",
+        "cooldown_after_exit_min",
+        "profit_erosion_guard_pct",
+        "scanner_enabled",
+        "scanner_top_n",
+        "min_edge_score_open",
+        "min_edge_score_keep",
+        "max_scan_symbols",
+        "maker_fee_pct",
+        "taker_fee_pct",
+        "tax_pct",
+        "min_after_tax_profit_pct",
+    ]
+
+    data = {k: settings.get(k) for k in keys}
+
+    return {
+        "ok": True,
+        "enabled": bool(settings.get("strategy_advanced_enabled", True)),
+        "settings": data,
+        "order_endpoint_used": False,
+    }
+
+
+def validate_strategy_settings():
+    """
+    Strategy beállítás validáció.
+    Csak ellenőrzés, nem kereskedik.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    errors = []
+    warnings = []
+
+    def num(key, default=0.0):
+        try:
+            return float(settings.get(key, default))
+        except Exception:
+            errors.append(f"{key} nem szám")
+            return float(default)
+
+    risk = num("risk_pct", 10.0)
+    max_pos = int(num("max_positions", 3))
+    min_after_tax = num("min_after_tax_profit_pct", 0.10)
+    fee = num("taker_fee_pct", 0.10)
+    tax = num("tax_pct", 15.0)
+    sma_fast = int(num("sma_fast", 9))
+    sma_slow = int(num("sma_slow", 21))
+    hold = num("hold_profit_minutes", 30)
+    cooldown = num("cooldown_after_exit_min", 10)
+    edge_open = num("min_edge_score_open", 0.55)
+    edge_keep = num("min_edge_score_keep", 0.50)
+
+    if risk <= 0:
+        errors.append("risk_pct <= 0")
+    if risk > 50:
+        warnings.append("risk_pct magas, 50% felett")
+    if max_pos < 1:
+        errors.append("max_positions < 1")
+    if max_pos > 20:
+        warnings.append("max_positions magas")
+    if min_after_tax < 0:
+        errors.append("min_after_tax_profit_pct negatív")
+    if fee < 0:
+        errors.append("taker_fee_pct negatív")
+    if tax < 0:
+        errors.append("tax_pct negatív")
+    if sma_fast >= sma_slow:
+        warnings.append("sma_fast >= sma_slow, trend jel gyengébb lehet")
+    if hold < 0:
+        errors.append("hold_profit_minutes negatív")
+    if cooldown < 0:
+        errors.append("cooldown_after_exit_min negatív")
+    if edge_open < edge_keep:
+        warnings.append("min_edge_score_open kisebb mint keep")
+    if bool(settings.get("live_mode_enabled", False)):
+        warnings.append("Live mód jelölve: safety gate továbbra is kötelező")
+
+    return {
+        "ok": len(errors) == 0,
+        "errors": errors,
+        "warnings": warnings,
+        "valid": len(errors) == 0,
+        "order_endpoint_used": False,
+    }
+
+
+def strategy_safety_preview(symbol=None, side=None, quote_amount=None):
+    """
+    Trade/strategy döntés előnézet.
+    Nem küld Binance ordert.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    symbol = str(symbol or settings.get("trade_simple_symbol", "BTCUSDT") or "BTCUSDT").upper()
+    side = str(side or settings.get("trade_simple_side", "BUY") or "BUY").upper()
+    quote_amount = float(quote_amount if quote_amount is not None else settings.get("trade_simple_quote_amount", 10.0) or 10.0)
+
+    validation = validate_strategy_settings()
+
+    guard = {}
+    try:
+        guard = trade_screen_check(symbol, side, settings) if "trade_screen_check" in globals() else {}
+    except Exception as e:
+        guard = {"ok": False, "error": str(e)}
+
+    ai = {}
+    try:
+        ai = ai_advisor(symbol) if "ai_advisor" in globals() else {}
+    except Exception as e:
+        ai = {"ok": False, "error": str(e)}
+
+    after_tax_ok = {}
+    try:
+        after_tax_ok_bool, after_tax_ok = is_after_tax_profit_ok(float(settings.get("min_profit_pct", 1.0) or 1.0), settings)
+    except Exception:
+        after_tax_ok_bool = False
+        after_tax_ok = {}
+
+    blockers = []
+    if not validation.get("valid"):
+        blockers.append("strategy_validation_error")
+    if bool(state.get("safe_mode", False)):
+        blockers.append("safe_mode_active")
+    if str(settings.get("execution_mode", "AUTO")).upper() == "OFF":
+        blockers.append("execution_mode_off")
+    if guard and guard.get("ok") is False:
+        blockers.append("trade_guard_block")
+    if ai and ai.get("recommendation") == "HOLD":
+        blockers.append("ai_hold")
+
+    return {
+        "ok": True,
+        "symbol": symbol,
+        "side": side,
+        "quote_amount": quote_amount,
+        "validation": validation,
+        "guard": guard,
+        "ai": ai,
+        "after_tax_preview": after_tax_ok,
+        "after_tax_ok": after_tax_ok_bool,
+        "blockers": blockers,
+        "would_allow_demo_signal": len(blockers) == 0,
+        "would_send_live_order": False,
+        "order_endpoint_used": False,
+        "message": "Strategy safety preview kész. Valódi order nincs.",
+    }
+
+
+def save_trade_simple_settings(symbol=None, side=None, quote_amount=None, risk_pct=None, min_after_tax_profit_pct=None):
+    """
+    Trade Simple beállítás mentése.
+    Nem küld ordert.
+    """
+    state = load_state()
+    settings = state.setdefault("settings", {})
+
+    if symbol is not None:
+        settings["trade_simple_symbol"] = str(symbol).upper()
+    if side is not None:
+        settings["trade_simple_side"] = str(side).upper()
+    if quote_amount is not None:
+        settings["trade_simple_quote_amount"] = float(quote_amount)
+    if risk_pct is not None:
+        settings["risk_pct"] = float(risk_pct)
+        settings["trade_simple_risk_pct"] = float(risk_pct)
+    if min_after_tax_profit_pct is not None:
+        settings["min_after_tax_profit_pct"] = float(min_after_tax_profit_pct)
+        settings["trade_simple_min_net_profit_pct"] = float(min_after_tax_profit_pct)
+
+    save_state(state)
+    audit_event("TRADE_SIMPLE_SAVE", "Trade Simple settings mentve", {
+        "symbol": settings.get("trade_simple_symbol"),
+        "side": settings.get("trade_simple_side"),
+        "quote_amount": settings.get("trade_simple_quote_amount"),
+        "order_endpoint_used": False,
+    })
+
+    return trade_simple_ui_status()
 
 
 if __name__ == "__main__":

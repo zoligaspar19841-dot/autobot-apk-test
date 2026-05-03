@@ -678,6 +678,177 @@ class TrendCanvasWidget(Widget):
 
 
 
+
+class DemoCoreTradeSimpleAdvancedScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]TRADE SIMPLE / STRATEGY ADVANCED[/b]\n[size=14]Beállítás, validáció, safety preview. Order nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=78
+        ))
+
+        form = GridLayout(cols=2, size_hint_y=None, height=210, spacing=6)
+        self.symbol = TextInput(text='BTCUSDT', multiline=False)
+        self.side = TextInput(text='BUY', multiline=False)
+        self.amount = TextInput(text='10', multiline=False)
+        self.risk = TextInput(text='10', multiline=False)
+        self.minprofit = TextInput(text='0.10', multiline=False)
+
+        for label, widget in [
+            ('Symbol', self.symbol),
+            ('Side BUY/SELL', self.side),
+            ('Quote amount', self.amount),
+            ('Risk %', self.risk),
+            ('Min after-tax profit %', self.minprofit),
+        ]:
+            form.add_widget(Label(text=label))
+            form.add_widget(widget)
+
+        root.add_widget(form)
+
+        self.info = Label(text='Trade Simple...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        buttons = [
+            ('LOAD', self.load_values),
+            ('SAVE SIMPLE', self.save_simple),
+            ('SIMPLE STATUS', self.simple_status),
+            ('ADVANCED STATUS', self.advanced_status),
+            ('VALIDATE', self.validate),
+            ('SAFETY PREVIEW', self.preview),
+            ('MASTER STATUS', lambda: self.manager.go_to('master_status')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.load_values()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def load_values(self):
+        try:
+            st = demo_core.load_state()
+            cfg = st.get('settings', {})
+            self.symbol.text = str(cfg.get('trade_simple_symbol', 'BTCUSDT'))
+            self.side.text = str(cfg.get('trade_simple_side', 'BUY'))
+            self.amount.text = str(cfg.get('trade_simple_quote_amount', 10))
+            self.risk.text = str(cfg.get('risk_pct', cfg.get('trade_simple_risk_pct', 10)))
+            self.minprofit.text = str(cfg.get('min_after_tax_profit_pct', cfg.get('trade_simple_min_net_profit_pct', 0.10)))
+            self.simple_status()
+        except Exception as e:
+            self.info.text = 'Load hiba: ' + str(e)
+
+    def save_simple(self):
+        try:
+            res = demo_core.save_trade_simple_settings(
+                symbol=self.symbol.text.strip(),
+                side=self.side.text.strip(),
+                quote_amount=float(self.amount.text.replace(',', '.')),
+                risk_pct=float(self.risk.text.replace(',', '.')),
+                min_after_tax_profit_pct=float(self.minprofit.text.replace(',', '.')),
+            )
+            self.info.text = '[b]Mentve[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Save hiba: ' + str(e)
+
+    def simple_status(self):
+        try:
+            res = demo_core.trade_simple_ui_status()
+            lines = ['[b]Trade Simple státusz[/b]', '']
+            for k in ['enabled','symbol','side','quote_amount','risk_pct','max_positions','min_profit_pct','min_after_tax_profit_pct','execution_mode','order_type','use_bbo','order_endpoint_used']:
+                lines.append(f"{k}: {res.get(k)}")
+            lines.append('')
+            lines.append('[b]Guard[/b]')
+            lines.append(str(res.get('guard')))
+            lines.append('')
+            lines.append('[b]AI[/b]')
+            lines.append(str(res.get('ai')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Simple status hiba: ' + str(e)
+
+    def advanced_status(self):
+        try:
+            res = demo_core.strategy_advanced_ui_status()
+            lines = ['[b]Strategy Advanced státusz[/b]', '']
+            for k, v in (res.get('settings') or {}).items():
+                lines.append(f"{k}: {v}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Advanced status hiba: ' + str(e)
+
+    def validate(self):
+        try:
+            res = demo_core.validate_strategy_settings()
+            lines = ['[b]Strategy Validation[/b]', f"Valid: {res.get('valid')}", '']
+            lines.append('[b]Errors[/b]')
+            if res.get('errors'):
+                for x in res.get('errors'):
+                    lines.append('🔴 ' + str(x))
+            else:
+                lines.append('✅ Nincs error')
+            lines.append('')
+            lines.append('[b]Warnings[/b]')
+            if res.get('warnings'):
+                for x in res.get('warnings'):
+                    lines.append('🟡 ' + str(x))
+            else:
+                lines.append('✅ Nincs warning')
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Validate hiba: ' + str(e)
+
+    def preview(self):
+        try:
+            res = demo_core.strategy_safety_preview(
+                symbol=self.symbol.text.strip(),
+                side=self.side.text.strip(),
+                quote_amount=float(self.amount.text.replace(',', '.')),
+            )
+            lines = ['[b]Strategy Safety Preview[/b]', '']
+            lines.append(f"Symbol: {res.get('symbol')} | Side: {res.get('side')} | Amount: {res.get('quote_amount')}")
+            lines.append(f"Would allow demo signal: {res.get('would_allow_demo_signal')}")
+            lines.append(f"Would send live order: {res.get('would_send_live_order')}")
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append('')
+            lines.append('[b]Blockers[/b]')
+            if res.get('blockers'):
+                for x in res.get('blockers'):
+                    lines.append('🟡 ' + str(x))
+            else:
+                lines.append('✅ Nincs blocker')
+            lines.append('')
+            lines.append('[b]Guard[/b]')
+            lines.append(str(res.get('guard')))
+            lines.append('')
+            lines.append('[b]After-tax preview[/b]')
+            lines.append(str(res.get('after_tax_preview')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Preview hiba: ' + str(e)
+
+
+
 class DemoCoreModernDashboardScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -3687,6 +3858,15 @@ class DemoCoreSettingsScreen(Screen):
             ('dashboard_top_coin_count', 'Dashboard top coin count'),
             ('dashboard_theme_mode', 'Dashboard theme mode AUTO/DEMO_GOLD/LIVE_BLUE'),
             ('dashboard_show_safety_badges', 'Dashboard show safety badges true/false'),
+            ('trade_ui_enabled', 'Trade UI enabled true/false'),
+            ('trade_simple_symbol', 'Trade Simple symbol'),
+            ('trade_simple_side', 'Trade Simple side BUY/SELL'),
+            ('trade_simple_quote_amount', 'Trade Simple quote amount'),
+            ('trade_simple_risk_pct', 'Trade Simple risk pct'),
+            ('trade_simple_min_net_profit_pct', 'Trade Simple min net profit pct'),
+            ('strategy_advanced_enabled', 'Strategy advanced enabled true/false'),
+            ('strategy_validation_enabled', 'Strategy validation enabled true/false'),
+            ('strategy_safety_preview_enabled', 'Strategy safety preview enabled true/false'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -3904,6 +4084,17 @@ class DemoCoreSettingsScreen(Screen):
             cfg['dashboard_top_coin_count'] = int(float(self.inputs['dashboard_top_coin_count'].text.replace(',', '.')))
             cfg['dashboard_theme_mode'] = self.inputs['dashboard_theme_mode'].text.strip().upper() or 'AUTO'
             cfg['dashboard_show_safety_badges'] = self.inputs['dashboard_show_safety_badges'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['trade_ui_enabled'] = self.inputs['trade_ui_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['trade_simple_symbol'] = self.inputs['trade_simple_symbol'].text.strip().upper() or 'BTCUSDT'
+            cfg['trade_simple_side'] = self.inputs['trade_simple_side'].text.strip().upper() or 'BUY'
+            cfg['trade_simple_quote_amount'] = float(self.inputs['trade_simple_quote_amount'].text.replace(',', '.'))
+            cfg['trade_simple_risk_pct'] = float(self.inputs['trade_simple_risk_pct'].text.replace(',', '.'))
+            cfg['risk_pct'] = float(self.inputs['trade_simple_risk_pct'].text.replace(',', '.'))
+            cfg['trade_simple_min_net_profit_pct'] = float(self.inputs['trade_simple_min_net_profit_pct'].text.replace(',', '.'))
+            cfg['min_after_tax_profit_pct'] = float(self.inputs['trade_simple_min_net_profit_pct'].text.replace(',', '.'))
+            cfg['strategy_advanced_enabled'] = self.inputs['strategy_advanced_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['strategy_validation_enabled'] = self.inputs['strategy_validation_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['strategy_safety_preview_enabled'] = self.inputs['strategy_safety_preview_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -4187,6 +4378,12 @@ class DemoCoreScreen(Screen):
             self.manager.go_to("pre_apk_safe")
         except Exception:
             self.manager.current = "pre_apk_safe"
+
+    def open_trade_simple_advanced(self):
+        try:
+            self.manager.go_to("trade_simple_advanced")
+        except Exception:
+            self.manager.current = "trade_simple_advanced"
 
     def open_modern_dashboard(self):
         try:
@@ -4496,6 +4693,7 @@ class AppMain(App):
         sm.add_widget(DemoCorePreApkSafeTestScreen(name="pre_apk_safe"))
         sm.add_widget(DemoCoreIntegrationTestCenterScreen(name="integration_tests"))
         sm.add_widget(DemoCoreModernDashboardScreen(name="modern_dashboard"))
+        sm.add_widget(DemoCoreTradeSimpleAdvancedScreen(name="trade_simple_advanced"))
         return sm
 
 if __name__ == "__main__":
