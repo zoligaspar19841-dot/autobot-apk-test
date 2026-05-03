@@ -680,6 +680,124 @@ class TrendCanvasWidget(Widget):
 
 
 
+
+class DemoCoreProfitReportScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]PROFIT / TRADES REPORT[/b]\n[size=14]Nettó PnL, becsült adózás utáni PnL, trade/audit export. Order nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=82
+        ))
+
+        self.info = Label(text='Profit report...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        buttons = [
+            ('STATUS', self.status),
+            ('SUMMARY', self.summary),
+            ('POSITIONS/AUDIT', self.positions_audit),
+            ('EXPORT JSON', self.export_json),
+            ('EXPORT CSV', self.export_csv),
+            ('FULL EXPORT', self.full_export),
+            ('TREND', lambda: self.manager.go_to('trend_history')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.summary()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def status(self):
+        try:
+            res = demo_core.trades_report_center_status()
+            lines = ['[b]Trades Report Center Status[/b]', '']
+            for k, v in res.items():
+                lines.append(f"{k}: {v}")
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Status hiba: ' + str(e)
+
+    def summary(self):
+        try:
+            res = demo_core.profit_report_summary()
+            lines = ['[b]Profit Summary[/b]', '']
+            for k in ['realized_pnl','net_before_tax_pnl','estimated_tax_pct','estimated_tax_value','after_tax_pnl','balance','equity','trade_count','buy_count','sell_count','open_positions','order_endpoint_used']:
+                lines.append(f"{k}: [b]{res.get(k)}[/b]")
+            lines.append('')
+            lines.append('[size=12]' + str(res.get('note')) + '[/size]')
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Summary hiba: ' + str(e)
+
+    def positions_audit(self):
+        try:
+            res = demo_core.position_trade_audit_link()
+            lines = ['[b]Positions / Audit Link[/b]', '']
+            lines.append(f"Positions: {res.get('positions_count')}")
+            lines.append(f"Audit rows seen: {res.get('audit_rows_seen')}")
+            lines.append(f"Order endpoint used: {res.get('order_endpoint_used')}")
+            lines.append('')
+            lines.append('[b]Positions[/b]')
+            for p in res.get('positions') or []:
+                lines.append(str(p))
+            lines.append('')
+            lines.append('[b]Last audit[/b]')
+            for a in res.get('last_audit') or []:
+                lines.append(str(a))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Positions/audit hiba: ' + str(e)
+
+    def export_json(self):
+        try:
+            res = demo_core.export_profit_report_json()
+            self.info.text = '[b]JSON export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'JSON export hiba: ' + str(e)
+
+    def export_csv(self):
+        try:
+            res = demo_core.export_profit_report_csv()
+            self.info.text = '[b]CSV export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'CSV export hiba: ' + str(e)
+
+    def full_export(self):
+        try:
+            res = demo_core.profit_report_full_export()
+            lines = ['[b]Full Profit Export[/b]', '']
+            lines.append(str(res.get('json')))
+            lines.append(str(res.get('csv')))
+            lines.append('')
+            lines.append(str(res.get('summary')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Full export hiba: ' + str(e)
+
+
+
 class DemoCoreReadonlyBalanceScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -4008,6 +4126,11 @@ class DemoCoreSettingsScreen(Screen):
             ('readonly_balance_require_account_read_enabled', 'Readonly require account read enabled true/false'),
             ('readonly_balance_require_real_get_enabled', 'Readonly require real get enabled true/false'),
             ('readonly_balance_report_file', 'Readonly balance report file'),
+            ('profit_report_enabled', 'Profit report enabled true/false'),
+            ('profit_report_file_json', 'Profit report JSON file'),
+            ('profit_report_file_csv', 'Profit report CSV file'),
+            ('profit_report_include_tax', 'Profit report include tax true/false'),
+            ('profit_report_tax_pct', 'Profit report tax pct'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -4242,6 +4365,11 @@ class DemoCoreSettingsScreen(Screen):
             cfg['readonly_balance_require_account_read_enabled'] = self.inputs['readonly_balance_require_account_read_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['readonly_balance_require_real_get_enabled'] = self.inputs['readonly_balance_require_real_get_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['readonly_balance_report_file'] = self.inputs['readonly_balance_report_file'].text.strip() or 'logs/readonly_balance_report.json'
+            cfg['profit_report_enabled'] = self.inputs['profit_report_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['profit_report_file_json'] = self.inputs['profit_report_file_json'].text.strip() or 'logs/profit_report.json'
+            cfg['profit_report_file_csv'] = self.inputs['profit_report_file_csv'].text.strip() or 'logs/profit_report.csv'
+            cfg['profit_report_include_tax'] = self.inputs['profit_report_include_tax'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['profit_report_tax_pct'] = float(self.inputs['profit_report_tax_pct'].text.replace(',', '.'))
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -4525,6 +4653,12 @@ class DemoCoreScreen(Screen):
             self.manager.go_to("pre_apk_safe")
         except Exception:
             self.manager.current = "pre_apk_safe"
+
+    def open_profit_report(self):
+        try:
+            self.manager.go_to("profit_report")
+        except Exception:
+            self.manager.current = "profit_report"
 
     def open_readonly_balance(self):
         try:
@@ -4848,6 +4982,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreModernDashboardScreen(name="modern_dashboard"))
         sm.add_widget(DemoCoreTradeSimpleAdvancedScreen(name="trade_simple_advanced"))
         sm.add_widget(DemoCoreReadonlyBalanceScreen(name="readonly_balance"))
+        sm.add_widget(DemoCoreProfitReportScreen(name="profit_report"))
         return sm
 
 if __name__ == "__main__":

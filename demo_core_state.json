@@ -206,7 +206,12 @@
     "readonly_balance_require_signed_enabled": true,
     "readonly_balance_require_account_read_enabled": true,
     "readonly_balance_require_real_get_enabled": true,
-    "readonly_balance_report_file": "logs/readonly_balance_report.json"
+    "readonly_balance_report_file": "logs/readonly_balance_report.json",
+    "profit_report_enabled": true,
+    "profit_report_file_json": "logs/profit_report.json",
+    "profit_report_file_csv": "logs/profit_report.csv",
+    "profit_report_include_tax": true,
+    "profit_report_tax_pct": 15.0
   },
   "last_action": "AI advisor: HOLD BTCUSDT",
   "safe_mode": false,

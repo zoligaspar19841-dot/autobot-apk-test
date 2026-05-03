@@ -1,4 +1,4 @@
-APP_VERSION = "0.5.3-demo-core"
+APP_VERSION = "0.5.4-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -75,6 +75,15 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+PROFIT_REPORT_DEFAULTS = {
+    "profit_report_enabled": True,
+    "profit_report_file_json": "logs/profit_report.json",
+    "profit_report_file_csv": "logs/profit_report.csv",
+    "profit_report_include_tax": True,
+    "profit_report_tax_pct": 15.0,
+}
 
 READONLY_BALANCE_TEST_DEFAULTS = {
     "readonly_balance_test_enabled": True,
@@ -414,6 +423,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "PROFIT_REPORT_DEFAULTS" in globals():
+        for k, v in PROFIT_REPORT_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -6320,6 +6335,253 @@ def export_readonly_balance_report(path=None):
         "path": path,
         "order_endpoint_used": False,
         "message": "Read-only balance report export kész.",
+    }
+
+
+
+def _read_csv_rows_safe(path, limit=1000):
+    rows = []
+    if not os.path.exists(path):
+        return rows
+    try:
+        import csv
+        with open(path, "r", encoding="utf-8", newline="") as f:
+            rd = csv.DictReader(f)
+            for i, row in enumerate(rd):
+                if i >= limit:
+                    break
+                rows.append(dict(row))
+    except Exception:
+        return []
+    return rows
+
+
+def trades_report_center_status():
+    """
+    Trades / profit report állapot.
+    Csak fájlokat és cache-t olvas, order nincs.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    trade_log = globals().get("TRADE_LOG", os.path.join("logs", "demo_core_trades.csv"))
+    audit_log = globals().get("AUDIT_LOG", os.path.join("logs", "demo_core_audit.csv"))
+
+    return {
+        "ok": True,
+        "enabled": bool(settings.get("profit_report_enabled", True)),
+        "trade_log": trade_log,
+        "trade_log_exists": os.path.exists(trade_log),
+        "audit_log": audit_log,
+        "audit_log_exists": os.path.exists(audit_log),
+        "json_report": settings.get("profit_report_file_json", "logs/profit_report.json"),
+        "csv_report": settings.get("profit_report_file_csv", "logs/profit_report.csv"),
+        "include_tax": bool(settings.get("profit_report_include_tax", True)),
+        "tax_pct": float(settings.get("profit_report_tax_pct", settings.get("tax_pct", 15.0)) or 15.0),
+        "order_endpoint_used": False,
+    }
+
+
+def profit_report_summary():
+    """
+    Profit összesítő: state + trade log + portfolio cache alapján.
+    Nem adótanácsadás, csak becslés.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+    st = trades_report_center_status()
+
+    realized = float(state.get("realized_pnl", 0.0) or 0.0)
+    balance = float(state.get("balance", 0.0) or 0.0)
+    equity = 0.0
+
+    try:
+        equity = float(_safe_call("dashboard_kpi_snapshot", {}).get("equity", 0.0) or 0.0)
+    except Exception:
+        equity = 0.0
+
+    if not equity:
+        try:
+            equity = float(_safe_call("spot_portfolio_status", {}).get("portfolio_total_value_usd", 0.0) or 0.0)
+        except Exception:
+            equity = 0.0
+
+    tax_pct = float(settings.get("profit_report_tax_pct", settings.get("tax_pct", 15.0)) or 15.0)
+    fee_pct = float(settings.get("taker_fee_pct", 0.10) or 0.10)
+
+    trade_rows = _read_csv_rows_safe(st.get("trade_log"), limit=5000)
+    trade_count = len(trade_rows)
+
+    sells = []
+    buys = []
+    for r in trade_rows:
+        txt = " ".join([str(v) for v in r.values()]).upper()
+        if "SELL" in txt:
+            sells.append(r)
+        elif "BUY" in txt:
+            buys.append(r)
+
+    net_before_tax = realized
+    tax_est = max(0.0, net_before_tax) * (tax_pct / 100.0)
+    after_tax = net_before_tax - tax_est
+
+    return {
+        "ok": True,
+        "realized_pnl": round(realized, 8),
+        "net_before_tax_pnl": round(net_before_tax, 8),
+        "estimated_tax_pct": tax_pct,
+        "estimated_tax_value": round(tax_est, 8),
+        "after_tax_pnl": round(after_tax, 8),
+        "balance": round(balance, 8),
+        "equity": round(equity, 8),
+        "fee_pct_reference": fee_pct,
+        "trade_count": trade_count,
+        "buy_count": len(buys),
+        "sell_count": len(sells),
+        "open_positions": len(state.get("positions", {}) or {}),
+        "note": "Adózás utáni érték csak tájékoztató becslés, nem adótanácsadás.",
+        "order_endpoint_used": False,
+    }
+
+
+def position_trade_audit_link():
+    """
+    Pozíciók + audit összefoglaló.
+    """
+    state = load_state()
+    positions = state.get("positions", {}) or {}
+    st = trades_report_center_status()
+
+    audit_rows = _read_csv_rows_safe(st.get("audit_log"), limit=1000)
+
+    pos_list = []
+    for sym, pos in positions.items():
+        if not isinstance(pos, dict):
+            continue
+        pos_list.append({
+            "symbol": sym,
+            "qty": pos.get("qty"),
+            "avg": pos.get("avg"),
+            "peak": pos.get("peak"),
+            "opened_ts": pos.get("opened_ts"),
+        })
+
+    last_audit = audit_rows[-20:] if audit_rows else []
+
+    return {
+        "ok": True,
+        "positions_count": len(pos_list),
+        "positions": pos_list,
+        "audit_log_exists": st.get("audit_log_exists"),
+        "audit_rows_seen": len(audit_rows),
+        "last_audit": last_audit,
+        "order_endpoint_used": False,
+    }
+
+
+def export_profit_report_json(path=None):
+    """
+    Profit report JSON export.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if path is None:
+        path = settings.get("profit_report_file_json", "logs/profit_report.json") or "logs/profit_report.json"
+
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    report = {
+        "ts": int(time.time()),
+        "app_version": globals().get("APP_VERSION", "unknown"),
+        "status": trades_report_center_status(),
+        "summary": profit_report_summary(),
+        "positions_audit": position_trade_audit_link(),
+        "trend_stats": _safe_call("trend_history_stats", {}),
+        "order_endpoint_used": False,
+    }
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    audit_event("PROFIT_REPORT_JSON_EXPORT", "Profit report JSON export", {
+        "path": path,
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "path": path,
+        "order_endpoint_used": False,
+        "message": "Profit report JSON export kész.",
+    }
+
+
+def export_profit_report_csv(path=None):
+    """
+    Profit report CSV export.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if path is None:
+        path = settings.get("profit_report_file_csv", "logs/profit_report.csv") or "logs/profit_report.csv"
+
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    summary = profit_report_summary()
+
+    import csv
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        fields = [
+            "ts",
+            "realized_pnl",
+            "net_before_tax_pnl",
+            "estimated_tax_pct",
+            "estimated_tax_value",
+            "after_tax_pnl",
+            "balance",
+            "equity",
+            "trade_count",
+            "buy_count",
+            "sell_count",
+            "open_positions",
+            "order_endpoint_used",
+        ]
+        wr = csv.DictWriter(f, fieldnames=fields)
+        wr.writeheader()
+        row = {k: summary.get(k) for k in fields}
+        row["ts"] = int(time.time())
+        row["order_endpoint_used"] = False
+        wr.writerow(row)
+
+    audit_event("PROFIT_REPORT_CSV_EXPORT", "Profit report CSV export", {
+        "path": path,
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "path": path,
+        "order_endpoint_used": False,
+        "message": "Profit report CSV export kész.",
+    }
+
+
+def profit_report_full_export():
+    """
+    JSON + CSV profit report egyben.
+    """
+    js = export_profit_report_json()
+    cs = export_profit_report_csv()
+
+    return {
+        "ok": True,
+        "json": js,
+        "csv": cs,
+        "summary": profit_report_summary(),
+        "order_endpoint_used": False,
+        "message": "Profit report full export kész.",
     }
 
 
