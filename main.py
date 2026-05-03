@@ -1,3 +1,4 @@
+from kivy.graphics import Color, Line, Rectangle
 import demo_core_engine as demo_core
 from kivy.app import App
 from kivy.clock import Clock
@@ -588,6 +589,91 @@ class SectionScreen(Screen):
 
 
 
+
+class TrendCanvasWidget(Widget):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.points = []
+        self.selected_index = -1
+        self.bind(pos=self.redraw, size=self.redraw)
+
+    def set_chart(self, chart):
+        try:
+            self.points = chart.get('points') or []
+            self.selected_index = int(chart.get('selected_index', -1) or -1)
+        except Exception:
+            self.points = []
+            self.selected_index = -1
+        self.redraw()
+
+    def redraw(self, *args):
+        self.canvas.clear()
+        with self.canvas:
+            Color(0.10, 0.12, 0.16, 1)
+            Rectangle(pos=self.pos, size=self.size)
+
+            if not self.points:
+                Color(0.5, 0.5, 0.5, 1)
+                Line(points=[self.x, self.center_y, self.right, self.center_y], width=1)
+                return
+
+            vals = []
+            for p in self.points:
+                try:
+                    vals.append(float(p.get('value') or 0))
+                except Exception:
+                    vals.append(0.0)
+
+            if not vals:
+                return
+
+            mn = min(vals)
+            mx = max(vals)
+            span = mx - mn if mx != mn else 1.0
+
+            pad = 8
+            w = max(1, self.width - pad * 2)
+            h = max(1, self.height - pad * 2)
+
+            coords = []
+            n = len(vals)
+            for i, v in enumerate(vals):
+                x = self.x + pad + (i / max(1, n - 1)) * w
+                y = self.y + pad + ((v - mn) / span) * h
+                coords.extend([x, y])
+
+            Color(0.95, 0.72, 0.15, 1)
+            if len(coords) >= 4:
+                Line(points=coords, width=1.4)
+
+            # baseline
+            Color(0.35, 0.35, 0.35, 1)
+            Line(points=[self.x + pad, self.y + pad, self.right - pad, self.y + pad], width=1)
+
+            # selected crosshair
+            idx = self.selected_index
+            if idx < 0 or idx >= n:
+                idx = n - 1
+
+            sx = self.x + pad + (idx / max(1, n - 1)) * w
+            Color(0.2, 0.8, 1.0, 1)
+            Line(points=[sx, self.y + pad, sx, self.top - pad], width=1)
+
+    def on_touch_down(self, touch):
+        if not self.collide_point(*touch.pos):
+            return False
+
+        if self.points:
+            ratio = (touch.x - self.x) / max(1, self.width)
+            try:
+                demo_core.select_trend_by_ratio(ratio)
+            except Exception:
+                pass
+
+        return True
+
+
+
 class DemoCoreTrendHistoryScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -599,6 +685,9 @@ class DemoCoreTrendHistoryScreen(Screen):
             size_hint_y=None,
             height=76
         ))
+
+        self.chart_widget = TrendCanvasWidget(size_hint_y=None, height=120)
+        root.add_widget(self.chart_widget)
 
         self.info = Label(text='Trend history...', markup=True, halign='left', valign='top')
         self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
@@ -672,6 +761,10 @@ class DemoCoreTrendHistoryScreen(Screen):
     def refresh(self):
         try:
             chart = demo_core.trend_chart_data()
+            try:
+                self.chart_widget.set_chart(chart)
+            except Exception:
+                pass
             lines = []
             lines.append(f"[b]Trend nézet:[/b] {chart.get('view')} / {chart.get('value_key')}")
             lines.append(f"Pontok: {chart.get('points_count')} | min={chart.get('min')} | max={chart.get('max')}")
@@ -3058,6 +3151,10 @@ class DemoCoreSettingsScreen(Screen):
             ('trend_export_enabled', 'Trend export enabled true/false'),
             ('trend_time_format', 'Trend time format'),
             ('trend_export_file', 'Trend export file'),
+            ('dashboard_trend_widget_enabled', 'Dashboard trend widget enabled true/false'),
+            ('dashboard_trend_widget_view', 'Dashboard trend widget view'),
+            ('dashboard_trend_widget_points', 'Dashboard trend widget points'),
+            ('dashboard_show_selected_trend_point', 'Dashboard show selected trend point true/false'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -3247,6 +3344,10 @@ class DemoCoreSettingsScreen(Screen):
             cfg['trend_export_enabled'] = self.inputs['trend_export_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['trend_time_format'] = self.inputs['trend_time_format'].text.strip() or '%Y-%m-%d %H:%M:%S'
             cfg['trend_export_file'] = self.inputs['trend_export_file'].text.strip() or 'logs/trend_history.csv'
+            cfg['dashboard_trend_widget_enabled'] = self.inputs['dashboard_trend_widget_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['dashboard_trend_widget_view'] = self.inputs['dashboard_trend_widget_view'].text.strip().upper() or 'PROFIT'
+            cfg['dashboard_trend_widget_points'] = int(float(self.inputs['dashboard_trend_widget_points'].text.replace(',', '.')))
+            cfg['dashboard_show_selected_trend_point'] = self.inputs['dashboard_show_selected_trend_point'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -3413,6 +3514,11 @@ class DemoCoreScreen(Screen):
             res = demo_core.tick()
             st = demo_core.load_state()
             self.update_kpi(st)
+            tw = demo_core.dashboard_trend_widget_data()
+            extra = ''
+            if tw.get('ok'):
+                sel = tw.get('selected') or {}
+                extra = '\n\n[b]Trend:[/b] ' + str(tw.get('view')) + '\n' + str(tw.get('sparkline')) + '\n' + str(tw.get('crosshair_bar')) + '\nselected: ' + str(sel.get('time', sel.get('ts', ''))) + ' | value=' + str(sel.get('value', ''))
             self.info.text = self.fmt_state(st, res.get("action", res))
             return True
         except Exception as e:
@@ -3441,7 +3547,7 @@ class DemoCoreScreen(Screen):
             self._demo_core_auto_event = Clock.schedule_interval(self.auto_tick, 15)
 
             self.update_kpi(st)
-            self.info.text = self.fmt_state(st, "START - automatikus tick 15 mp")
+            self.info.text = self.fmt_state(st, "START - automatikus tick 15 mp") + extra
         except Exception as e:
             self.info.text = "Start hiba: " + str(e)
 

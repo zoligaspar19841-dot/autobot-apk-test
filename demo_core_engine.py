@@ -1,4 +1,4 @@
-APP_VERSION = "0.4.5-demo-core"
+APP_VERSION = "0.4.6-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -67,6 +67,14 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+TREND_DASHBOARD_WIDGET_DEFAULTS = {
+    "dashboard_trend_widget_enabled": True,
+    "dashboard_trend_widget_view": "PROFIT",
+    "dashboard_trend_widget_points": 80,
+    "dashboard_show_selected_trend_point": True,
+}
 
 TREND_EXPORT_DEFAULTS = {
     "trend_export_enabled": True,
@@ -339,6 +347,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "TREND_DASHBOARD_WIDGET_DEFAULTS" in globals():
+        for k, v in TREND_DASHBOARD_WIDGET_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -4833,6 +4847,45 @@ def trend_ascii_crosshair_bar(width=60):
         chars[pos] = "│"
 
     return "".join(chars)
+
+
+
+def dashboard_trend_widget_data():
+    """
+    Dashboard trend widget rövid adat.
+    Canvas chart és KPI alá.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if not bool(settings.get("dashboard_trend_widget_enabled", True)):
+        return {
+            "ok": False,
+            "enabled": False,
+            "reason": "dashboard_trend_widget_enabled false",
+        }
+
+    view = str(settings.get("dashboard_trend_widget_view", settings.get("trend_view_mode", "PROFIT")) or "PROFIT").upper()
+    limit = int(settings.get("dashboard_trend_widget_points", 80) or 80)
+
+    chart = trend_chart_data(view=view, limit=limit)
+    detail = trend_selected_detail() if bool(settings.get("dashboard_show_selected_trend_point", True)) else {}
+
+    stats = trend_history_stats(view=view, limit=limit)
+
+    return {
+        "ok": True,
+        "enabled": True,
+        "view": chart.get("view"),
+        "value_key": chart.get("value_key"),
+        "sparkline": chart.get("sparkline"),
+        "crosshair_bar": trend_ascii_crosshair_bar(int(settings.get("trend_chart_width", 60) or 60)),
+        "points_count": chart.get("points_count"),
+        "selected": detail,
+        "stats": stats,
+        "note": "Dashboard trend widget adat kész.",
+        "order_endpoint_used": False,
+    }
 
 
 if __name__ == "__main__":
