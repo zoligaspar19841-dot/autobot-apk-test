@@ -1,4 +1,4 @@
-APP_VERSION = "0.5.9-demo-core"
+APP_VERSION = "0.6.0-demo-core-prebuild"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -81,6 +81,13 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+FINAL_PREBUILD_DEFAULTS = {
+    "final_prebuild_audit_enabled": True,
+    "final_prebuild_report_file": "logs/final_prebuild_audit_report.json",
+    "final_prebuild_min_score_pct": 90.0,
+}
 
 APK_BUILD_GATE_DEFAULTS = {
     "apk_build_gate_enabled": True,
@@ -469,6 +476,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "FINAL_PREBUILD_DEFAULTS" in globals():
+        for k, v in FINAL_PREBUILD_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True

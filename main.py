@@ -686,6 +686,97 @@ class TrendCanvasWidget(Widget):
 
 
 
+
+class DemoCoreFinalPrebuildAuditScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]FINAL PREBUILD AUDIT / GO-NOGO[/b]\n[size=14]Végső APK előtti audit. APK build nincs, order nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=86
+        ))
+
+        self.info = Label(text='Final prebuild audit...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=220, spacing=8)
+        buttons = [
+            ('FINAL AUDIT', self.audit),
+            ('GO / NO-GO', self.go_nogo),
+            ('EXPORT REPORT', self.export_report),
+            ('APK GATE', lambda: self.manager.go_to('apk_build_gate')),
+            ('RC STATUS', lambda: self.manager.go_to('release_candidate')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.audit()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def audit(self):
+        try:
+            res = demo_core.final_prebuild_audit_status()
+            lines = ['[b]Final Prebuild Audit[/b]', '']
+            lines.append(f"GO for APK build later: [b]{res.get('go_for_apk_build_later')}[/b]")
+            lines.append(f"Score: {res.get('score_pct')}% / min {res.get('min_score_pct')}%")
+            lines.append(f"Required: {res.get('passed_required')}/{res.get('total_required')}")
+            lines.append(f"Order flags: {res.get('order_endpoint_flags')}")
+            lines.append(f"Will build now: {res.get('will_build_now')}")
+            lines.append(f"APK build touched: {res.get('apk_build_touched')}")
+            lines.append('')
+            lines.append('[b]Failed required[/b]')
+            failed = res.get('failed_required') or []
+            if not failed:
+                lines.append('✅ Nincs hiba')
+            for f in failed:
+                lines.append('🔴 ' + str(f.get('title')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Final audit hiba: ' + str(e)
+
+    def go_nogo(self):
+        try:
+            res = demo_core.final_go_nogo_summary()
+            lines = ['[b]GO / NO-GO Summary[/b]', '']
+            lines.append(f"Verdict: [b]{res.get('verdict')}[/b]")
+            lines.append(f"Score: {res.get('score_pct')}%")
+            lines.append(f"Failed count: {res.get('failed_count')}")
+            lines.append('')
+            for step in res.get('next_steps') or []:
+                lines.append('- ' + str(step))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'GO/NO-GO hiba: ' + str(e)
+
+    def export_report(self):
+        try:
+            res = demo_core.export_final_prebuild_audit_report()
+            self.info.text = '[b]Final prebuild audit export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Export hiba: ' + str(e)
+
+
+
 class DemoCoreApkBuildGateScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -4711,6 +4802,9 @@ class DemoCoreSettingsScreen(Screen):
             ('apk_require_no_plain_secrets', 'APK require no plain secrets true/false'),
             ('apk_manifest_file', 'APK manifest file'),
             ('apk_build_gate_report_file', 'APK build gate report file'),
+            ('final_prebuild_audit_enabled', 'Final prebuild audit enabled true/false'),
+            ('final_prebuild_report_file', 'Final prebuild report file'),
+            ('final_prebuild_min_score_pct', 'Final prebuild min score pct'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -4976,6 +5070,9 @@ class DemoCoreSettingsScreen(Screen):
             cfg['apk_require_no_plain_secrets'] = self.inputs['apk_require_no_plain_secrets'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['apk_manifest_file'] = self.inputs['apk_manifest_file'].text.strip() or 'logs/apk_artifact_manifest.json'
             cfg['apk_build_gate_report_file'] = self.inputs['apk_build_gate_report_file'].text.strip() or 'logs/apk_build_gate_report.json'
+            cfg['final_prebuild_audit_enabled'] = self.inputs['final_prebuild_audit_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['final_prebuild_report_file'] = self.inputs['final_prebuild_report_file'].text.strip() or 'logs/final_prebuild_audit_report.json'
+            cfg['final_prebuild_min_score_pct'] = float(self.inputs['final_prebuild_min_score_pct'].text.replace(',', '.'))
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -5259,6 +5356,12 @@ class DemoCoreScreen(Screen):
             self.manager.go_to("pre_apk_safe")
         except Exception:
             self.manager.current = "pre_apk_safe"
+
+    def open_final_prebuild_audit(self):
+        try:
+            self.manager.go_to("final_prebuild_audit")
+        except Exception:
+            self.manager.current = "final_prebuild_audit"
 
     def open_apk_build_gate(self):
         try:
