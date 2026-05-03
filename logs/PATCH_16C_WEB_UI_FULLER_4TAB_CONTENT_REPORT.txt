@@ -1,0 +1,13 @@
+PATCH 16C OK
+Date: Sun May  3 22:06:37 CEST 2026
+
+Javítás:
+- dupla Demo/Live vezérlés kivéve
+- csak 4 fő fül: Demo / Live / Beállítások / Report
+- Demo és Live azonos dashboard logikára állítva
+- nagyobb betűk, nagyobb gombok
+- beállítások helper szövegekkel feltöltve
+- Report oldal tartalommal feltöltve
+- trend panel mind Demo, mind Live oldalon látható
+- APK build nem indult
+- Binance order nem történt
