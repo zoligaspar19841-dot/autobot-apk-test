@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "ts": 1777773769,
+  "stage_dir": "/data/data/com.termux/files/home/autobot-apk-test/apk_stage",
+  "no_build": true,
+  "apk_build_touched": false,
+  "order_endpoint_used": false,
+  "files": [
+    "__pycache__/demo_core_engine.cpython-313.pyc",
+    "__pycache__/main.cpython-313.pyc",
+    "buildozer.spec",
+    "demo_core_engine.py",
+    "icon.png",
+    "main.py"
+  ],
+  "has_buildozer": true,
+  "has_java": true,
+  "build_command_preview": "cd ~/autobot-apk-test/apk_stage && buildozer -v android debug",
+  "message": "apk_stage build ready check kész. Build nem indult."
+}
