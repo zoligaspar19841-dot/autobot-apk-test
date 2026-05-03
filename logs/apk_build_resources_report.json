@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "ts": 1777773937,
+  "no_build": true,
+  "apk_build_touched": false,
+  "order_endpoint_used": false,
+  "disk_home": "Filesystem       Size Used Avail Use% Mounted on\n/dev/block/dm-60 460G 455G  5.3G  99% /data/user/0",
+  "disk_project": "Filesystem       Size Used Avail Use% Mounted on\n/dev/block/dm-60 460G 455G  5.3G  99% /data/user/0",
+  "memory": "total        used        free      shared  buff/cache   available\nMem:            10Gi       7.9Gi       390Mi       148Mi       2.5Gi       2.7Gi\nSwap:           11Gi       4.2Gi       7.8Gi",
+  "cpu_count": "Command 'getconf _NPROCESSORS_ONLN' returned non-zero exit status 127.",
+  "has_buildozer": true,
+  "has_java": true,
+  "has_git": true,
+  "has_zip": true,
+  "has_unzip": true,
+  "stage_files": [
+    "buildozer.spec",
+    "demo_core_engine.py",
+    "icon.png",
+    "main.py"
+  ],
+  "next_command_preview": "cd ~/autobot-apk-test/apk_stage && buildozer -v android debug",
+  "message": "APK build resources check kész. Build nem indult."
+}
