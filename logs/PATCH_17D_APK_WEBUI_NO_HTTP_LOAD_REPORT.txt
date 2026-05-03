@@ -1,0 +1,15 @@
+PATCH 17D OK
+Date: Sun May  3 23:28:05 CEST 2026
+
+Javítás:
+- APK WebView már NEM http://127.0.0.1:8080 címet nyit.
+- webui/index.html közvetlenül WebView-be töltődik.
+- ERR_CLEARTEXT_NOT_PERMITTED így kikerülve.
+- /api hívások mock/fallback választ kapnak.
+- Live order továbbra is tiltva.
+- Binance order NEM történt.
+- APK build NEM indult.
+- Commit NEM történt.
+
+Cél:
+- Az APK ugyanazt a szép 16C/16D webes UI-t mutassa.

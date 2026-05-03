@@ -1,3 +1,27 @@
+#!/usr/bin/env bash
+set -e
+
+echo "=== PATCH 17D: APK WEBUI NO-HTTP LOAD - APK BUILD NÉLKÜL ==="
+echo "Nem buildel, nem pushol, nem küld Binance ordert."
+echo "Cél: ne http://127.0.0.1:8080-t nyisson, hanem közvetlenül töltse be a tesztelt webui/index.html-t."
+
+mkdir -p backups logs apk_stage/webui
+TS=$(date +%Y%m%d_%H%M%S)
+
+if [ ! -f webui/index.html ]; then
+  echo "HIBA: nincs webui/index.html"
+  exit 1
+fi
+
+if [ -f apk_stage/main.py ]; then
+  cp apk_stage/main.py "backups/apk_stage_main.py.bak_patch17d_$TS"
+fi
+
+rm -rf apk_stage/webui
+mkdir -p apk_stage/webui
+cp -a webui/. apk_stage/webui/
+
+cat > apk_stage/main.py <<'PY'
 # PATCH 17D APK WEBUI NO-HTTP LAUNCHER
 # Cél: az APK ugyanazt a tesztelt webui/index.html UI-t mutassa,
 # de WebView-ben NEM http://127.0.0.1:8080-ról, hanem közvetlen HTML betöltéssel.
@@ -176,3 +200,32 @@ class AutobotWebUIApp(App):
 
 if __name__ == "__main__":
     AutobotWebUIApp().run()
+PY
+
+echo "=== Ellenőrzés ==="
+python3 -m py_compile apk_stage/main.py
+
+grep -nE "PATCH 17D|loadDataWithBaseURL|NO-HTTP|ERR_CLEARTEXT|blocked_live_order|127.0.0.1" apk_stage/main.py || true
+ls -lah apk_stage/webui/index.html
+
+cat > logs/PATCH_17D_APK_WEBUI_NO_HTTP_LOAD_REPORT.txt <<EOF
+PATCH 17D OK
+Date: $(date)
+
+Javítás:
+- APK WebView már NEM http://127.0.0.1:8080 címet nyit.
+- webui/index.html közvetlenül WebView-be töltődik.
+- ERR_CLEARTEXT_NOT_PERMITTED így kikerülve.
+- /api hívások mock/fallback választ kapnak.
+- Live order továbbra is tiltva.
+- Binance order NEM történt.
+- APK build NEM indult.
+- Commit NEM történt.
+
+Cél:
+- Az APK ugyanazt a szép 16C/16D webes UI-t mutassa.
+EOF
+
+echo "=== PATCH 17D KÉSZ ==="
+echo "Jelentés: logs/PATCH_17D_APK_WEBUI_NO_HTTP_LOAD_REPORT.txt"
+echo "APK build NEM indult. Commit NEM történt."
