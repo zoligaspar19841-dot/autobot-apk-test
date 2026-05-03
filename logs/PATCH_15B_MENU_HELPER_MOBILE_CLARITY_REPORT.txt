@@ -1,0 +1,11 @@
+PATCH 15B OK
+Date: Sun May  3 20:42:37 CEST 2026
+
+Videó alapján javítva:
+- Emoji ikonok kivéve, mert Android/Kivy alatt több helyen hibás négyzetként látszottak
+- Főmenü rövidebb és érthetőbb lett
+- Demo/Live helper szöveg bekerült
+- Live adat hiányának oka kiírva: API nélkül nincs live adat
+- Fejlesztői képernyők külön csoportba kerültek
+- APK build nem indult
+- Binance order nem történt
