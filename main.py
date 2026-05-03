@@ -613,6 +613,8 @@ class DemoCoreTrendHistoryScreen(Screen):
             ('ADD SNAPSHOT', self.snapshot),
             ('NEXT VIEW', self.next_view),
             ('SELECT LATEST', self.select_latest),
+            ('PREV POINT', self.prev_point),
+            ('NEXT POINT', self.next_point),
             ('EXPORT CSV', self.export_csv),
             ('STATS', self.stats),
             ('SPOT SYNC', self.spot_sync),
@@ -676,13 +678,15 @@ class DemoCoreTrendHistoryScreen(Screen):
             lines.append('')
             lines.append('[b]Mini chart:[/b]')
             lines.append(str(chart.get('sparkline', '')))
+            lines.append(str(demo_core.trend_ascii_crosshair_bar()))
             lines.append('')
+            detail = demo_core.trend_selected_detail()
             sel = chart.get('selected') or {}
             if sel:
                 lines.append('[b]Kijelölt / utolsó pont:[/b]')
                 lines.append(f"index: {chart.get('selected_index')}")
                 lines.append(f"ts: {sel.get('ts')}")
-                lines.append(f"time: {demo_core.format_trend_ts(sel.get('ts'))}")
+                lines.append(f"time: {detail.get('time')}")
                 lines.append(f"value: {sel.get('value')}")
                 lines.append(f"equity: {sel.get('equity')}")
                 lines.append(f"total value: {sel.get('total_value_usd')}")
@@ -715,6 +719,20 @@ class DemoCoreTrendHistoryScreen(Screen):
             self.render(demo_core.cycle_trend_view_mode())
         except Exception as e:
             self.info.text = 'Next view hiba: ' + str(e)
+
+    def prev_point(self):
+        try:
+            demo_core.select_trend_prev()
+            self.refresh()
+        except Exception as e:
+            self.info.text = 'Prev point hiba: ' + str(e)
+
+    def next_point(self):
+        try:
+            demo_core.select_trend_next()
+            self.refresh()
+        except Exception as e:
+            self.info.text = 'Next point hiba: ' + str(e)
 
     def select_latest(self):
         try:

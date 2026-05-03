@@ -286,7 +286,19 @@
       "quote_free_usd": 81.0,
       "open_positions": 2,
       "last_action": "Spot portfolio sync OK"
+    },
+    {
+      "ts": 1777766405,
+      "reason": "crosshair_nav_test",
+      "equity": 99.91972223,
+      "total_value_usd": 99.96609944,
+      "realized_pnl": 0.0,
+      "pnl_pct_from_100": -0.033901,
+      "tradable_usd": 71.0,
+      "quote_free_usd": 81.0,
+      "open_positions": 2,
+      "last_action": "Spot portfolio sync OK"
     }
   ],
-  "last_trend_snapshot_ts": 1777766320
+  "last_trend_snapshot_ts": 1777766405
 }

@@ -1,4 +1,4 @@
-APP_VERSION = "0.4.4-demo-core"
+APP_VERSION = "0.4.5-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -4682,6 +4682,157 @@ def trend_export_status():
         "history_points": len(state.get("trend_history") or []),
         "order_endpoint_used": False,
     }
+
+
+
+def _trend_points_for_current_view(limit=300):
+    tr = trend_history_status(limit=limit)
+    return tr.get("points") or []
+
+
+def select_trend_prev():
+    """
+    Kijelölt trendpont balra léptetése.
+    """
+    state = load_state()
+    settings = state.setdefault("settings", {})
+    pts = _trend_points_for_current_view()
+
+    if not pts:
+        return {"ok": False, "error": "Nincs trend pont."}
+
+    cur = int(settings.get("trend_selected_index", len(pts) - 1) or 0)
+    if cur < 0 or cur >= len(pts):
+        cur = len(pts) - 1
+
+    nxt = max(0, cur - 1)
+    settings["trend_selected_index"] = nxt
+    save_state(state)
+
+    return {
+        "ok": True,
+        "selected_index": nxt,
+        "selected": pts[nxt],
+        "message": "Trend pont balra léptetve.",
+    }
+
+
+def select_trend_next():
+    """
+    Kijelölt trendpont jobbra léptetése.
+    """
+    state = load_state()
+    settings = state.setdefault("settings", {})
+    pts = _trend_points_for_current_view()
+
+    if not pts:
+        return {"ok": False, "error": "Nincs trend pont."}
+
+    cur = int(settings.get("trend_selected_index", len(pts) - 1) or 0)
+    if cur < 0 or cur >= len(pts):
+        cur = len(pts) - 1
+
+    nxt = min(len(pts) - 1, cur + 1)
+    settings["trend_selected_index"] = nxt
+    save_state(state)
+
+    return {
+        "ok": True,
+        "selected_index": nxt,
+        "selected": pts[nxt],
+        "message": "Trend pont jobbra léptetve.",
+    }
+
+
+def select_trend_by_ratio(ratio=1.0):
+    """
+    Touch/crosshair előkészítés.
+    ratio: 0.0 = bal széle, 1.0 = jobb széle.
+    """
+    state = load_state()
+    settings = state.setdefault("settings", {})
+    pts = _trend_points_for_current_view()
+
+    if not pts:
+        return {"ok": False, "error": "Nincs trend pont."}
+
+    try:
+        r = float(ratio)
+    except Exception:
+        r = 1.0
+
+    r = max(0.0, min(1.0, r))
+    idx = int(round(r * (len(pts) - 1)))
+
+    settings["trend_selected_index"] = idx
+    save_state(state)
+
+    return {
+        "ok": True,
+        "ratio": r,
+        "selected_index": idx,
+        "selected": pts[idx],
+        "message": "Trend pont arány alapján kijelölve.",
+    }
+
+
+def trend_selected_detail():
+    """
+    Részletes kijelölt trendpont adatpanel.
+    """
+    cross = trend_crosshair_summary()
+
+    if not cross.get("ok"):
+        return cross
+
+    ts = cross.get("ts")
+
+    return {
+        "ok": True,
+        "view": cross.get("view"),
+        "selected_index": cross.get("selected_index"),
+        "ts": ts,
+        "time": format_trend_ts(ts),
+        "value": cross.get("value"),
+        "equity": cross.get("equity"),
+        "total_value_usd": cross.get("total_value_usd"),
+        "realized_pnl": cross.get("realized_pnl"),
+        "pnl_pct_from_100": cross.get("pnl_pct_from_100"),
+        "tradable_usd": cross.get("tradable_usd"),
+        "quote_free_usd": cross.get("quote_free_usd"),
+        "open_positions": cross.get("open_positions"),
+        "last_action": cross.get("last_action"),
+        "reason": cross.get("reason"),
+        "order_endpoint_used": False,
+    }
+
+
+def trend_ascii_crosshair_bar(width=60):
+    """
+    Egyszerű vizuális bar, ahol a kijelölt indexnél | jel van.
+    """
+    chart = trend_chart_data()
+    pts_count = int(chart.get("points_count", 0) or 0)
+    idx = int(chart.get("selected_index", -1) or -1)
+
+    try:
+        width = int(width or 60)
+    except Exception:
+        width = 60
+
+    if pts_count <= 0:
+        return ""
+
+    if pts_count == 1:
+        pos = width - 1
+    else:
+        pos = int(round((idx / max(1, pts_count - 1)) * (width - 1)))
+
+    chars = ["─"] * width
+    if 0 <= pos < width:
+        chars[pos] = "│"
+
+    return "".join(chars)
 
 
 if __name__ == "__main__":
