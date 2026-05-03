@@ -7669,5 +7669,173 @@ def export_apk_build_gate_report(path=None):
     }
 
 
+
+def _json_file_status(path):
+    try:
+        if not os.path.exists(path):
+            return {"path": path, "exists": False, "ok": False, "size": 0}
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return {
+            "path": path,
+            "exists": True,
+            "ok": True,
+            "size": os.path.getsize(path),
+            "keys": list(data.keys())[:20] if isinstance(data, dict) else [],
+        }
+    except Exception as e:
+        return {"path": path, "exists": os.path.exists(path), "ok": False, "error": str(e)}
+
+
+def final_prebuild_audit_status():
+    state = load_state()
+    settings = state.get("settings", {})
+
+    checks = []
+
+    def add(key, title, required, ok, detail=None):
+        checks.append({
+            "key": key,
+            "title": title,
+            "required": bool(required),
+            "ok": bool(ok),
+            "detail": detail or {},
+        })
+
+    full_status = _json_file_status("logs/full_system_status_report.json")
+    health_report = _json_file_status("logs/health_report.json")
+    firstrun_report = _json_file_status("logs/firstrun_readiness_report.json")
+    release_report = _json_file_status("logs/release_candidate_report.json")
+    ui_report = _json_file_status("logs/ui_route_report.json")
+    apk_gate_report = _json_file_status("logs/apk_build_gate_report.json")
+    manifest_report = _json_file_status("logs/apk_artifact_manifest.json")
+
+    master = _safe_call("master_status_overview", {})
+    firstrun = _safe_call("firstrun_readiness_check", {})
+    health = _safe_call("health_alert_center_status", {})
+    rc = _safe_call("release_candidate_status", {})
+    ui = _safe_call("ui_route_screen_registry_check", {})
+    apk_gate = _safe_call("apk_build_gate_status", {})
+    secrets = _safe_call("secrets_clean_check", {})
+    preapk = _safe_call("pre_apk_full_safe_test", {})
+
+    add("python_modules", "Python full system report", True, full_status.get("ok"), full_status)
+    add("health_report", "Health report", True, health_report.get("ok"), health_report)
+    add("firstrun_report", "First-run readiness report", True, firstrun_report.get("ok"), firstrun_report)
+    add("release_report", "Release candidate report", True, release_report.get("ok"), release_report)
+    add("ui_route_report", "UI route report", True, ui_report.get("ok"), ui_report)
+    add("apk_gate_report", "APK gate report", True, apk_gate_report.get("ok"), apk_gate_report)
+    add("manifest_report", "APK manifest report", True, manifest_report.get("ok"), manifest_report)
+
+    add("master_status", "Master status OK", True, bool(master.get("ok", False)), master)
+    add("firstrun_ready", "First-run complete", True, bool(firstrun.get("complete", False)), firstrun)
+    add("health_center", "Health center OK", True, bool(health.get("ok", False)) and not bool(health.get("order_endpoint_used", False)), health)
+    add("release_candidate", "Release candidate OK", True, bool(rc.get("rc_ok", False)) and not bool(rc.get("apk_build_touched", False)), rc)
+    add("ui_route_check", "UI route check OK", True, bool(ui.get("ok", False)), ui)
+    add("apk_build_gate", "APK build gate can_build_later", True, bool(apk_gate.get("can_build_later", False)), apk_gate)
+    add("secrets_clean", "Plain secrets nincsenek", True, bool(secrets.get("ok", False)), secrets)
+    add("preapk_safety", "Pre-APK safety OK", True, bool(preapk.get("ok", False)) and not bool(preapk.get("order_endpoint_used", False)), preapk)
+
+    order_flags = []
+    for name, obj in [
+        ("master", master), ("firstrun", firstrun), ("health", health),
+        ("release", rc), ("ui", ui), ("apk_gate", apk_gate),
+        ("secrets", secrets), ("preapk", preapk)
+    ]:
+        if isinstance(obj, dict) and obj.get("order_endpoint_used"):
+            order_flags.append(name)
+
+    required = [c for c in checks if c.get("required")]
+    passed = [c for c in required if c.get("ok")]
+    failed = [c for c in required if not c.get("ok")]
+
+    score_pct = round((len(passed) / len(required)) * 100.0, 2) if required else 0.0
+    min_score = float(settings.get("final_prebuild_min_score_pct", 90.0) or 90.0)
+
+    go = score_pct >= min_score and not failed and not order_flags
+
+    return {
+        "ok": True,
+        "go_for_apk_build_later": go,
+        "score_pct": score_pct,
+        "min_score_pct": min_score,
+        "passed_required": len(passed),
+        "total_required": len(required),
+        "failed_required": failed,
+        "order_endpoint_flags": order_flags,
+        "checks": checks,
+        "will_build_now": False,
+        "apk_build_touched": False,
+        "order_endpoint_used": False,
+        "message": "Final prebuild audit kész. APK build nincs.",
+    }
+
+
+def final_go_nogo_summary():
+    audit = final_prebuild_audit_status()
+
+    if audit.get("go_for_apk_build_later"):
+        verdict = "GO"
+        next_steps = [
+            "Kód oldalon APK build előtti állapot jó.",
+            "Következő: kézi UI indítás/átkattintás vagy APK build pipeline előkészítés.",
+            "Valódi live order továbbra sem aktív.",
+        ]
+    else:
+        verdict = "NO-GO"
+        next_steps = [
+            "Előbb a failed_required elemeket kell javítani.",
+            "APK build még ne induljon.",
+            "Valódi live order továbbra sem aktív.",
+        ]
+
+    return {
+        "ok": True,
+        "verdict": verdict,
+        "score_pct": audit.get("score_pct"),
+        "failed_count": len(audit.get("failed_required", [])),
+        "failed_required": audit.get("failed_required", []),
+        "next_steps": next_steps,
+        "will_build_now": False,
+        "apk_build_touched": False,
+        "order_endpoint_used": False,
+    }
+
+
+def export_final_prebuild_audit_report(path=None):
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if path is None:
+        path = settings.get("final_prebuild_report_file", "logs/final_prebuild_audit_report.json") or "logs/final_prebuild_audit_report.json"
+
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    data = {
+        "ts": int(time.time()),
+        "app_version": globals().get("APP_VERSION", "unknown"),
+        "audit": final_prebuild_audit_status(),
+        "go_nogo": final_go_nogo_summary(),
+        "order_endpoint_used": False,
+        "apk_build_touched": False,
+    }
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    audit_event("FINAL_PREBUILD_AUDIT_EXPORT", "Final prebuild audit report export", {
+        "path": path,
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "path": path,
+        "order_endpoint_used": False,
+        "apk_build_touched": False,
+        "message": "Final prebuild audit report export kész.",
+    }
+
+
 if __name__ == "__main__":
     print(json.dumps(tick(), ensure_ascii=False, indent=2))

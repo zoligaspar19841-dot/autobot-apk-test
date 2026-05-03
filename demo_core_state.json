@@ -237,12 +237,15 @@
     "apk_require_ui_route_check": true,
     "apk_require_no_plain_secrets": true,
     "apk_manifest_file": "logs/apk_artifact_manifest.json",
-    "apk_build_gate_report_file": "logs/apk_build_gate_report.json"
+    "apk_build_gate_report_file": "logs/apk_build_gate_report.json",
+    "final_prebuild_audit_enabled": true,
+    "final_prebuild_report_file": "logs/final_prebuild_audit_report.json",
+    "final_prebuild_min_score_pct": 90.0
   },
   "last_action": "Heartbeat update: full_system_check",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
-  "last_heartbeat_ts": 1777770474,
+  "last_heartbeat_ts": 1777771099,
   "cooldowns": {},
   "spot_balances_cache": [
     {

@@ -1,0 +1,4241 @@
+{
+  "ts": 1777770914,
+  "app_version": "0.6.0-demo-core-prebuild",
+  "audit": {
+    "ok": true,
+    "go_for_apk_build_later": true,
+    "score_pct": 100.0,
+    "min_score_pct": 90.0,
+    "passed_required": 15,
+    "total_required": 15,
+    "failed_required": [],
+    "order_endpoint_flags": [],
+    "checks": [
+      {
+        "key": "python_modules",
+        "title": "Python full system report",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "path": "logs/full_system_status_report.json",
+          "exists": true,
+          "ok": true,
+          "size": 79458,
+          "keys": [
+            "ts",
+            "ok",
+            "failed",
+            "order_endpoint_used_modules",
+            "tested_count",
+            "passed_count",
+            "order_endpoint_used",
+            "results"
+          ]
+        }
+      },
+      {
+        "key": "health_report",
+        "title": "Health report",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "path": "logs/health_report.json",
+          "exists": true,
+          "ok": true,
+          "size": 15662,
+          "keys": [
+            "ts",
+            "app_version",
+            "health_alert_center",
+            "order_endpoint_used"
+          ]
+        }
+      },
+      {
+        "key": "firstrun_report",
+        "title": "First-run readiness report",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "path": "logs/firstrun_readiness_report.json",
+          "exists": true,
+          "ok": true,
+          "size": 40783,
+          "keys": [
+            "ts",
+            "app_version",
+            "readiness",
+            "next_actions",
+            "order_endpoint_used"
+          ]
+        }
+      },
+      {
+        "key": "release_report",
+        "title": "Release candidate report",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "path": "logs/release_candidate_report.json",
+          "exists": true,
+          "ok": true,
+          "size": 60615,
+          "keys": [
+            "ts",
+            "app_version",
+            "release_candidate",
+            "rollback",
+            "build_input",
+            "build_preview",
+            "order_endpoint_used"
+          ]
+        }
+      },
+      {
+        "key": "ui_route_report",
+        "title": "UI route report",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "path": "logs/ui_route_report.json",
+          "exists": true,
+          "ok": true,
+          "size": 8118,
+          "keys": [
+            "ts",
+            "app_version",
+            "registry",
+            "menu_routes",
+            "missing_report",
+            "order_endpoint_used",
+            "apk_build_touched"
+          ]
+        }
+      },
+      {
+        "key": "apk_gate_report",
+        "title": "APK gate report",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "path": "logs/apk_build_gate_report.json",
+          "exists": true,
+          "ok": true,
+          "size": 2958,
+          "keys": [
+            "ts",
+            "app_version",
+            "gate",
+            "manifest",
+            "secrets_clean",
+            "build_preview",
+            "order_endpoint_used",
+            "apk_build_touched"
+          ]
+        }
+      },
+      {
+        "key": "manifest_report",
+        "title": "APK manifest report",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "path": "logs/apk_artifact_manifest.json",
+          "exists": true,
+          "ok": true,
+          "size": 2089,
+          "keys": [
+            "ts",
+            "app_version",
+            "manifest",
+            "secrets_clean",
+            "order_endpoint_used",
+            "apk_build_touched"
+          ]
+        }
+      },
+      {
+        "key": "master_status",
+        "title": "Master status OK",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "ok": true,
+          "app_version": "0.6.0-demo-core-prebuild",
+          "mode": "DEMO",
+          "running": false,
+          "safe_mode": false,
+          "execution_mode": "AUTO",
+          "last_action": "Heartbeat update: full_system_check",
+          "portfolio": {
+            "total_value_usd": 99.88643379,
+            "tradable_usd": 71.0,
+            "open_positions": 2,
+            "usdc_free": 81.0,
+            "usdt_free": 0.0
+          },
+          "trend": {
+            "history_points": 8,
+            "last_trend_snapshot_ts": 1777766553,
+            "auto_enabled": true
+          },
+          "integrations": {
+            "secrets_encrypted": null,
+            "plain_file_exists": null,
+            "email_ok": false,
+            "openai_ok": false,
+            "binance_live_ready": false,
+            "readonly_ok": true
+          },
+          "safety": {
+            "health_status": "OK",
+            "live_gate_ok": true,
+            "order_endpoint_used": false,
+            "safe_note": "Valódi Binance order endpoint továbbra sincs bekötve."
+          },
+          "package": {
+            "ok": true,
+            "working_apk_reference": "APK 0.2.5 - utolsó ismert működő referencia",
+            "app_version": "0.6.0-demo-core-prebuild",
+            "build_policy": "APK buildhez csak külön stabil build-lépésben nyúlunk.",
+            "current_dev_mode": "code_patch_only"
+          },
+          "readiness": {
+            "score_pct": 92.86,
+            "ok_count": 26,
+            "total_count": 28
+          },
+          "missing": {
+            "ok": true,
+            "critical_missing_count": 0,
+            "warnings_count": 9,
+            "critical": [],
+            "warnings": [
+              {
+                "key": "binance_api_key",
+                "title": "Binance API key nincs megadva",
+                "level": "warning",
+                "detail": "Live/read-only teszthez kell."
+              },
+              {
+                "key": "binance_api_secret",
+                "title": "Binance API secret nincs megadva",
+                "level": "warning",
+                "detail": "Signed read-only ellenőrzéshez kell."
+              },
+              {
+                "key": "openai_api_key",
+                "title": "OpenAI API key nincs megadva",
+                "level": "warning",
+                "detail": "AI API módhoz kell, offline AI ettől még működik."
+              },
+              {
+                "key": "email_config",
+                "title": "E-mail adatok hiányosak",
+                "level": "warning",
+                "detail": "Teszt e-mailhez és riasztáshoz kell."
+              },
+              {
+                "key": "google_drive_token",
+                "title": "Google Drive token nincs megadva",
+                "level": "warning",
+                "detail": "Drive sync teljes működéséhez kell."
+              },
+              {
+                "key": "pc_sync_token",
+                "title": "PC sync token nincs megadva",
+                "level": "warning",
+                "detail": "PC agent későbbi kapcsolathoz kell."
+              },
+              {
+                "key": "binance_signed_readonly_enabled",
+                "title": "Signed read-only nincs bekapcsolva",
+                "level": "warning",
+                "detail": "Első valódi account olvasáshoz külön engedély kell."
+              },
+              {
+                "key": "binance_account_read_enabled",
+                "title": "Account read nincs bekapcsolva",
+                "level": "warning",
+                "detail": "Balance sync valódi Binance olvasáshoz kell."
+              },
+              {
+                "key": "binance_real_account_get_enabled",
+                "title": "Real account GET nincs bekapcsolva",
+                "level": "warning",
+                "detail": "Valódi /api/v3/account olvasáshoz kell."
+              }
+            ],
+            "safe_note": "Order endpoint továbbra sincs bekötve.",
+            "order_endpoint_used": false
+          },
+          "modules": [
+            {
+              "id": "demo_core",
+              "title": "Demo Core",
+              "ok": true,
+              "detail": "Core modul aktív",
+              "weight": 1
+            },
+            {
+              "id": "settings",
+              "title": "Settings",
+              "ok": true,
+              "detail": "settings state létezik",
+              "weight": 1
+            },
+            {
+              "id": "logs",
+              "title": "Logs / Audit",
+              "ok": true,
+              "detail": "audit/trade log modul",
+              "weight": 1
+            },
+            {
+              "id": "healthcheck",
+              "title": "Healthcheck / Heartbeat",
+              "ok": true,
+              "detail": "OK",
+              "weight": 1
+            },
+            {
+              "id": "safe_mode",
+              "title": "Panic Stop / Safe Mode",
+              "ok": true,
+              "detail": "panic + safe mode függvények",
+              "weight": 1
+            },
+            {
+              "id": "execution_mode",
+              "title": "Execution Mode",
+              "ok": true,
+              "detail": "AUTO",
+              "weight": 1
+            },
+            {
+              "id": "profit_hold",
+              "title": "Profit Hold / Smart Exit",
+              "ok": true,
+              "detail": "profit tartás beállítások",
+              "weight": 1
+            },
+            {
+              "id": "scanner",
+              "title": "Multi-symbol Scanner",
+              "ok": true,
+              "detail": "scanner függvény",
+              "weight": 1
+            },
+            {
+              "id": "fee_tax",
+              "title": "Fee + Tax",
+              "ok": false,
+              "detail": "nettó/adó utáni PnL",
+              "weight": 1
+            },
+            {
+              "id": "trade_guard",
+              "title": "Trade Screen Guard",
+              "ok": true,
+              "detail": "BBO/spread/slippage",
+              "weight": 1
+            },
+            {
+              "id": "ai_advisor",
+              "title": "AI Advisor",
+              "ok": true,
+              "detail": "offline/API advisor alap",
+              "weight": 1
+            },
+            {
+              "id": "secrets",
+              "title": "Encrypted Secrets",
+              "ok": false,
+              "detail": "secrets.enc státusz",
+              "weight": 1
+            },
+            {
+              "id": "email",
+              "title": "Email Notify",
+              "ok": true,
+              "detail": "email alap modul",
+              "weight": 1
+            },
+            {
+              "id": "openai",
+              "title": "OpenAI API",
+              "ok": true,
+              "detail": "opcionális API fallback",
+              "weight": 1
+            },
+            {
+              "id": "binance_live_check",
+              "title": "Binance Live Check",
+              "ok": true,
+              "detail": "nem küld ordert",
+              "weight": 1
+            },
+            {
+              "id": "readonly_account",
+              "title": "Read-only Account",
+              "ok": true,
+              "detail": "",
+              "weight": 1
+            },
+            {
+              "id": "live_gate",
+              "title": "Live Safety Gate",
+              "ok": true,
+              "detail": "hard-stop gate",
+              "weight": 1
+            },
+            {
+              "id": "approval",
+              "title": "Approval / Dry-run",
+              "ok": true,
+              "detail": "approval queue",
+              "weight": 1
+            },
+            {
+              "id": "portfolio",
+              "title": "Spot Portfolio Sync",
+              "ok": true,
+              "detail": "total/tradable cache",
+              "weight": 1
+            },
+            {
+              "id": "trend",
+              "title": "Trend / Chart / Export",
+              "ok": true,
+              "detail": "trend auto snapshot",
+              "weight": 1
+            },
+            {
+              "id": "backtest",
+              "title": "Backtest / Diagnostics",
+              "ok": true,
+              "detail": "backtest alap",
+              "weight": 1
+            },
+            {
+              "id": "schedules",
+              "title": "Schedules",
+              "ok": true,
+              "detail": "snapshot/trigger alap",
+              "weight": 1
+            },
+            {
+              "id": "launchpool",
+              "title": "Launchpool / Airdrop",
+              "ok": true,
+              "detail": "watch alap",
+              "weight": 1
+            },
+            {
+              "id": "package",
+              "title": "Package / Snapshot",
+              "ok": true,
+              "detail": "APK reference/package",
+              "weight": 1
+            },
+            {
+              "id": "sync",
+              "title": "PC / Drive Sync",
+              "ok": true,
+              "detail": "sync alap",
+              "weight": 1
+            },
+            {
+              "id": "first_run",
+              "title": "First-run Safety",
+              "ok": true,
+              "detail": "startup safety",
+              "weight": 1
+            },
+            {
+              "id": "admin",
+              "title": "Admin Security",
+              "ok": true,
+              "detail": "5 perc timeout",
+              "weight": 1
+            },
+            {
+              "id": "patch_manager",
+              "title": "Patch Manager",
+              "ok": true,
+              "detail": "safe queue",
+              "weight": 1
+            }
+          ],
+          "next_steps": [
+            {
+              "priority": 1,
+              "title": "Secrets / Integrációk kitöltése és tesztelése",
+              "reason": "API/OpenAI/email/Drive/PC mezők hiányozhatnak.",
+              "patch": "PATCH_INTEGRATION_TESTS_UI.sh"
+            },
+            {
+              "priority": 3,
+              "title": "Modern Dashboard KPI kártyák",
+              "reason": "A dashboard adat már megvan, most UI-kártyákba kell rendezni.",
+              "patch": "PATCH_DASHBOARD_MODERN_KPI_CARDS.sh"
+            },
+            {
+              "priority": 4,
+              "title": "Top coin mini-kártyák",
+              "reason": "Scanner + portfolio cache alapján top coin lista kell.",
+              "patch": "PATCH_TOP_COIN_CARDS.sh"
+            },
+            {
+              "priority": 5,
+              "title": "Demo Reset megerősítő popup",
+              "reason": "Biztonságosabb reset, csak Demo módban.",
+              "patch": "PATCH_DEMO_RESET_CONFIRM_MODAL.sh"
+            },
+            {
+              "priority": 6,
+              "title": "Trade Simple / Advanced szétválasztás",
+              "reason": "Beállítások már vannak, UI-t kell rendezni.",
+              "patch": "PATCH_TRADE_SIMPLE_ADVANCED_UI.sh"
+            },
+            {
+              "priority": 7,
+              "title": "Read-only Binance valós balance teszt",
+              "reason": "Order nélkül, csak /api/v3/account olvasás.",
+              "patch": "PATCH_READONLY_BALANCE_TEST_FLOW.sh"
+            },
+            {
+              "priority": 8,
+              "title": "APK build előtti safe full test",
+              "reason": "Csak akkor build, ha minden compile és status zöld.",
+              "patch": "PATCH_PRE_APK_FULL_SAFE_TEST.sh"
+            }
+          ],
+          "order_endpoint_used": false
+        }
+      },
+      {
+        "key": "firstrun_ready",
+        "title": "First-run complete",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "ok": true,
+          "complete": true,
+          "required_count": 7,
+          "required_ok_count": 7,
+          "missing_required": [],
+          "optional_missing": [],
+          "checks": [
+            {
+              "key": "secrets_storage",
+              "title": "Titkosított secrets tárolás",
+              "required": true,
+              "ok": true,
+              "detail": {
+                "ok": true,
+                "binance_api": false,
+                "openai_api": false,
+                "email": false,
+                "google_drive": false,
+                "pc_sync": false,
+                "ngrok": false,
+                "masked": {
+                  "binance_api_key": "",
+                  "binance_api_secret": "",
+                  "openai_api_key": "",
+                  "email_user": "",
+                  "email_to": "",
+                  "email_app_password": "",
+                  "google_drive_token": "",
+                  "pc_sync_token": "",
+                  "ngrok_token": ""
+                }
+              }
+            },
+            {
+              "key": "startup_safety",
+              "title": "Startup Safety Summary",
+              "required": true,
+              "ok": true,
+              "detail": {
+                "ok": true,
+                "app_version": "0.6.0-demo-core-prebuild",
+                "health": "OK",
+                "safety_flags": {
+                  "safe_mode": false,
+                  "running": false,
+                  "execution_mode": "AUTO",
+                  "live_executor_enabled": false,
+                  "live_buy_allowed": false,
+                  "live_sell_allowed": false,
+                  "order_endpoint_bound": false,
+                  "readonly_real_get_enabled": false,
+                  "admin_active": false,
+                  "first_run_complete": false
+                },
+                "warnings": [
+                  "First-run kötelező teendő van: 1"
+                ],
+                "first_run": {
+                  "ok": true,
+                  "complete": false,
+                  "required_missing_count": 1,
+                  "tasks": [
+                    {
+                      "id": "admin_password",
+                      "title": "Admin jelszó csere",
+                      "required": true,
+                      "ok": false,
+                      "detail": "Alap admin/admin jelszót első használatkor cserélni kell."
+                    },
+                    {
+                      "id": "secrets_review",
+                      "title": "Secrets / integrációk ellenőrzése",
+                      "required": true,
+                      "ok": true,
+                      "detail": "Binance/OpenAI/E-mail kulcsok helyi titkosított tárolóban kezelhetők."
+                    },
+                    {
+                      "id": "live_warning",
+                      "title": "Live mód figyelmeztetés",
+                      "required": true,
+                      "ok": true,
+                      "detail": "Live order csak safety gate, approval, API és külön kapcsolók után engedhető."
+                    },
+                    {
+                      "id": "readonly_warning",
+                      "title": "Read-only Binance olvasás",
+                      "required": false,
+                      "ok": true,
+                      "detail": "Valódi account olvasás csak 3 külön kapcsolóval és API kulccsal fut."
+                    }
+                  ],
+                  "message": "First-run teendők vannak."
+                },
+                "safe_message": "Order endpoint nincs bekötve. APK buildhez nem nyúltunk."
+              }
+            },
+            {
+              "key": "pre_apk_safe",
+              "title": "Pre-APK safety test",
+              "required": true,
+              "ok": true,
+              "detail": {
+                "ok": true,
+                "ready_for_apk_test_build": false,
+                "blockers": [
+                  "order endpoint suspicious hard block found"
+                ],
+                "warnings": [],
+                "compile": {
+                  "ok": true,
+                  "missing": [],
+                  "checked": [
+                    "master_status_overview",
+                    "module_readiness_status",
+                    "missing_setup_status",
+                    "next_recommended_steps",
+                    "healthcheck",
+                    "trend_auto_refresh_status",
+                    "spot_portfolio_status"
+                  ],
+                  "order_endpoint_used": false
+                },
+                "order_scan": {
+                  "ok": true,
+                  "safe": false,
+                  "suspicious_count": 7,
+                  "hard_block_count": 6,
+                  "suspicious": [
+                    {
+                      "file": "demo_core_engine.py",
+                      "pattern": "api/v3/order",
+                      "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                    },
+                    {
+                      "file": "demo_core_engine.py",
+                      "pattern": "/api/v3/order",
+                      "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                    },
+                    {
+                      "file": "demo_core_engine.py",
+                      "pattern": "create_order",
+                      "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                    },
+                    {
+                      "file": "demo_core_engine.py",
+                      "pattern": "new_order",
+                      "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                    },
+                    {
+                      "file": "demo_core_engine.py",
+                      "pattern": "order/test",
+                      "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                    },
+                    {
+                      "file": "demo_core_engine.py",
+                      "pattern": "signed_order",
+                      "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                    },
+                    {
+                      "file": "demo_core_engine.py",
+                      "pattern": "LIVE ORDER SENT",
+                      "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                    }
+                  ],
+                  "hard_blocks": [
+                    {
+                      "file": "demo_core_engine.py",
+                      "pattern": "api/v3/order",
+                      "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                    },
+                    {
+                      "file": "demo_core_engine.py",
+                      "pattern": "/api/v3/order",
+                      "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                    },
+                    {
+                      "file": "demo_core_engine.py",
+                      "pattern": "create_order",
+                      "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                    },
+                    {
+                      "file": "demo_core_engine.py",
+                      "pattern": "new_order",
+                      "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                    },
+                    {
+                      "file": "demo_core_engine.py",
+                      "pattern": "signed_order",
+                      "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                    },
+                    {
+                      "file": "demo_core_engine.py",
+                      "pattern": "LIVE ORDER SENT",
+                      "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                    }
+                  ],
+                  "order_endpoint_used": false,
+                  "message": "Order endpoint safety scan lefutott."
+                },
+                "readiness_score_pct": 92.86,
+                "min_required_score_pct": 70.0,
+                "report": {
+                  "ok": true,
+                  "path": "logs/pre_apk_safe_report.json",
+                  "order_endpoint_used": false,
+                  "message": "Module status report export kész."
+                },
+                "apk_build_touched": false,
+                "order_endpoint_used": false,
+                "message": "Pre-APK full safe test lefutott. Ez még nem APK build."
+              }
+            },
+            {
+              "key": "full_system_check_report",
+              "title": "Full system check report",
+              "required": true,
+              "ok": true,
+              "detail": {
+                "path": "logs/full_system_status_report.json",
+                "exists": true
+              }
+            },
+            {
+              "key": "health_center",
+              "title": "Health / Alert / Recovery",
+              "required": true,
+              "ok": true,
+              "detail": {
+                "ok": true,
+                "heartbeat": {
+                  "ok": true,
+                  "now": 1777770929,
+                  "running": false,
+                  "last_heartbeat_ts": 1777770928,
+                  "last_tick_ts": 1777759959,
+                  "heartbeat_age_sec": 1,
+                  "tick_age_sec": 10970,
+                  "stale_after_sec": 120,
+                  "heartbeat_ok": true,
+                  "tick_ok": false,
+                  "last_action": "Heartbeat update: full_system_check",
+                  "order_endpoint_used": false
+                },
+                "alerts": {
+                  "ok": true,
+                  "enabled": true,
+                  "alert_count": 1,
+                  "alerts": [
+                    {
+                      "level": "info",
+                      "title": "Read-only gate nem ready",
+                      "detail": "['Binance API key hiányzik', 'Binance API secret hiányzik', 'binance_signed_readonly_enabled false', 'binance_account_read_enabled false', 'binance_real_account_get_enabled false']"
+                    }
+                  ],
+                  "health": {
+                    "ok": true,
+                    "status": "OK",
+                    "warnings": [],
+                    "running": false,
+                    "safe_mode": false,
+                    "positions_count": 2,
+                    "balance": 81.0,
+                    "realized_pnl": 0.0,
+                    "equity": 99.84916958245462,
+                    "trade_log_exists": true,
+                    "trade_log_path": "logs/demo_core_trades.csv",
+                    "last_tick_ts": 1777759959,
+                    "last_heartbeat_ts": 1777770929,
+                    "last_tick_age_sec": 10970,
+                    "last_heartbeat_age_sec": 1,
+                    "last_action": "Heartbeat update: full_system_check"
+                  },
+                  "heartbeat": {
+                    "ok": true,
+                    "now": 1777770929,
+                    "running": false,
+                    "last_heartbeat_ts": 1777770929,
+                    "last_tick_ts": 1777759959,
+                    "heartbeat_age_sec": 0,
+                    "tick_age_sec": 10970,
+                    "stale_after_sec": 120,
+                    "heartbeat_ok": true,
+                    "tick_ok": false,
+                    "last_action": "Heartbeat update: full_system_check",
+                    "order_endpoint_used": false
+                  },
+                  "order_endpoint_used": false
+                },
+                "recovery": {
+                  "ok": true,
+                  "crash_recovery_enabled": true,
+                  "resume_after_restart_enabled": true,
+                  "can_resume": true,
+                  "running": false,
+                  "safe_mode": false,
+                  "open_positions": 2,
+                  "blockers": [],
+                  "recommended_actions": [
+                    "2 nyitott pozíció állapotból visszaolvasható.",
+                    "Bot stopped flag, újraindítás kézi START után."
+                  ],
+                  "order_endpoint_used": false,
+                  "message": "Crash recovery státusz kész. Nem indít ordert."
+                },
+                "integration": {
+                  "ok": true,
+                  "enabled": true,
+                  "allow_network": false,
+                  "allow_email_send": false,
+                  "ok_count": 5,
+                  "total_count": 8,
+                  "score_pct": 62.5,
+                  "rows": [
+                    {
+                      "key": "secrets",
+                      "title": "Titkosított secrets",
+                      "ok": false,
+                      "detail": "secrets.enc / key státusz",
+                      "safe": true
+                    },
+                    {
+                      "key": "email_config",
+                      "title": "E-mail config",
+                      "ok": false,
+                      "detail": "{'ok': False, 'smtp_host': 'smtp.gmail.com', 'smtp_port': '587', 'email_user': '', 'email_to': '', 'has_password': False}",
+                      "safe": true
+                    },
+                    {
+                      "key": "openai_config",
+                      "title": "OpenAI config",
+                      "ok": false,
+                      "detail": "{'ok': True, 'has_key': False, 'api_enabled': False, 'ai_mode': 'OFFLINE', 'model': 'gpt-5-mini', 'ready': False}",
+                      "safe": true
+                    },
+                    {
+                      "key": "binance_live_check",
+                      "title": "Binance live readiness",
+                      "ok": true,
+                      "detail": "csak státusz, nem order",
+                      "safe": true
+                    },
+                    {
+                      "key": "binance_readonly",
+                      "title": "Binance read-only",
+                      "ok": true,
+                      "detail": "",
+                      "safe": true
+                    },
+                    {
+                      "key": "sync",
+                      "title": "PC / Drive sync",
+                      "ok": true,
+                      "detail": "{'ok': True, 'sync_enabled': True, 'primary_device': 'PHONE', 'drive_sync_folder': 'AutobotBackups', 'pc_sync_folder': 'PCSync', 'drive_files_count': 1, 'pc_files_count': 0, 'last_drive_files': ['AutobotBackups/autobot_sync_drive_1777763617.zip'], 'last_pc_files': [], 'last_sync_export_ts': 1777763617, 'last_sync_import_ts': 0}",
+                      "safe": true
+                    },
+                    {
+                      "key": "first_run",
+                      "title": "First-run wizard státusz",
+                      "ok": true,
+                      "detail": "{'ok': True, 'first_run_done': False, 'missing_count': 3, 'ready': False, 'checklist': [{'id': 'secrets_file', 'label': 'Titkosított secrets fájl', 'ok': True}, {'id': 'binance_api', 'label': 'Binance API key/secret megadva', 'ok': False}, {'id': 'email', 'label': 'E-mail értesítés beállítva', 'ok': False}, {'id': 'openai', 'label': 'OpenAI API kulcs megadva', 'ok': False}, {'id': 'sync_dirs', 'label': 'Drive/PC sync mappák létrehozva', 'ok': True}, {'id': 'live_safe', 'label': 'Live mód biztonsági állapot ellenőrizve', 'ok': True}]}",
+                      "safe": true
+                    },
+                    {
+                      "key": "health",
+                      "title": "Healthcheck",
+                      "ok": true,
+                      "detail": "OK",
+                      "safe": true
+                    }
+                  ],
+                  "order_endpoint_used": false,
+                  "message": "Integration Test Center státusz kész. Alapból nincs hálózati hívás."
+                },
+                "master": {
+                  "ok": true,
+                  "app_version": "0.6.0-demo-core-prebuild",
+                  "mode": "DEMO",
+                  "running": false,
+                  "safe_mode": false,
+                  "execution_mode": "AUTO",
+                  "last_action": "Heartbeat update: full_system_check",
+                  "portfolio": {
+                    "total_value_usd": 99.88643379,
+                    "tradable_usd": 71.0,
+                    "open_positions": 2,
+                    "usdc_free": 81.0,
+                    "usdt_free": 0.0
+                  },
+                  "trend": {
+                    "history_points": 8,
+                    "last_trend_snapshot_ts": 1777766553,
+                    "auto_enabled": true
+                  },
+                  "integrations": {
+                    "secrets_encrypted": null,
+                    "plain_file_exists": null,
+                    "email_ok": false,
+                    "openai_ok": false,
+                    "binance_live_ready": false,
+                    "readonly_ok": true
+                  },
+                  "safety": {
+                    "health_status": "OK",
+                    "live_gate_ok": true,
+                    "order_endpoint_used": false,
+                    "safe_note": "Valódi Binance order endpoint továbbra sincs bekötve."
+                  },
+                  "package": {
+                    "ok": true,
+                    "working_apk_reference": "APK 0.2.5 - utolsó ismert működő referencia",
+                    "app_version": "0.6.0-demo-core-prebuild",
+                    "build_policy": "APK buildhez csak külön stabil build-lépésben nyúlunk.",
+                    "current_dev_mode": "code_patch_only"
+                  },
+                  "readiness": {
+                    "score_pct": 92.86,
+                    "ok_count": 26,
+                    "total_count": 28
+                  },
+                  "missing": {
+                    "ok": true,
+                    "critical_missing_count": 0,
+                    "warnings_count": 9,
+                    "critical": [],
+                    "warnings": [
+                      {
+                        "key": "binance_api_key",
+                        "title": "Binance API key nincs megadva",
+                        "level": "warning",
+                        "detail": "Live/read-only teszthez kell."
+                      },
+                      {
+                        "key": "binance_api_secret",
+                        "title": "Binance API secret nincs megadva",
+                        "level": "warning",
+                        "detail": "Signed read-only ellenőrzéshez kell."
+                      },
+                      {
+                        "key": "openai_api_key",
+                        "title": "OpenAI API key nincs megadva",
+                        "level": "warning",
+                        "detail": "AI API módhoz kell, offline AI ettől még működik."
+                      },
+                      {
+                        "key": "email_config",
+                        "title": "E-mail adatok hiányosak",
+                        "level": "warning",
+                        "detail": "Teszt e-mailhez és riasztáshoz kell."
+                      },
+                      {
+                        "key": "google_drive_token",
+                        "title": "Google Drive token nincs megadva",
+                        "level": "warning",
+                        "detail": "Drive sync teljes működéséhez kell."
+                      },
+                      {
+                        "key": "pc_sync_token",
+                        "title": "PC sync token nincs megadva",
+                        "level": "warning",
+                        "detail": "PC agent későbbi kapcsolathoz kell."
+                      },
+                      {
+                        "key": "binance_signed_readonly_enabled",
+                        "title": "Signed read-only nincs bekapcsolva",
+                        "level": "warning",
+                        "detail": "Első valódi account olvasáshoz külön engedély kell."
+                      },
+                      {
+                        "key": "binance_account_read_enabled",
+                        "title": "Account read nincs bekapcsolva",
+                        "level": "warning",
+                        "detail": "Balance sync valódi Binance olvasáshoz kell."
+                      },
+                      {
+                        "key": "binance_real_account_get_enabled",
+                        "title": "Real account GET nincs bekapcsolva",
+                        "level": "warning",
+                        "detail": "Valódi /api/v3/account olvasáshoz kell."
+                      }
+                    ],
+                    "safe_note": "Order endpoint továbbra sincs bekötve.",
+                    "order_endpoint_used": false
+                  },
+                  "modules": [
+                    {
+                      "id": "demo_core",
+                      "title": "Demo Core",
+                      "ok": true,
+                      "detail": "Core modul aktív",
+                      "weight": 1
+                    },
+                    {
+                      "id": "settings",
+                      "title": "Settings",
+                      "ok": true,
+                      "detail": "settings state létezik",
+                      "weight": 1
+                    },
+                    {
+                      "id": "logs",
+                      "title": "Logs / Audit",
+                      "ok": true,
+                      "detail": "audit/trade log modul",
+                      "weight": 1
+                    },
+                    {
+                      "id": "healthcheck",
+                      "title": "Healthcheck / Heartbeat",
+                      "ok": true,
+                      "detail": "OK",
+                      "weight": 1
+                    },
+                    {
+                      "id": "safe_mode",
+                      "title": "Panic Stop / Safe Mode",
+                      "ok": true,
+                      "detail": "panic + safe mode függvények",
+                      "weight": 1
+                    },
+                    {
+                      "id": "execution_mode",
+                      "title": "Execution Mode",
+                      "ok": true,
+                      "detail": "AUTO",
+                      "weight": 1
+                    },
+                    {
+                      "id": "profit_hold",
+                      "title": "Profit Hold / Smart Exit",
+                      "ok": true,
+                      "detail": "profit tartás beállítások",
+                      "weight": 1
+                    },
+                    {
+                      "id": "scanner",
+                      "title": "Multi-symbol Scanner",
+                      "ok": true,
+                      "detail": "scanner függvény",
+                      "weight": 1
+                    },
+                    {
+                      "id": "fee_tax",
+                      "title": "Fee + Tax",
+                      "ok": false,
+                      "detail": "nettó/adó utáni PnL",
+                      "weight": 1
+                    },
+                    {
+                      "id": "trade_guard",
+                      "title": "Trade Screen Guard",
+                      "ok": true,
+                      "detail": "BBO/spread/slippage",
+                      "weight": 1
+                    },
+                    {
+                      "id": "ai_advisor",
+                      "title": "AI Advisor",
+                      "ok": true,
+                      "detail": "offline/API advisor alap",
+                      "weight": 1
+                    },
+                    {
+                      "id": "secrets",
+                      "title": "Encrypted Secrets",
+                      "ok": false,
+                      "detail": "secrets.enc státusz",
+                      "weight": 1
+                    },
+                    {
+                      "id": "email",
+                      "title": "Email Notify",
+                      "ok": true,
+                      "detail": "email alap modul",
+                      "weight": 1
+                    },
+                    {
+                      "id": "openai",
+                      "title": "OpenAI API",
+                      "ok": true,
+                      "detail": "opcionális API fallback",
+                      "weight": 1
+                    },
+                    {
+                      "id": "binance_live_check",
+                      "title": "Binance Live Check",
+                      "ok": true,
+                      "detail": "nem küld ordert",
+                      "weight": 1
+                    },
+                    {
+                      "id": "readonly_account",
+                      "title": "Read-only Account",
+                      "ok": true,
+                      "detail": "",
+                      "weight": 1
+                    },
+                    {
+                      "id": "live_gate",
+                      "title": "Live Safety Gate",
+                      "ok": true,
+                      "detail": "hard-stop gate",
+                      "weight": 1
+                    },
+                    {
+                      "id": "approval",
+                      "title": "Approval / Dry-run",
+                      "ok": true,
+                      "detail": "approval queue",
+                      "weight": 1
+                    },
+                    {
+                      "id": "portfolio",
+                      "title": "Spot Portfolio Sync",
+                      "ok": true,
+                      "detail": "total/tradable cache",
+                      "weight": 1
+                    },
+                    {
+                      "id": "trend",
+                      "title": "Trend / Chart / Export",
+                      "ok": true,
+                      "detail": "trend auto snapshot",
+                      "weight": 1
+                    },
+                    {
+                      "id": "backtest",
+                      "title": "Backtest / Diagnostics",
+                      "ok": true,
+                      "detail": "backtest alap",
+                      "weight": 1
+                    },
+                    {
+                      "id": "schedules",
+                      "title": "Schedules",
+                      "ok": true,
+                      "detail": "snapshot/trigger alap",
+                      "weight": 1
+                    },
+                    {
+                      "id": "launchpool",
+                      "title": "Launchpool / Airdrop",
+                      "ok": true,
+                      "detail": "watch alap",
+                      "weight": 1
+                    },
+                    {
+                      "id": "package",
+                      "title": "Package / Snapshot",
+                      "ok": true,
+                      "detail": "APK reference/package",
+                      "weight": 1
+                    },
+                    {
+                      "id": "sync",
+                      "title": "PC / Drive Sync",
+                      "ok": true,
+                      "detail": "sync alap",
+                      "weight": 1
+                    },
+                    {
+                      "id": "first_run",
+                      "title": "First-run Safety",
+                      "ok": true,
+                      "detail": "startup safety",
+                      "weight": 1
+                    },
+                    {
+                      "id": "admin",
+                      "title": "Admin Security",
+                      "ok": true,
+                      "detail": "5 perc timeout",
+                      "weight": 1
+                    },
+                    {
+                      "id": "patch_manager",
+                      "title": "Patch Manager",
+                      "ok": true,
+                      "detail": "safe queue",
+                      "weight": 1
+                    }
+                  ],
+                  "next_steps": [
+                    {
+                      "priority": 1,
+                      "title": "Secrets / Integrációk kitöltése és tesztelése",
+                      "reason": "API/OpenAI/email/Drive/PC mezők hiányozhatnak.",
+                      "patch": "PATCH_INTEGRATION_TESTS_UI.sh"
+                    },
+                    {
+                      "priority": 3,
+                      "title": "Modern Dashboard KPI kártyák",
+                      "reason": "A dashboard adat már megvan, most UI-kártyákba kell rendezni.",
+                      "patch": "PATCH_DASHBOARD_MODERN_KPI_CARDS.sh"
+                    },
+                    {
+                      "priority": 4,
+                      "title": "Top coin mini-kártyák",
+                      "reason": "Scanner + portfolio cache alapján top coin lista kell.",
+                      "patch": "PATCH_TOP_COIN_CARDS.sh"
+                    },
+                    {
+                      "priority": 5,
+                      "title": "Demo Reset megerősítő popup",
+                      "reason": "Biztonságosabb reset, csak Demo módban.",
+                      "patch": "PATCH_DEMO_RESET_CONFIRM_MODAL.sh"
+                    },
+                    {
+                      "priority": 6,
+                      "title": "Trade Simple / Advanced szétválasztás",
+                      "reason": "Beállítások már vannak, UI-t kell rendezni.",
+                      "patch": "PATCH_TRADE_SIMPLE_ADVANCED_UI.sh"
+                    },
+                    {
+                      "priority": 7,
+                      "title": "Read-only Binance valós balance teszt",
+                      "reason": "Order nélkül, csak /api/v3/account olvasás.",
+                      "patch": "PATCH_READONLY_BALANCE_TEST_FLOW.sh"
+                    },
+                    {
+                      "priority": 8,
+                      "title": "APK build előtti safe full test",
+                      "reason": "Csak akkor build, ha minden compile és status zöld.",
+                      "patch": "PATCH_PRE_APK_FULL_SAFE_TEST.sh"
+                    }
+                  ],
+                  "order_endpoint_used": false
+                },
+                "order_endpoint_used": false,
+                "message": "Health Alert Recovery Center státusz kész."
+              }
+            },
+            {
+              "key": "readonly_gate",
+              "title": "Read-only Binance gate",
+              "required": false,
+              "ok": true,
+              "detail": {
+                "ok": true,
+                "ready_for_readonly_network_test": false,
+                "network_allowed": false,
+                "has_api_key": false,
+                "has_api_secret": false,
+                "signed_readonly_enabled": false,
+                "account_read_enabled": false,
+                "real_account_get_enabled": false,
+                "blockers": [
+                  "Binance API key hiányzik",
+                  "Binance API secret hiányzik",
+                  "binance_signed_readonly_enabled false",
+                  "binance_account_read_enabled false",
+                  "binance_real_account_get_enabled false"
+                ],
+                "warnings": [
+                  "Hálózati read-only teszt tiltva: readonly_balance_allow_network vagy integration_test_allow_network false"
+                ],
+                "binance_order_allowed": false,
+                "order_endpoint_used": false,
+                "message": "Read-only balance gate kész. Order nincs."
+              }
+            },
+            {
+              "key": "live_gate_safe",
+              "title": "Live gate safety",
+              "required": true,
+              "ok": true,
+              "detail": {
+                "ok": true,
+                "live_executor_enabled": false,
+                "live_hard_stop_enabled": true,
+                "live_require_admin_active": true,
+                "live_require_approval": true,
+                "live_require_positive_after_tax": true,
+                "live_max_order_usdt_hard": 10.0,
+                "live_block_if_health_warning": true,
+                "live_block_if_spread_bad": true,
+                "live_block_if_ai_hold": true
+              }
+            },
+            {
+              "key": "master_status",
+              "title": "Master status overview",
+              "required": true,
+              "ok": true,
+              "detail": {
+                "ok": true,
+                "app_version": "0.6.0-demo-core-prebuild",
+                "mode": "DEMO",
+                "running": false,
+                "safe_mode": false,
+                "execution_mode": "AUTO",
+                "last_action": "Heartbeat update: full_system_check",
+                "portfolio": {
+                  "total_value_usd": 99.88643379,
+                  "tradable_usd": 71.0,
+                  "open_positions": 2,
+                  "usdc_free": 81.0,
+                  "usdt_free": 0.0
+                },
+                "trend": {
+                  "history_points": 8,
+                  "last_trend_snapshot_ts": 1777766553,
+                  "auto_enabled": true
+                },
+                "integrations": {
+                  "secrets_encrypted": null,
+                  "plain_file_exists": null,
+                  "email_ok": false,
+                  "openai_ok": false,
+                  "binance_live_ready": false,
+                  "readonly_ok": true
+                },
+                "safety": {
+                  "health_status": "OK",
+                  "live_gate_ok": true,
+                  "order_endpoint_used": false,
+                  "safe_note": "Valódi Binance order endpoint továbbra sincs bekötve."
+                },
+                "package": {
+                  "ok": true,
+                  "working_apk_reference": "APK 0.2.5 - utolsó ismert működő referencia",
+                  "app_version": "0.6.0-demo-core-prebuild",
+                  "build_policy": "APK buildhez csak külön stabil build-lépésben nyúlunk.",
+                  "current_dev_mode": "code_patch_only"
+                },
+                "readiness": {
+                  "score_pct": 92.86,
+                  "ok_count": 26,
+                  "total_count": 28
+                },
+                "missing": {
+                  "ok": true,
+                  "critical_missing_count": 0,
+                  "warnings_count": 9,
+                  "critical": [],
+                  "warnings": [
+                    {
+                      "key": "binance_api_key",
+                      "title": "Binance API key nincs megadva",
+                      "level": "warning",
+                      "detail": "Live/read-only teszthez kell."
+                    },
+                    {
+                      "key": "binance_api_secret",
+                      "title": "Binance API secret nincs megadva",
+                      "level": "warning",
+                      "detail": "Signed read-only ellenőrzéshez kell."
+                    },
+                    {
+                      "key": "openai_api_key",
+                      "title": "OpenAI API key nincs megadva",
+                      "level": "warning",
+                      "detail": "AI API módhoz kell, offline AI ettől még működik."
+                    },
+                    {
+                      "key": "email_config",
+                      "title": "E-mail adatok hiányosak",
+                      "level": "warning",
+                      "detail": "Teszt e-mailhez és riasztáshoz kell."
+                    },
+                    {
+                      "key": "google_drive_token",
+                      "title": "Google Drive token nincs megadva",
+                      "level": "warning",
+                      "detail": "Drive sync teljes működéséhez kell."
+                    },
+                    {
+                      "key": "pc_sync_token",
+                      "title": "PC sync token nincs megadva",
+                      "level": "warning",
+                      "detail": "PC agent későbbi kapcsolathoz kell."
+                    },
+                    {
+                      "key": "binance_signed_readonly_enabled",
+                      "title": "Signed read-only nincs bekapcsolva",
+                      "level": "warning",
+                      "detail": "Első valódi account olvasáshoz külön engedély kell."
+                    },
+                    {
+                      "key": "binance_account_read_enabled",
+                      "title": "Account read nincs bekapcsolva",
+                      "level": "warning",
+                      "detail": "Balance sync valódi Binance olvasáshoz kell."
+                    },
+                    {
+                      "key": "binance_real_account_get_enabled",
+                      "title": "Real account GET nincs bekapcsolva",
+                      "level": "warning",
+                      "detail": "Valódi /api/v3/account olvasáshoz kell."
+                    }
+                  ],
+                  "safe_note": "Order endpoint továbbra sincs bekötve.",
+                  "order_endpoint_used": false
+                },
+                "modules": [
+                  {
+                    "id": "demo_core",
+                    "title": "Demo Core",
+                    "ok": true,
+                    "detail": "Core modul aktív",
+                    "weight": 1
+                  },
+                  {
+                    "id": "settings",
+                    "title": "Settings",
+                    "ok": true,
+                    "detail": "settings state létezik",
+                    "weight": 1
+                  },
+                  {
+                    "id": "logs",
+                    "title": "Logs / Audit",
+                    "ok": true,
+                    "detail": "audit/trade log modul",
+                    "weight": 1
+                  },
+                  {
+                    "id": "healthcheck",
+                    "title": "Healthcheck / Heartbeat",
+                    "ok": true,
+                    "detail": "OK",
+                    "weight": 1
+                  },
+                  {
+                    "id": "safe_mode",
+                    "title": "Panic Stop / Safe Mode",
+                    "ok": true,
+                    "detail": "panic + safe mode függvények",
+                    "weight": 1
+                  },
+                  {
+                    "id": "execution_mode",
+                    "title": "Execution Mode",
+                    "ok": true,
+                    "detail": "AUTO",
+                    "weight": 1
+                  },
+                  {
+                    "id": "profit_hold",
+                    "title": "Profit Hold / Smart Exit",
+                    "ok": true,
+                    "detail": "profit tartás beállítások",
+                    "weight": 1
+                  },
+                  {
+                    "id": "scanner",
+                    "title": "Multi-symbol Scanner",
+                    "ok": true,
+                    "detail": "scanner függvény",
+                    "weight": 1
+                  },
+                  {
+                    "id": "fee_tax",
+                    "title": "Fee + Tax",
+                    "ok": false,
+                    "detail": "nettó/adó utáni PnL",
+                    "weight": 1
+                  },
+                  {
+                    "id": "trade_guard",
+                    "title": "Trade Screen Guard",
+                    "ok": true,
+                    "detail": "BBO/spread/slippage",
+                    "weight": 1
+                  },
+                  {
+                    "id": "ai_advisor",
+                    "title": "AI Advisor",
+                    "ok": true,
+                    "detail": "offline/API advisor alap",
+                    "weight": 1
+                  },
+                  {
+                    "id": "secrets",
+                    "title": "Encrypted Secrets",
+                    "ok": false,
+                    "detail": "secrets.enc státusz",
+                    "weight": 1
+                  },
+                  {
+                    "id": "email",
+                    "title": "Email Notify",
+                    "ok": true,
+                    "detail": "email alap modul",
+                    "weight": 1
+                  },
+                  {
+                    "id": "openai",
+                    "title": "OpenAI API",
+                    "ok": true,
+                    "detail": "opcionális API fallback",
+                    "weight": 1
+                  },
+                  {
+                    "id": "binance_live_check",
+                    "title": "Binance Live Check",
+                    "ok": true,
+                    "detail": "nem küld ordert",
+                    "weight": 1
+                  },
+                  {
+                    "id": "readonly_account",
+                    "title": "Read-only Account",
+                    "ok": true,
+                    "detail": "",
+                    "weight": 1
+                  },
+                  {
+                    "id": "live_gate",
+                    "title": "Live Safety Gate",
+                    "ok": true,
+                    "detail": "hard-stop gate",
+                    "weight": 1
+                  },
+                  {
+                    "id": "approval",
+                    "title": "Approval / Dry-run",
+                    "ok": true,
+                    "detail": "approval queue",
+                    "weight": 1
+                  },
+                  {
+                    "id": "portfolio",
+                    "title": "Spot Portfolio Sync",
+                    "ok": true,
+                    "detail": "total/tradable cache",
+                    "weight": 1
+                  },
+                  {
+                    "id": "trend",
+                    "title": "Trend / Chart / Export",
+                    "ok": true,
+                    "detail": "trend auto snapshot",
+                    "weight": 1
+                  },
+                  {
+                    "id": "backtest",
+                    "title": "Backtest / Diagnostics",
+                    "ok": true,
+                    "detail": "backtest alap",
+                    "weight": 1
+                  },
+                  {
+                    "id": "schedules",
+                    "title": "Schedules",
+                    "ok": true,
+                    "detail": "snapshot/trigger alap",
+                    "weight": 1
+                  },
+                  {
+                    "id": "launchpool",
+                    "title": "Launchpool / Airdrop",
+                    "ok": true,
+                    "detail": "watch alap",
+                    "weight": 1
+                  },
+                  {
+                    "id": "package",
+                    "title": "Package / Snapshot",
+                    "ok": true,
+                    "detail": "APK reference/package",
+                    "weight": 1
+                  },
+                  {
+                    "id": "sync",
+                    "title": "PC / Drive Sync",
+                    "ok": true,
+                    "detail": "sync alap",
+                    "weight": 1
+                  },
+                  {
+                    "id": "first_run",
+                    "title": "First-run Safety",
+                    "ok": true,
+                    "detail": "startup safety",
+                    "weight": 1
+                  },
+                  {
+                    "id": "admin",
+                    "title": "Admin Security",
+                    "ok": true,
+                    "detail": "5 perc timeout",
+                    "weight": 1
+                  },
+                  {
+                    "id": "patch_manager",
+                    "title": "Patch Manager",
+                    "ok": true,
+                    "detail": "safe queue",
+                    "weight": 1
+                  }
+                ],
+                "next_steps": [
+                  {
+                    "priority": 1,
+                    "title": "Secrets / Integrációk kitöltése és tesztelése",
+                    "reason": "API/OpenAI/email/Drive/PC mezők hiányozhatnak.",
+                    "patch": "PATCH_INTEGRATION_TESTS_UI.sh"
+                  },
+                  {
+                    "priority": 3,
+                    "title": "Modern Dashboard KPI kártyák",
+                    "reason": "A dashboard adat már megvan, most UI-kártyákba kell rendezni.",
+                    "patch": "PATCH_DASHBOARD_MODERN_KPI_CARDS.sh"
+                  },
+                  {
+                    "priority": 4,
+                    "title": "Top coin mini-kártyák",
+                    "reason": "Scanner + portfolio cache alapján top coin lista kell.",
+                    "patch": "PATCH_TOP_COIN_CARDS.sh"
+                  },
+                  {
+                    "priority": 5,
+                    "title": "Demo Reset megerősítő popup",
+                    "reason": "Biztonságosabb reset, csak Demo módban.",
+                    "patch": "PATCH_DEMO_RESET_CONFIRM_MODAL.sh"
+                  },
+                  {
+                    "priority": 6,
+                    "title": "Trade Simple / Advanced szétválasztás",
+                    "reason": "Beállítások már vannak, UI-t kell rendezni.",
+                    "patch": "PATCH_TRADE_SIMPLE_ADVANCED_UI.sh"
+                  },
+                  {
+                    "priority": 7,
+                    "title": "Read-only Binance valós balance teszt",
+                    "reason": "Order nélkül, csak /api/v3/account olvasás.",
+                    "patch": "PATCH_READONLY_BALANCE_TEST_FLOW.sh"
+                  },
+                  {
+                    "priority": 8,
+                    "title": "APK build előtti safe full test",
+                    "reason": "Csak akkor build, ha minden compile és status zöld.",
+                    "patch": "PATCH_PRE_APK_FULL_SAFE_TEST.sh"
+                  }
+                ],
+                "order_endpoint_used": false
+              }
+            }
+          ],
+          "order_endpoint_used": false,
+          "message": "First-run readiness check kész."
+        }
+      },
+      {
+        "key": "health_center",
+        "title": "Health center OK",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "ok": true,
+          "heartbeat": {
+            "ok": true,
+            "now": 1777770933,
+            "running": false,
+            "last_heartbeat_ts": 1777770932,
+            "last_tick_ts": 1777759959,
+            "heartbeat_age_sec": 1,
+            "tick_age_sec": 10974,
+            "stale_after_sec": 120,
+            "heartbeat_ok": true,
+            "tick_ok": false,
+            "last_action": "Heartbeat update: full_system_check",
+            "order_endpoint_used": false
+          },
+          "alerts": {
+            "ok": true,
+            "enabled": true,
+            "alert_count": 1,
+            "alerts": [
+              {
+                "level": "info",
+                "title": "Read-only gate nem ready",
+                "detail": "['Binance API key hiányzik', 'Binance API secret hiányzik', 'binance_signed_readonly_enabled false', 'binance_account_read_enabled false', 'binance_real_account_get_enabled false']"
+              }
+            ],
+            "health": {
+              "ok": true,
+              "status": "OK",
+              "warnings": [],
+              "running": false,
+              "safe_mode": false,
+              "positions_count": 2,
+              "balance": 81.0,
+              "realized_pnl": 0.0,
+              "equity": 99.84971005081415,
+              "trade_log_exists": true,
+              "trade_log_path": "logs/demo_core_trades.csv",
+              "last_tick_ts": 1777759959,
+              "last_heartbeat_ts": 1777770933,
+              "last_tick_age_sec": 10974,
+              "last_heartbeat_age_sec": 1,
+              "last_action": "Heartbeat update: full_system_check"
+            },
+            "heartbeat": {
+              "ok": true,
+              "now": 1777770934,
+              "running": false,
+              "last_heartbeat_ts": 1777770933,
+              "last_tick_ts": 1777759959,
+              "heartbeat_age_sec": 1,
+              "tick_age_sec": 10975,
+              "stale_after_sec": 120,
+              "heartbeat_ok": true,
+              "tick_ok": false,
+              "last_action": "Heartbeat update: full_system_check",
+              "order_endpoint_used": false
+            },
+            "order_endpoint_used": false
+          },
+          "recovery": {
+            "ok": true,
+            "crash_recovery_enabled": true,
+            "resume_after_restart_enabled": true,
+            "can_resume": true,
+            "running": false,
+            "safe_mode": false,
+            "open_positions": 2,
+            "blockers": [],
+            "recommended_actions": [
+              "2 nyitott pozíció állapotból visszaolvasható.",
+              "Bot stopped flag, újraindítás kézi START után."
+            ],
+            "order_endpoint_used": false,
+            "message": "Crash recovery státusz kész. Nem indít ordert."
+          },
+          "integration": {
+            "ok": true,
+            "enabled": true,
+            "allow_network": false,
+            "allow_email_send": false,
+            "ok_count": 5,
+            "total_count": 8,
+            "score_pct": 62.5,
+            "rows": [
+              {
+                "key": "secrets",
+                "title": "Titkosított secrets",
+                "ok": false,
+                "detail": "secrets.enc / key státusz",
+                "safe": true
+              },
+              {
+                "key": "email_config",
+                "title": "E-mail config",
+                "ok": false,
+                "detail": "{'ok': False, 'smtp_host': 'smtp.gmail.com', 'smtp_port': '587', 'email_user': '', 'email_to': '', 'has_password': False}",
+                "safe": true
+              },
+              {
+                "key": "openai_config",
+                "title": "OpenAI config",
+                "ok": false,
+                "detail": "{'ok': True, 'has_key': False, 'api_enabled': False, 'ai_mode': 'OFFLINE', 'model': 'gpt-5-mini', 'ready': False}",
+                "safe": true
+              },
+              {
+                "key": "binance_live_check",
+                "title": "Binance live readiness",
+                "ok": true,
+                "detail": "csak státusz, nem order",
+                "safe": true
+              },
+              {
+                "key": "binance_readonly",
+                "title": "Binance read-only",
+                "ok": true,
+                "detail": "",
+                "safe": true
+              },
+              {
+                "key": "sync",
+                "title": "PC / Drive sync",
+                "ok": true,
+                "detail": "{'ok': True, 'sync_enabled': True, 'primary_device': 'PHONE', 'drive_sync_folder': 'AutobotBackups', 'pc_sync_folder': 'PCSync', 'drive_files_count': 1, 'pc_files_count': 0, 'last_drive_files': ['AutobotBackups/autobot_sync_drive_1777763617.zip'], 'last_pc_files': [], 'last_sync_export_ts': 1777763617, 'last_sync_import_ts': 0}",
+                "safe": true
+              },
+              {
+                "key": "first_run",
+                "title": "First-run wizard státusz",
+                "ok": true,
+                "detail": "{'ok': True, 'first_run_done': False, 'missing_count': 3, 'ready': False, 'checklist': [{'id': 'secrets_file', 'label': 'Titkosított secrets fájl', 'ok': True}, {'id': 'binance_api', 'label': 'Binance API key/secret megadva', 'ok': False}, {'id': 'email', 'label': 'E-mail értesítés beállítva', 'ok': False}, {'id': 'openai', 'label': 'OpenAI API kulcs megadva', 'ok': False}, {'id': 'sync_dirs', 'label': 'Drive/PC sync mappák létrehozva', 'ok': True}, {'id': 'live_safe', 'label': 'Live mód biztonsági állapot ellenőrizve', 'ok': True}]}",
+                "safe": true
+              },
+              {
+                "key": "health",
+                "title": "Healthcheck",
+                "ok": true,
+                "detail": "OK",
+                "safe": true
+              }
+            ],
+            "order_endpoint_used": false,
+            "message": "Integration Test Center státusz kész. Alapból nincs hálózati hívás."
+          },
+          "master": {
+            "ok": true,
+            "app_version": "0.6.0-demo-core-prebuild",
+            "mode": "DEMO",
+            "running": false,
+            "safe_mode": false,
+            "execution_mode": "AUTO",
+            "last_action": "Heartbeat update: full_system_check",
+            "portfolio": {
+              "total_value_usd": 99.88643379,
+              "tradable_usd": 71.0,
+              "open_positions": 2,
+              "usdc_free": 81.0,
+              "usdt_free": 0.0
+            },
+            "trend": {
+              "history_points": 8,
+              "last_trend_snapshot_ts": 1777766553,
+              "auto_enabled": true
+            },
+            "integrations": {
+              "secrets_encrypted": null,
+              "plain_file_exists": null,
+              "email_ok": false,
+              "openai_ok": false,
+              "binance_live_ready": false,
+              "readonly_ok": true
+            },
+            "safety": {
+              "health_status": "OK",
+              "live_gate_ok": true,
+              "order_endpoint_used": false,
+              "safe_note": "Valódi Binance order endpoint továbbra sincs bekötve."
+            },
+            "package": {
+              "ok": true,
+              "working_apk_reference": "APK 0.2.5 - utolsó ismert működő referencia",
+              "app_version": "0.6.0-demo-core-prebuild",
+              "build_policy": "APK buildhez csak külön stabil build-lépésben nyúlunk.",
+              "current_dev_mode": "code_patch_only"
+            },
+            "readiness": {
+              "score_pct": 92.86,
+              "ok_count": 26,
+              "total_count": 28
+            },
+            "missing": {
+              "ok": true,
+              "critical_missing_count": 0,
+              "warnings_count": 9,
+              "critical": [],
+              "warnings": [
+                {
+                  "key": "binance_api_key",
+                  "title": "Binance API key nincs megadva",
+                  "level": "warning",
+                  "detail": "Live/read-only teszthez kell."
+                },
+                {
+                  "key": "binance_api_secret",
+                  "title": "Binance API secret nincs megadva",
+                  "level": "warning",
+                  "detail": "Signed read-only ellenőrzéshez kell."
+                },
+                {
+                  "key": "openai_api_key",
+                  "title": "OpenAI API key nincs megadva",
+                  "level": "warning",
+                  "detail": "AI API módhoz kell, offline AI ettől még működik."
+                },
+                {
+                  "key": "email_config",
+                  "title": "E-mail adatok hiányosak",
+                  "level": "warning",
+                  "detail": "Teszt e-mailhez és riasztáshoz kell."
+                },
+                {
+                  "key": "google_drive_token",
+                  "title": "Google Drive token nincs megadva",
+                  "level": "warning",
+                  "detail": "Drive sync teljes működéséhez kell."
+                },
+                {
+                  "key": "pc_sync_token",
+                  "title": "PC sync token nincs megadva",
+                  "level": "warning",
+                  "detail": "PC agent későbbi kapcsolathoz kell."
+                },
+                {
+                  "key": "binance_signed_readonly_enabled",
+                  "title": "Signed read-only nincs bekapcsolva",
+                  "level": "warning",
+                  "detail": "Első valódi account olvasáshoz külön engedély kell."
+                },
+                {
+                  "key": "binance_account_read_enabled",
+                  "title": "Account read nincs bekapcsolva",
+                  "level": "warning",
+                  "detail": "Balance sync valódi Binance olvasáshoz kell."
+                },
+                {
+                  "key": "binance_real_account_get_enabled",
+                  "title": "Real account GET nincs bekapcsolva",
+                  "level": "warning",
+                  "detail": "Valódi /api/v3/account olvasáshoz kell."
+                }
+              ],
+              "safe_note": "Order endpoint továbbra sincs bekötve.",
+              "order_endpoint_used": false
+            },
+            "modules": [
+              {
+                "id": "demo_core",
+                "title": "Demo Core",
+                "ok": true,
+                "detail": "Core modul aktív",
+                "weight": 1
+              },
+              {
+                "id": "settings",
+                "title": "Settings",
+                "ok": true,
+                "detail": "settings state létezik",
+                "weight": 1
+              },
+              {
+                "id": "logs",
+                "title": "Logs / Audit",
+                "ok": true,
+                "detail": "audit/trade log modul",
+                "weight": 1
+              },
+              {
+                "id": "healthcheck",
+                "title": "Healthcheck / Heartbeat",
+                "ok": true,
+                "detail": "OK",
+                "weight": 1
+              },
+              {
+                "id": "safe_mode",
+                "title": "Panic Stop / Safe Mode",
+                "ok": true,
+                "detail": "panic + safe mode függvények",
+                "weight": 1
+              },
+              {
+                "id": "execution_mode",
+                "title": "Execution Mode",
+                "ok": true,
+                "detail": "AUTO",
+                "weight": 1
+              },
+              {
+                "id": "profit_hold",
+                "title": "Profit Hold / Smart Exit",
+                "ok": true,
+                "detail": "profit tartás beállítások",
+                "weight": 1
+              },
+              {
+                "id": "scanner",
+                "title": "Multi-symbol Scanner",
+                "ok": true,
+                "detail": "scanner függvény",
+                "weight": 1
+              },
+              {
+                "id": "fee_tax",
+                "title": "Fee + Tax",
+                "ok": false,
+                "detail": "nettó/adó utáni PnL",
+                "weight": 1
+              },
+              {
+                "id": "trade_guard",
+                "title": "Trade Screen Guard",
+                "ok": true,
+                "detail": "BBO/spread/slippage",
+                "weight": 1
+              },
+              {
+                "id": "ai_advisor",
+                "title": "AI Advisor",
+                "ok": true,
+                "detail": "offline/API advisor alap",
+                "weight": 1
+              },
+              {
+                "id": "secrets",
+                "title": "Encrypted Secrets",
+                "ok": false,
+                "detail": "secrets.enc státusz",
+                "weight": 1
+              },
+              {
+                "id": "email",
+                "title": "Email Notify",
+                "ok": true,
+                "detail": "email alap modul",
+                "weight": 1
+              },
+              {
+                "id": "openai",
+                "title": "OpenAI API",
+                "ok": true,
+                "detail": "opcionális API fallback",
+                "weight": 1
+              },
+              {
+                "id": "binance_live_check",
+                "title": "Binance Live Check",
+                "ok": true,
+                "detail": "nem küld ordert",
+                "weight": 1
+              },
+              {
+                "id": "readonly_account",
+                "title": "Read-only Account",
+                "ok": true,
+                "detail": "",
+                "weight": 1
+              },
+              {
+                "id": "live_gate",
+                "title": "Live Safety Gate",
+                "ok": true,
+                "detail": "hard-stop gate",
+                "weight": 1
+              },
+              {
+                "id": "approval",
+                "title": "Approval / Dry-run",
+                "ok": true,
+                "detail": "approval queue",
+                "weight": 1
+              },
+              {
+                "id": "portfolio",
+                "title": "Spot Portfolio Sync",
+                "ok": true,
+                "detail": "total/tradable cache",
+                "weight": 1
+              },
+              {
+                "id": "trend",
+                "title": "Trend / Chart / Export",
+                "ok": true,
+                "detail": "trend auto snapshot",
+                "weight": 1
+              },
+              {
+                "id": "backtest",
+                "title": "Backtest / Diagnostics",
+                "ok": true,
+                "detail": "backtest alap",
+                "weight": 1
+              },
+              {
+                "id": "schedules",
+                "title": "Schedules",
+                "ok": true,
+                "detail": "snapshot/trigger alap",
+                "weight": 1
+              },
+              {
+                "id": "launchpool",
+                "title": "Launchpool / Airdrop",
+                "ok": true,
+                "detail": "watch alap",
+                "weight": 1
+              },
+              {
+                "id": "package",
+                "title": "Package / Snapshot",
+                "ok": true,
+                "detail": "APK reference/package",
+                "weight": 1
+              },
+              {
+                "id": "sync",
+                "title": "PC / Drive Sync",
+                "ok": true,
+                "detail": "sync alap",
+                "weight": 1
+              },
+              {
+                "id": "first_run",
+                "title": "First-run Safety",
+                "ok": true,
+                "detail": "startup safety",
+                "weight": 1
+              },
+              {
+                "id": "admin",
+                "title": "Admin Security",
+                "ok": true,
+                "detail": "5 perc timeout",
+                "weight": 1
+              },
+              {
+                "id": "patch_manager",
+                "title": "Patch Manager",
+                "ok": true,
+                "detail": "safe queue",
+                "weight": 1
+              }
+            ],
+            "next_steps": [
+              {
+                "priority": 1,
+                "title": "Secrets / Integrációk kitöltése és tesztelése",
+                "reason": "API/OpenAI/email/Drive/PC mezők hiányozhatnak.",
+                "patch": "PATCH_INTEGRATION_TESTS_UI.sh"
+              },
+              {
+                "priority": 3,
+                "title": "Modern Dashboard KPI kártyák",
+                "reason": "A dashboard adat már megvan, most UI-kártyákba kell rendezni.",
+                "patch": "PATCH_DASHBOARD_MODERN_KPI_CARDS.sh"
+              },
+              {
+                "priority": 4,
+                "title": "Top coin mini-kártyák",
+                "reason": "Scanner + portfolio cache alapján top coin lista kell.",
+                "patch": "PATCH_TOP_COIN_CARDS.sh"
+              },
+              {
+                "priority": 5,
+                "title": "Demo Reset megerősítő popup",
+                "reason": "Biztonságosabb reset, csak Demo módban.",
+                "patch": "PATCH_DEMO_RESET_CONFIRM_MODAL.sh"
+              },
+              {
+                "priority": 6,
+                "title": "Trade Simple / Advanced szétválasztás",
+                "reason": "Beállítások már vannak, UI-t kell rendezni.",
+                "patch": "PATCH_TRADE_SIMPLE_ADVANCED_UI.sh"
+              },
+              {
+                "priority": 7,
+                "title": "Read-only Binance valós balance teszt",
+                "reason": "Order nélkül, csak /api/v3/account olvasás.",
+                "patch": "PATCH_READONLY_BALANCE_TEST_FLOW.sh"
+              },
+              {
+                "priority": 8,
+                "title": "APK build előtti safe full test",
+                "reason": "Csak akkor build, ha minden compile és status zöld.",
+                "patch": "PATCH_PRE_APK_FULL_SAFE_TEST.sh"
+              }
+            ],
+            "order_endpoint_used": false
+          },
+          "order_endpoint_used": false,
+          "message": "Health Alert Recovery Center státusz kész."
+        }
+      },
+      {
+        "key": "release_candidate",
+        "title": "Release candidate OK",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "ok": true,
+          "release_candidate_enabled": true,
+          "release_candidate_name": "Autobot DemoCore RC",
+          "rc_ok": true,
+          "head": {
+            "ok": true,
+            "output": "f255b72 FIX: remove literal backslash-n syntax issue",
+            "order_endpoint_used": false
+          },
+          "latest_tags": [
+            "stable-fix-literal-n-syntax-20260503-031059",
+            "stable-apk-build-gate-artifact-manifest-20260503-030757",
+            "stable-ui-route-screen-registry-check-20260503-030520",
+            "stable-release-candidate-rollback-preview-20260503-024756",
+            "stable-firstrun-setup-readiness-final-20260503-024512",
+            "stable-firstrun-setup-readiness-final-20260503-024404",
+            "stable-full-system-check-20260503-024049",
+            "stable-health-alert-recovery-center-20260503-023721",
+            "stable-profit-trades-report-center-20260503-023553",
+            "stable-readonly-balance-test-flow-20260503-023419"
+          ],
+          "full_system_report_exists": true,
+          "firstrun_report_exists": true,
+          "preapk_report_exists": true,
+          "readiness": {
+            "ok": true,
+            "complete": true,
+            "required_count": 7,
+            "required_ok_count": 7,
+            "missing_required": [],
+            "optional_missing": [],
+            "checks": [
+              {
+                "key": "secrets_storage",
+                "title": "Titkosított secrets tárolás",
+                "required": true,
+                "ok": true,
+                "detail": {
+                  "ok": true,
+                  "binance_api": false,
+                  "openai_api": false,
+                  "email": false,
+                  "google_drive": false,
+                  "pc_sync": false,
+                  "ngrok": false,
+                  "masked": {
+                    "binance_api_key": "",
+                    "binance_api_secret": "",
+                    "openai_api_key": "",
+                    "email_user": "",
+                    "email_to": "",
+                    "email_app_password": "",
+                    "google_drive_token": "",
+                    "pc_sync_token": "",
+                    "ngrok_token": ""
+                  }
+                }
+              },
+              {
+                "key": "startup_safety",
+                "title": "Startup Safety Summary",
+                "required": true,
+                "ok": true,
+                "detail": {
+                  "ok": true,
+                  "app_version": "0.6.0-demo-core-prebuild",
+                  "health": "OK",
+                  "safety_flags": {
+                    "safe_mode": false,
+                    "running": false,
+                    "execution_mode": "AUTO",
+                    "live_executor_enabled": false,
+                    "live_buy_allowed": false,
+                    "live_sell_allowed": false,
+                    "order_endpoint_bound": false,
+                    "readonly_real_get_enabled": false,
+                    "admin_active": false,
+                    "first_run_complete": false
+                  },
+                  "warnings": [
+                    "First-run kötelező teendő van: 1"
+                  ],
+                  "first_run": {
+                    "ok": true,
+                    "complete": false,
+                    "required_missing_count": 1,
+                    "tasks": [
+                      {
+                        "id": "admin_password",
+                        "title": "Admin jelszó csere",
+                        "required": true,
+                        "ok": false,
+                        "detail": "Alap admin/admin jelszót első használatkor cserélni kell."
+                      },
+                      {
+                        "id": "secrets_review",
+                        "title": "Secrets / integrációk ellenőrzése",
+                        "required": true,
+                        "ok": true,
+                        "detail": "Binance/OpenAI/E-mail kulcsok helyi titkosított tárolóban kezelhetők."
+                      },
+                      {
+                        "id": "live_warning",
+                        "title": "Live mód figyelmeztetés",
+                        "required": true,
+                        "ok": true,
+                        "detail": "Live order csak safety gate, approval, API és külön kapcsolók után engedhető."
+                      },
+                      {
+                        "id": "readonly_warning",
+                        "title": "Read-only Binance olvasás",
+                        "required": false,
+                        "ok": true,
+                        "detail": "Valódi account olvasás csak 3 külön kapcsolóval és API kulccsal fut."
+                      }
+                    ],
+                    "message": "First-run teendők vannak."
+                  },
+                  "safe_message": "Order endpoint nincs bekötve. APK buildhez nem nyúltunk."
+                }
+              },
+              {
+                "key": "pre_apk_safe",
+                "title": "Pre-APK safety test",
+                "required": true,
+                "ok": true,
+                "detail": {
+                  "ok": true,
+                  "ready_for_apk_test_build": false,
+                  "blockers": [
+                    "order endpoint suspicious hard block found"
+                  ],
+                  "warnings": [],
+                  "compile": {
+                    "ok": true,
+                    "missing": [],
+                    "checked": [
+                      "master_status_overview",
+                      "module_readiness_status",
+                      "missing_setup_status",
+                      "next_recommended_steps",
+                      "healthcheck",
+                      "trend_auto_refresh_status",
+                      "spot_portfolio_status"
+                    ],
+                    "order_endpoint_used": false
+                  },
+                  "order_scan": {
+                    "ok": true,
+                    "safe": false,
+                    "suspicious_count": 7,
+                    "hard_block_count": 6,
+                    "suspicious": [
+                      {
+                        "file": "demo_core_engine.py",
+                        "pattern": "api/v3/order",
+                        "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                      },
+                      {
+                        "file": "demo_core_engine.py",
+                        "pattern": "/api/v3/order",
+                        "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                      },
+                      {
+                        "file": "demo_core_engine.py",
+                        "pattern": "create_order",
+                        "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                      },
+                      {
+                        "file": "demo_core_engine.py",
+                        "pattern": "new_order",
+                        "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                      },
+                      {
+                        "file": "demo_core_engine.py",
+                        "pattern": "order/test",
+                        "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                      },
+                      {
+                        "file": "demo_core_engine.py",
+                        "pattern": "signed_order",
+                        "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                      },
+                      {
+                        "file": "demo_core_engine.py",
+                        "pattern": "LIVE ORDER SENT",
+                        "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                      }
+                    ],
+                    "hard_blocks": [
+                      {
+                        "file": "demo_core_engine.py",
+                        "pattern": "api/v3/order",
+                        "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                      },
+                      {
+                        "file": "demo_core_engine.py",
+                        "pattern": "/api/v3/order",
+                        "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                      },
+                      {
+                        "file": "demo_core_engine.py",
+                        "pattern": "create_order",
+                        "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                      },
+                      {
+                        "file": "demo_core_engine.py",
+                        "pattern": "new_order",
+                        "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                      },
+                      {
+                        "file": "demo_core_engine.py",
+                        "pattern": "signed_order",
+                        "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                      },
+                      {
+                        "file": "demo_core_engine.py",
+                        "pattern": "LIVE ORDER SENT",
+                        "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                      }
+                    ],
+                    "order_endpoint_used": false,
+                    "message": "Order endpoint safety scan lefutott."
+                  },
+                  "readiness_score_pct": 92.86,
+                  "min_required_score_pct": 70.0,
+                  "report": {
+                    "ok": true,
+                    "path": "logs/pre_apk_safe_report.json",
+                    "order_endpoint_used": false,
+                    "message": "Module status report export kész."
+                  },
+                  "apk_build_touched": false,
+                  "order_endpoint_used": false,
+                  "message": "Pre-APK full safe test lefutott. Ez még nem APK build."
+                }
+              },
+              {
+                "key": "full_system_check_report",
+                "title": "Full system check report",
+                "required": true,
+                "ok": true,
+                "detail": {
+                  "path": "logs/full_system_status_report.json",
+                  "exists": true
+                }
+              },
+              {
+                "key": "health_center",
+                "title": "Health / Alert / Recovery",
+                "required": true,
+                "ok": true,
+                "detail": {
+                  "ok": true,
+                  "heartbeat": {
+                    "ok": true,
+                    "now": 1777770949,
+                    "running": false,
+                    "last_heartbeat_ts": 1777770948,
+                    "last_tick_ts": 1777759959,
+                    "heartbeat_age_sec": 1,
+                    "tick_age_sec": 10990,
+                    "stale_after_sec": 120,
+                    "heartbeat_ok": true,
+                    "tick_ok": false,
+                    "last_action": "Heartbeat update: full_system_check",
+                    "order_endpoint_used": false
+                  },
+                  "alerts": {
+                    "ok": true,
+                    "enabled": true,
+                    "alert_count": 1,
+                    "alerts": [
+                      {
+                        "level": "info",
+                        "title": "Read-only gate nem ready",
+                        "detail": "['Binance API key hiányzik', 'Binance API secret hiányzik', 'binance_signed_readonly_enabled false', 'binance_account_read_enabled false', 'binance_real_account_get_enabled false']"
+                      }
+                    ],
+                    "health": {
+                      "ok": true,
+                      "status": "OK",
+                      "warnings": [],
+                      "running": false,
+                      "safe_mode": false,
+                      "positions_count": 2,
+                      "balance": 81.0,
+                      "realized_pnl": 0.0,
+                      "equity": 99.85021191429087,
+                      "trade_log_exists": true,
+                      "trade_log_path": "logs/demo_core_trades.csv",
+                      "last_tick_ts": 1777759959,
+                      "last_heartbeat_ts": 1777770949,
+                      "last_tick_age_sec": 10990,
+                      "last_heartbeat_age_sec": 1,
+                      "last_action": "Heartbeat update: full_system_check"
+                    },
+                    "heartbeat": {
+                      "ok": true,
+                      "now": 1777770949,
+                      "running": false,
+                      "last_heartbeat_ts": 1777770949,
+                      "last_tick_ts": 1777759959,
+                      "heartbeat_age_sec": 0,
+                      "tick_age_sec": 10990,
+                      "stale_after_sec": 120,
+                      "heartbeat_ok": true,
+                      "tick_ok": false,
+                      "last_action": "Heartbeat update: full_system_check",
+                      "order_endpoint_used": false
+                    },
+                    "order_endpoint_used": false
+                  },
+                  "recovery": {
+                    "ok": true,
+                    "crash_recovery_enabled": true,
+                    "resume_after_restart_enabled": true,
+                    "can_resume": true,
+                    "running": false,
+                    "safe_mode": false,
+                    "open_positions": 2,
+                    "blockers": [],
+                    "recommended_actions": [
+                      "2 nyitott pozíció állapotból visszaolvasható.",
+                      "Bot stopped flag, újraindítás kézi START után."
+                    ],
+                    "order_endpoint_used": false,
+                    "message": "Crash recovery státusz kész. Nem indít ordert."
+                  },
+                  "integration": {
+                    "ok": true,
+                    "enabled": true,
+                    "allow_network": false,
+                    "allow_email_send": false,
+                    "ok_count": 5,
+                    "total_count": 8,
+                    "score_pct": 62.5,
+                    "rows": [
+                      {
+                        "key": "secrets",
+                        "title": "Titkosított secrets",
+                        "ok": false,
+                        "detail": "secrets.enc / key státusz",
+                        "safe": true
+                      },
+                      {
+                        "key": "email_config",
+                        "title": "E-mail config",
+                        "ok": false,
+                        "detail": "{'ok': False, 'smtp_host': 'smtp.gmail.com', 'smtp_port': '587', 'email_user': '', 'email_to': '', 'has_password': False}",
+                        "safe": true
+                      },
+                      {
+                        "key": "openai_config",
+                        "title": "OpenAI config",
+                        "ok": false,
+                        "detail": "{'ok': True, 'has_key': False, 'api_enabled': False, 'ai_mode': 'OFFLINE', 'model': 'gpt-5-mini', 'ready': False}",
+                        "safe": true
+                      },
+                      {
+                        "key": "binance_live_check",
+                        "title": "Binance live readiness",
+                        "ok": true,
+                        "detail": "csak státusz, nem order",
+                        "safe": true
+                      },
+                      {
+                        "key": "binance_readonly",
+                        "title": "Binance read-only",
+                        "ok": true,
+                        "detail": "",
+                        "safe": true
+                      },
+                      {
+                        "key": "sync",
+                        "title": "PC / Drive sync",
+                        "ok": true,
+                        "detail": "{'ok': True, 'sync_enabled': True, 'primary_device': 'PHONE', 'drive_sync_folder': 'AutobotBackups', 'pc_sync_folder': 'PCSync', 'drive_files_count': 1, 'pc_files_count': 0, 'last_drive_files': ['AutobotBackups/autobot_sync_drive_1777763617.zip'], 'last_pc_files': [], 'last_sync_export_ts': 1777763617, 'last_sync_import_ts': 0}",
+                        "safe": true
+                      },
+                      {
+                        "key": "first_run",
+                        "title": "First-run wizard státusz",
+                        "ok": true,
+                        "detail": "{'ok': True, 'first_run_done': False, 'missing_count': 3, 'ready': False, 'checklist': [{'id': 'secrets_file', 'label': 'Titkosított secrets fájl', 'ok': True}, {'id': 'binance_api', 'label': 'Binance API key/secret megadva', 'ok': False}, {'id': 'email', 'label': 'E-mail értesítés beállítva', 'ok': False}, {'id': 'openai', 'label': 'OpenAI API kulcs megadva', 'ok': False}, {'id': 'sync_dirs', 'label': 'Drive/PC sync mappák létrehozva', 'ok': True}, {'id': 'live_safe', 'label': 'Live mód biztonsági állapot ellenőrizve', 'ok': True}]}",
+                        "safe": true
+                      },
+                      {
+                        "key": "health",
+                        "title": "Healthcheck",
+                        "ok": true,
+                        "detail": "OK",
+                        "safe": true
+                      }
+                    ],
+                    "order_endpoint_used": false,
+                    "message": "Integration Test Center státusz kész. Alapból nincs hálózati hívás."
+                  },
+                  "master": {
+                    "ok": true,
+                    "app_version": "0.6.0-demo-core-prebuild",
+                    "mode": "DEMO",
+                    "running": false,
+                    "safe_mode": false,
+                    "execution_mode": "AUTO",
+                    "last_action": "Heartbeat update: full_system_check",
+                    "portfolio": {
+                      "total_value_usd": 99.88643379,
+                      "tradable_usd": 71.0,
+                      "open_positions": 2,
+                      "usdc_free": 81.0,
+                      "usdt_free": 0.0
+                    },
+                    "trend": {
+                      "history_points": 8,
+                      "last_trend_snapshot_ts": 1777766553,
+                      "auto_enabled": true
+                    },
+                    "integrations": {
+                      "secrets_encrypted": null,
+                      "plain_file_exists": null,
+                      "email_ok": false,
+                      "openai_ok": false,
+                      "binance_live_ready": false,
+                      "readonly_ok": true
+                    },
+                    "safety": {
+                      "health_status": "OK",
+                      "live_gate_ok": true,
+                      "order_endpoint_used": false,
+                      "safe_note": "Valódi Binance order endpoint továbbra sincs bekötve."
+                    },
+                    "package": {
+                      "ok": true,
+                      "working_apk_reference": "APK 0.2.5 - utolsó ismert működő referencia",
+                      "app_version": "0.6.0-demo-core-prebuild",
+                      "build_policy": "APK buildhez csak külön stabil build-lépésben nyúlunk.",
+                      "current_dev_mode": "code_patch_only"
+                    },
+                    "readiness": {
+                      "score_pct": 92.86,
+                      "ok_count": 26,
+                      "total_count": 28
+                    },
+                    "missing": {
+                      "ok": true,
+                      "critical_missing_count": 0,
+                      "warnings_count": 9,
+                      "critical": [],
+                      "warnings": [
+                        {
+                          "key": "binance_api_key",
+                          "title": "Binance API key nincs megadva",
+                          "level": "warning",
+                          "detail": "Live/read-only teszthez kell."
+                        },
+                        {
+                          "key": "binance_api_secret",
+                          "title": "Binance API secret nincs megadva",
+                          "level": "warning",
+                          "detail": "Signed read-only ellenőrzéshez kell."
+                        },
+                        {
+                          "key": "openai_api_key",
+                          "title": "OpenAI API key nincs megadva",
+                          "level": "warning",
+                          "detail": "AI API módhoz kell, offline AI ettől még működik."
+                        },
+                        {
+                          "key": "email_config",
+                          "title": "E-mail adatok hiányosak",
+                          "level": "warning",
+                          "detail": "Teszt e-mailhez és riasztáshoz kell."
+                        },
+                        {
+                          "key": "google_drive_token",
+                          "title": "Google Drive token nincs megadva",
+                          "level": "warning",
+                          "detail": "Drive sync teljes működéséhez kell."
+                        },
+                        {
+                          "key": "pc_sync_token",
+                          "title": "PC sync token nincs megadva",
+                          "level": "warning",
+                          "detail": "PC agent későbbi kapcsolathoz kell."
+                        },
+                        {
+                          "key": "binance_signed_readonly_enabled",
+                          "title": "Signed read-only nincs bekapcsolva",
+                          "level": "warning",
+                          "detail": "Első valódi account olvasáshoz külön engedély kell."
+                        },
+                        {
+                          "key": "binance_account_read_enabled",
+                          "title": "Account read nincs bekapcsolva",
+                          "level": "warning",
+                          "detail": "Balance sync valódi Binance olvasáshoz kell."
+                        },
+                        {
+                          "key": "binance_real_account_get_enabled",
+                          "title": "Real account GET nincs bekapcsolva",
+                          "level": "warning",
+                          "detail": "Valódi /api/v3/account olvasáshoz kell."
+                        }
+                      ],
+                      "safe_note": "Order endpoint továbbra sincs bekötve.",
+                      "order_endpoint_used": false
+                    },
+                    "modules": [
+                      {
+                        "id": "demo_core",
+                        "title": "Demo Core",
+                        "ok": true,
+                        "detail": "Core modul aktív",
+                        "weight": 1
+                      },
+                      {
+                        "id": "settings",
+                        "title": "Settings",
+                        "ok": true,
+                        "detail": "settings state létezik",
+                        "weight": 1
+                      },
+                      {
+                        "id": "logs",
+                        "title": "Logs / Audit",
+                        "ok": true,
+                        "detail": "audit/trade log modul",
+                        "weight": 1
+                      },
+                      {
+                        "id": "healthcheck",
+                        "title": "Healthcheck / Heartbeat",
+                        "ok": true,
+                        "detail": "OK",
+                        "weight": 1
+                      },
+                      {
+                        "id": "safe_mode",
+                        "title": "Panic Stop / Safe Mode",
+                        "ok": true,
+                        "detail": "panic + safe mode függvények",
+                        "weight": 1
+                      },
+                      {
+                        "id": "execution_mode",
+                        "title": "Execution Mode",
+                        "ok": true,
+                        "detail": "AUTO",
+                        "weight": 1
+                      },
+                      {
+                        "id": "profit_hold",
+                        "title": "Profit Hold / Smart Exit",
+                        "ok": true,
+                        "detail": "profit tartás beállítások",
+                        "weight": 1
+                      },
+                      {
+                        "id": "scanner",
+                        "title": "Multi-symbol Scanner",
+                        "ok": true,
+                        "detail": "scanner függvény",
+                        "weight": 1
+                      },
+                      {
+                        "id": "fee_tax",
+                        "title": "Fee + Tax",
+                        "ok": false,
+                        "detail": "nettó/adó utáni PnL",
+                        "weight": 1
+                      },
+                      {
+                        "id": "trade_guard",
+                        "title": "Trade Screen Guard",
+                        "ok": true,
+                        "detail": "BBO/spread/slippage",
+                        "weight": 1
+                      },
+                      {
+                        "id": "ai_advisor",
+                        "title": "AI Advisor",
+                        "ok": true,
+                        "detail": "offline/API advisor alap",
+                        "weight": 1
+                      },
+                      {
+                        "id": "secrets",
+                        "title": "Encrypted Secrets",
+                        "ok": false,
+                        "detail": "secrets.enc státusz",
+                        "weight": 1
+                      },
+                      {
+                        "id": "email",
+                        "title": "Email Notify",
+                        "ok": true,
+                        "detail": "email alap modul",
+                        "weight": 1
+                      },
+                      {
+                        "id": "openai",
+                        "title": "OpenAI API",
+                        "ok": true,
+                        "detail": "opcionális API fallback",
+                        "weight": 1
+                      },
+                      {
+                        "id": "binance_live_check",
+                        "title": "Binance Live Check",
+                        "ok": true,
+                        "detail": "nem küld ordert",
+                        "weight": 1
+                      },
+                      {
+                        "id": "readonly_account",
+                        "title": "Read-only Account",
+                        "ok": true,
+                        "detail": "",
+                        "weight": 1
+                      },
+                      {
+                        "id": "live_gate",
+                        "title": "Live Safety Gate",
+                        "ok": true,
+                        "detail": "hard-stop gate",
+                        "weight": 1
+                      },
+                      {
+                        "id": "approval",
+                        "title": "Approval / Dry-run",
+                        "ok": true,
+                        "detail": "approval queue",
+                        "weight": 1
+                      },
+                      {
+                        "id": "portfolio",
+                        "title": "Spot Portfolio Sync",
+                        "ok": true,
+                        "detail": "total/tradable cache",
+                        "weight": 1
+                      },
+                      {
+                        "id": "trend",
+                        "title": "Trend / Chart / Export",
+                        "ok": true,
+                        "detail": "trend auto snapshot",
+                        "weight": 1
+                      },
+                      {
+                        "id": "backtest",
+                        "title": "Backtest / Diagnostics",
+                        "ok": true,
+                        "detail": "backtest alap",
+                        "weight": 1
+                      },
+                      {
+                        "id": "schedules",
+                        "title": "Schedules",
+                        "ok": true,
+                        "detail": "snapshot/trigger alap",
+                        "weight": 1
+                      },
+                      {
+                        "id": "launchpool",
+                        "title": "Launchpool / Airdrop",
+                        "ok": true,
+                        "detail": "watch alap",
+                        "weight": 1
+                      },
+                      {
+                        "id": "package",
+                        "title": "Package / Snapshot",
+                        "ok": true,
+                        "detail": "APK reference/package",
+                        "weight": 1
+                      },
+                      {
+                        "id": "sync",
+                        "title": "PC / Drive Sync",
+                        "ok": true,
+                        "detail": "sync alap",
+                        "weight": 1
+                      },
+                      {
+                        "id": "first_run",
+                        "title": "First-run Safety",
+                        "ok": true,
+                        "detail": "startup safety",
+                        "weight": 1
+                      },
+                      {
+                        "id": "admin",
+                        "title": "Admin Security",
+                        "ok": true,
+                        "detail": "5 perc timeout",
+                        "weight": 1
+                      },
+                      {
+                        "id": "patch_manager",
+                        "title": "Patch Manager",
+                        "ok": true,
+                        "detail": "safe queue",
+                        "weight": 1
+                      }
+                    ],
+                    "next_steps": [
+                      {
+                        "priority": 1,
+                        "title": "Secrets / Integrációk kitöltése és tesztelése",
+                        "reason": "API/OpenAI/email/Drive/PC mezők hiányozhatnak.",
+                        "patch": "PATCH_INTEGRATION_TESTS_UI.sh"
+                      },
+                      {
+                        "priority": 3,
+                        "title": "Modern Dashboard KPI kártyák",
+                        "reason": "A dashboard adat már megvan, most UI-kártyákba kell rendezni.",
+                        "patch": "PATCH_DASHBOARD_MODERN_KPI_CARDS.sh"
+                      },
+                      {
+                        "priority": 4,
+                        "title": "Top coin mini-kártyák",
+                        "reason": "Scanner + portfolio cache alapján top coin lista kell.",
+                        "patch": "PATCH_TOP_COIN_CARDS.sh"
+                      },
+                      {
+                        "priority": 5,
+                        "title": "Demo Reset megerősítő popup",
+                        "reason": "Biztonságosabb reset, csak Demo módban.",
+                        "patch": "PATCH_DEMO_RESET_CONFIRM_MODAL.sh"
+                      },
+                      {
+                        "priority": 6,
+                        "title": "Trade Simple / Advanced szétválasztás",
+                        "reason": "Beállítások már vannak, UI-t kell rendezni.",
+                        "patch": "PATCH_TRADE_SIMPLE_ADVANCED_UI.sh"
+                      },
+                      {
+                        "priority": 7,
+                        "title": "Read-only Binance valós balance teszt",
+                        "reason": "Order nélkül, csak /api/v3/account olvasás.",
+                        "patch": "PATCH_READONLY_BALANCE_TEST_FLOW.sh"
+                      },
+                      {
+                        "priority": 8,
+                        "title": "APK build előtti safe full test",
+                        "reason": "Csak akkor build, ha minden compile és status zöld.",
+                        "patch": "PATCH_PRE_APK_FULL_SAFE_TEST.sh"
+                      }
+                    ],
+                    "order_endpoint_used": false
+                  },
+                  "order_endpoint_used": false,
+                  "message": "Health Alert Recovery Center státusz kész."
+                }
+              },
+              {
+                "key": "readonly_gate",
+                "title": "Read-only Binance gate",
+                "required": false,
+                "ok": true,
+                "detail": {
+                  "ok": true,
+                  "ready_for_readonly_network_test": false,
+                  "network_allowed": false,
+                  "has_api_key": false,
+                  "has_api_secret": false,
+                  "signed_readonly_enabled": false,
+                  "account_read_enabled": false,
+                  "real_account_get_enabled": false,
+                  "blockers": [
+                    "Binance API key hiányzik",
+                    "Binance API secret hiányzik",
+                    "binance_signed_readonly_enabled false",
+                    "binance_account_read_enabled false",
+                    "binance_real_account_get_enabled false"
+                  ],
+                  "warnings": [
+                    "Hálózati read-only teszt tiltva: readonly_balance_allow_network vagy integration_test_allow_network false"
+                  ],
+                  "binance_order_allowed": false,
+                  "order_endpoint_used": false,
+                  "message": "Read-only balance gate kész. Order nincs."
+                }
+              },
+              {
+                "key": "live_gate_safe",
+                "title": "Live gate safety",
+                "required": true,
+                "ok": true,
+                "detail": {
+                  "ok": true,
+                  "live_executor_enabled": false,
+                  "live_hard_stop_enabled": true,
+                  "live_require_admin_active": true,
+                  "live_require_approval": true,
+                  "live_require_positive_after_tax": true,
+                  "live_max_order_usdt_hard": 10.0,
+                  "live_block_if_health_warning": true,
+                  "live_block_if_spread_bad": true,
+                  "live_block_if_ai_hold": true
+                }
+              },
+              {
+                "key": "master_status",
+                "title": "Master status overview",
+                "required": true,
+                "ok": true,
+                "detail": {
+                  "ok": true,
+                  "app_version": "0.6.0-demo-core-prebuild",
+                  "mode": "DEMO",
+                  "running": false,
+                  "safe_mode": false,
+                  "execution_mode": "AUTO",
+                  "last_action": "Heartbeat update: full_system_check",
+                  "portfolio": {
+                    "total_value_usd": 99.88643379,
+                    "tradable_usd": 71.0,
+                    "open_positions": 2,
+                    "usdc_free": 81.0,
+                    "usdt_free": 0.0
+                  },
+                  "trend": {
+                    "history_points": 8,
+                    "last_trend_snapshot_ts": 1777766553,
+                    "auto_enabled": true
+                  },
+                  "integrations": {
+                    "secrets_encrypted": null,
+                    "plain_file_exists": null,
+                    "email_ok": false,
+                    "openai_ok": false,
+                    "binance_live_ready": false,
+                    "readonly_ok": true
+                  },
+                  "safety": {
+                    "health_status": "OK",
+                    "live_gate_ok": true,
+                    "order_endpoint_used": false,
+                    "safe_note": "Valódi Binance order endpoint továbbra sincs bekötve."
+                  },
+                  "package": {
+                    "ok": true,
+                    "working_apk_reference": "APK 0.2.5 - utolsó ismert működő referencia",
+                    "app_version": "0.6.0-demo-core-prebuild",
+                    "build_policy": "APK buildhez csak külön stabil build-lépésben nyúlunk.",
+                    "current_dev_mode": "code_patch_only"
+                  },
+                  "readiness": {
+                    "score_pct": 92.86,
+                    "ok_count": 26,
+                    "total_count": 28
+                  },
+                  "missing": {
+                    "ok": true,
+                    "critical_missing_count": 0,
+                    "warnings_count": 9,
+                    "critical": [],
+                    "warnings": [
+                      {
+                        "key": "binance_api_key",
+                        "title": "Binance API key nincs megadva",
+                        "level": "warning",
+                        "detail": "Live/read-only teszthez kell."
+                      },
+                      {
+                        "key": "binance_api_secret",
+                        "title": "Binance API secret nincs megadva",
+                        "level": "warning",
+                        "detail": "Signed read-only ellenőrzéshez kell."
+                      },
+                      {
+                        "key": "openai_api_key",
+                        "title": "OpenAI API key nincs megadva",
+                        "level": "warning",
+                        "detail": "AI API módhoz kell, offline AI ettől még működik."
+                      },
+                      {
+                        "key": "email_config",
+                        "title": "E-mail adatok hiányosak",
+                        "level": "warning",
+                        "detail": "Teszt e-mailhez és riasztáshoz kell."
+                      },
+                      {
+                        "key": "google_drive_token",
+                        "title": "Google Drive token nincs megadva",
+                        "level": "warning",
+                        "detail": "Drive sync teljes működéséhez kell."
+                      },
+                      {
+                        "key": "pc_sync_token",
+                        "title": "PC sync token nincs megadva",
+                        "level": "warning",
+                        "detail": "PC agent későbbi kapcsolathoz kell."
+                      },
+                      {
+                        "key": "binance_signed_readonly_enabled",
+                        "title": "Signed read-only nincs bekapcsolva",
+                        "level": "warning",
+                        "detail": "Első valódi account olvasáshoz külön engedély kell."
+                      },
+                      {
+                        "key": "binance_account_read_enabled",
+                        "title": "Account read nincs bekapcsolva",
+                        "level": "warning",
+                        "detail": "Balance sync valódi Binance olvasáshoz kell."
+                      },
+                      {
+                        "key": "binance_real_account_get_enabled",
+                        "title": "Real account GET nincs bekapcsolva",
+                        "level": "warning",
+                        "detail": "Valódi /api/v3/account olvasáshoz kell."
+                      }
+                    ],
+                    "safe_note": "Order endpoint továbbra sincs bekötve.",
+                    "order_endpoint_used": false
+                  },
+                  "modules": [
+                    {
+                      "id": "demo_core",
+                      "title": "Demo Core",
+                      "ok": true,
+                      "detail": "Core modul aktív",
+                      "weight": 1
+                    },
+                    {
+                      "id": "settings",
+                      "title": "Settings",
+                      "ok": true,
+                      "detail": "settings state létezik",
+                      "weight": 1
+                    },
+                    {
+                      "id": "logs",
+                      "title": "Logs / Audit",
+                      "ok": true,
+                      "detail": "audit/trade log modul",
+                      "weight": 1
+                    },
+                    {
+                      "id": "healthcheck",
+                      "title": "Healthcheck / Heartbeat",
+                      "ok": true,
+                      "detail": "OK",
+                      "weight": 1
+                    },
+                    {
+                      "id": "safe_mode",
+                      "title": "Panic Stop / Safe Mode",
+                      "ok": true,
+                      "detail": "panic + safe mode függvények",
+                      "weight": 1
+                    },
+                    {
+                      "id": "execution_mode",
+                      "title": "Execution Mode",
+                      "ok": true,
+                      "detail": "AUTO",
+                      "weight": 1
+                    },
+                    {
+                      "id": "profit_hold",
+                      "title": "Profit Hold / Smart Exit",
+                      "ok": true,
+                      "detail": "profit tartás beállítások",
+                      "weight": 1
+                    },
+                    {
+                      "id": "scanner",
+                      "title": "Multi-symbol Scanner",
+                      "ok": true,
+                      "detail": "scanner függvény",
+                      "weight": 1
+                    },
+                    {
+                      "id": "fee_tax",
+                      "title": "Fee + Tax",
+                      "ok": false,
+                      "detail": "nettó/adó utáni PnL",
+                      "weight": 1
+                    },
+                    {
+                      "id": "trade_guard",
+                      "title": "Trade Screen Guard",
+                      "ok": true,
+                      "detail": "BBO/spread/slippage",
+                      "weight": 1
+                    },
+                    {
+                      "id": "ai_advisor",
+                      "title": "AI Advisor",
+                      "ok": true,
+                      "detail": "offline/API advisor alap",
+                      "weight": 1
+                    },
+                    {
+                      "id": "secrets",
+                      "title": "Encrypted Secrets",
+                      "ok": false,
+                      "detail": "secrets.enc státusz",
+                      "weight": 1
+                    },
+                    {
+                      "id": "email",
+                      "title": "Email Notify",
+                      "ok": true,
+                      "detail": "email alap modul",
+                      "weight": 1
+                    },
+                    {
+                      "id": "openai",
+                      "title": "OpenAI API",
+                      "ok": true,
+                      "detail": "opcionális API fallback",
+                      "weight": 1
+                    },
+                    {
+                      "id": "binance_live_check",
+                      "title": "Binance Live Check",
+                      "ok": true,
+                      "detail": "nem küld ordert",
+                      "weight": 1
+                    },
+                    {
+                      "id": "readonly_account",
+                      "title": "Read-only Account",
+                      "ok": true,
+                      "detail": "",
+                      "weight": 1
+                    },
+                    {
+                      "id": "live_gate",
+                      "title": "Live Safety Gate",
+                      "ok": true,
+                      "detail": "hard-stop gate",
+                      "weight": 1
+                    },
+                    {
+                      "id": "approval",
+                      "title": "Approval / Dry-run",
+                      "ok": true,
+                      "detail": "approval queue",
+                      "weight": 1
+                    },
+                    {
+                      "id": "portfolio",
+                      "title": "Spot Portfolio Sync",
+                      "ok": true,
+                      "detail": "total/tradable cache",
+                      "weight": 1
+                    },
+                    {
+                      "id": "trend",
+                      "title": "Trend / Chart / Export",
+                      "ok": true,
+                      "detail": "trend auto snapshot",
+                      "weight": 1
+                    },
+                    {
+                      "id": "backtest",
+                      "title": "Backtest / Diagnostics",
+                      "ok": true,
+                      "detail": "backtest alap",
+                      "weight": 1
+                    },
+                    {
+                      "id": "schedules",
+                      "title": "Schedules",
+                      "ok": true,
+                      "detail": "snapshot/trigger alap",
+                      "weight": 1
+                    },
+                    {
+                      "id": "launchpool",
+                      "title": "Launchpool / Airdrop",
+                      "ok": true,
+                      "detail": "watch alap",
+                      "weight": 1
+                    },
+                    {
+                      "id": "package",
+                      "title": "Package / Snapshot",
+                      "ok": true,
+                      "detail": "APK reference/package",
+                      "weight": 1
+                    },
+                    {
+                      "id": "sync",
+                      "title": "PC / Drive Sync",
+                      "ok": true,
+                      "detail": "sync alap",
+                      "weight": 1
+                    },
+                    {
+                      "id": "first_run",
+                      "title": "First-run Safety",
+                      "ok": true,
+                      "detail": "startup safety",
+                      "weight": 1
+                    },
+                    {
+                      "id": "admin",
+                      "title": "Admin Security",
+                      "ok": true,
+                      "detail": "5 perc timeout",
+                      "weight": 1
+                    },
+                    {
+                      "id": "patch_manager",
+                      "title": "Patch Manager",
+                      "ok": true,
+                      "detail": "safe queue",
+                      "weight": 1
+                    }
+                  ],
+                  "next_steps": [
+                    {
+                      "priority": 1,
+                      "title": "Secrets / Integrációk kitöltése és tesztelése",
+                      "reason": "API/OpenAI/email/Drive/PC mezők hiányozhatnak.",
+                      "patch": "PATCH_INTEGRATION_TESTS_UI.sh"
+                    },
+                    {
+                      "priority": 3,
+                      "title": "Modern Dashboard KPI kártyák",
+                      "reason": "A dashboard adat már megvan, most UI-kártyákba kell rendezni.",
+                      "patch": "PATCH_DASHBOARD_MODERN_KPI_CARDS.sh"
+                    },
+                    {
+                      "priority": 4,
+                      "title": "Top coin mini-kártyák",
+                      "reason": "Scanner + portfolio cache alapján top coin lista kell.",
+                      "patch": "PATCH_TOP_COIN_CARDS.sh"
+                    },
+                    {
+                      "priority": 5,
+                      "title": "Demo Reset megerősítő popup",
+                      "reason": "Biztonságosabb reset, csak Demo módban.",
+                      "patch": "PATCH_DEMO_RESET_CONFIRM_MODAL.sh"
+                    },
+                    {
+                      "priority": 6,
+                      "title": "Trade Simple / Advanced szétválasztás",
+                      "reason": "Beállítások már vannak, UI-t kell rendezni.",
+                      "patch": "PATCH_TRADE_SIMPLE_ADVANCED_UI.sh"
+                    },
+                    {
+                      "priority": 7,
+                      "title": "Read-only Binance valós balance teszt",
+                      "reason": "Order nélkül, csak /api/v3/account olvasás.",
+                      "patch": "PATCH_READONLY_BALANCE_TEST_FLOW.sh"
+                    },
+                    {
+                      "priority": 8,
+                      "title": "APK build előtti safe full test",
+                      "reason": "Csak akkor build, ha minden compile és status zöld.",
+                      "patch": "PATCH_PRE_APK_FULL_SAFE_TEST.sh"
+                    }
+                  ],
+                  "order_endpoint_used": false
+                }
+              }
+            ],
+            "order_endpoint_used": false,
+            "message": "First-run readiness check kész."
+          },
+          "preapk": {
+            "ok": true,
+            "ready_for_apk_test_build": false,
+            "blockers": [
+              "order endpoint suspicious hard block found"
+            ],
+            "warnings": [],
+            "compile": {
+              "ok": true,
+              "missing": [],
+              "checked": [
+                "master_status_overview",
+                "module_readiness_status",
+                "missing_setup_status",
+                "next_recommended_steps",
+                "healthcheck",
+                "trend_auto_refresh_status",
+                "spot_portfolio_status"
+              ],
+              "order_endpoint_used": false
+            },
+            "order_scan": {
+              "ok": true,
+              "safe": false,
+              "suspicious_count": 7,
+              "hard_block_count": 6,
+              "suspicious": [
+                {
+                  "file": "demo_core_engine.py",
+                  "pattern": "api/v3/order",
+                  "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                },
+                {
+                  "file": "demo_core_engine.py",
+                  "pattern": "/api/v3/order",
+                  "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                },
+                {
+                  "file": "demo_core_engine.py",
+                  "pattern": "create_order",
+                  "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                },
+                {
+                  "file": "demo_core_engine.py",
+                  "pattern": "new_order",
+                  "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                },
+                {
+                  "file": "demo_core_engine.py",
+                  "pattern": "order/test",
+                  "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                },
+                {
+                  "file": "demo_core_engine.py",
+                  "pattern": "signed_order",
+                  "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                },
+                {
+                  "file": "demo_core_engine.py",
+                  "pattern": "LIVE ORDER SENT",
+                  "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                }
+              ],
+              "hard_blocks": [
+                {
+                  "file": "demo_core_engine.py",
+                  "pattern": "api/v3/order",
+                  "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                },
+                {
+                  "file": "demo_core_engine.py",
+                  "pattern": "/api/v3/order",
+                  "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                },
+                {
+                  "file": "demo_core_engine.py",
+                  "pattern": "create_order",
+                  "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                },
+                {
+                  "file": "demo_core_engine.py",
+                  "pattern": "new_order",
+                  "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                },
+                {
+                  "file": "demo_core_engine.py",
+                  "pattern": "signed_order",
+                  "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                },
+                {
+                  "file": "demo_core_engine.py",
+                  "pattern": "LIVE ORDER SENT",
+                  "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+                }
+              ],
+              "order_endpoint_used": false,
+              "message": "Order endpoint safety scan lefutott."
+            },
+            "readiness_score_pct": 92.86,
+            "min_required_score_pct": 70.0,
+            "report": {
+              "ok": true,
+              "path": "logs/pre_apk_safe_report.json",
+              "order_endpoint_used": false,
+              "message": "Module status report export kész."
+            },
+            "apk_build_touched": false,
+            "order_endpoint_used": false,
+            "message": "Pre-APK full safe test lefutott. Ez még nem APK build."
+          },
+          "master": {
+            "ok": true,
+            "app_version": "0.6.0-demo-core-prebuild",
+            "mode": "DEMO",
+            "running": false,
+            "safe_mode": false,
+            "execution_mode": "AUTO",
+            "last_action": "Heartbeat update: full_system_check",
+            "portfolio": {
+              "total_value_usd": 99.88643379,
+              "tradable_usd": 71.0,
+              "open_positions": 2,
+              "usdc_free": 81.0,
+              "usdt_free": 0.0
+            },
+            "trend": {
+              "history_points": 8,
+              "last_trend_snapshot_ts": 1777766553,
+              "auto_enabled": true
+            },
+            "integrations": {
+              "secrets_encrypted": null,
+              "plain_file_exists": null,
+              "email_ok": false,
+              "openai_ok": false,
+              "binance_live_ready": false,
+              "readonly_ok": true
+            },
+            "safety": {
+              "health_status": "OK",
+              "live_gate_ok": true,
+              "order_endpoint_used": false,
+              "safe_note": "Valódi Binance order endpoint továbbra sincs bekötve."
+            },
+            "package": {
+              "ok": true,
+              "working_apk_reference": "APK 0.2.5 - utolsó ismert működő referencia",
+              "app_version": "0.6.0-demo-core-prebuild",
+              "build_policy": "APK buildhez csak külön stabil build-lépésben nyúlunk.",
+              "current_dev_mode": "code_patch_only"
+            },
+            "readiness": {
+              "score_pct": 92.86,
+              "ok_count": 26,
+              "total_count": 28
+            },
+            "missing": {
+              "ok": true,
+              "critical_missing_count": 0,
+              "warnings_count": 9,
+              "critical": [],
+              "warnings": [
+                {
+                  "key": "binance_api_key",
+                  "title": "Binance API key nincs megadva",
+                  "level": "warning",
+                  "detail": "Live/read-only teszthez kell."
+                },
+                {
+                  "key": "binance_api_secret",
+                  "title": "Binance API secret nincs megadva",
+                  "level": "warning",
+                  "detail": "Signed read-only ellenőrzéshez kell."
+                },
+                {
+                  "key": "openai_api_key",
+                  "title": "OpenAI API key nincs megadva",
+                  "level": "warning",
+                  "detail": "AI API módhoz kell, offline AI ettől még működik."
+                },
+                {
+                  "key": "email_config",
+                  "title": "E-mail adatok hiányosak",
+                  "level": "warning",
+                  "detail": "Teszt e-mailhez és riasztáshoz kell."
+                },
+                {
+                  "key": "google_drive_token",
+                  "title": "Google Drive token nincs megadva",
+                  "level": "warning",
+                  "detail": "Drive sync teljes működéséhez kell."
+                },
+                {
+                  "key": "pc_sync_token",
+                  "title": "PC sync token nincs megadva",
+                  "level": "warning",
+                  "detail": "PC agent későbbi kapcsolathoz kell."
+                },
+                {
+                  "key": "binance_signed_readonly_enabled",
+                  "title": "Signed read-only nincs bekapcsolva",
+                  "level": "warning",
+                  "detail": "Első valódi account olvasáshoz külön engedély kell."
+                },
+                {
+                  "key": "binance_account_read_enabled",
+                  "title": "Account read nincs bekapcsolva",
+                  "level": "warning",
+                  "detail": "Balance sync valódi Binance olvasáshoz kell."
+                },
+                {
+                  "key": "binance_real_account_get_enabled",
+                  "title": "Real account GET nincs bekapcsolva",
+                  "level": "warning",
+                  "detail": "Valódi /api/v3/account olvasáshoz kell."
+                }
+              ],
+              "safe_note": "Order endpoint továbbra sincs bekötve.",
+              "order_endpoint_used": false
+            },
+            "modules": [
+              {
+                "id": "demo_core",
+                "title": "Demo Core",
+                "ok": true,
+                "detail": "Core modul aktív",
+                "weight": 1
+              },
+              {
+                "id": "settings",
+                "title": "Settings",
+                "ok": true,
+                "detail": "settings state létezik",
+                "weight": 1
+              },
+              {
+                "id": "logs",
+                "title": "Logs / Audit",
+                "ok": true,
+                "detail": "audit/trade log modul",
+                "weight": 1
+              },
+              {
+                "id": "healthcheck",
+                "title": "Healthcheck / Heartbeat",
+                "ok": true,
+                "detail": "OK",
+                "weight": 1
+              },
+              {
+                "id": "safe_mode",
+                "title": "Panic Stop / Safe Mode",
+                "ok": true,
+                "detail": "panic + safe mode függvények",
+                "weight": 1
+              },
+              {
+                "id": "execution_mode",
+                "title": "Execution Mode",
+                "ok": true,
+                "detail": "AUTO",
+                "weight": 1
+              },
+              {
+                "id": "profit_hold",
+                "title": "Profit Hold / Smart Exit",
+                "ok": true,
+                "detail": "profit tartás beállítások",
+                "weight": 1
+              },
+              {
+                "id": "scanner",
+                "title": "Multi-symbol Scanner",
+                "ok": true,
+                "detail": "scanner függvény",
+                "weight": 1
+              },
+              {
+                "id": "fee_tax",
+                "title": "Fee + Tax",
+                "ok": false,
+                "detail": "nettó/adó utáni PnL",
+                "weight": 1
+              },
+              {
+                "id": "trade_guard",
+                "title": "Trade Screen Guard",
+                "ok": true,
+                "detail": "BBO/spread/slippage",
+                "weight": 1
+              },
+              {
+                "id": "ai_advisor",
+                "title": "AI Advisor",
+                "ok": true,
+                "detail": "offline/API advisor alap",
+                "weight": 1
+              },
+              {
+                "id": "secrets",
+                "title": "Encrypted Secrets",
+                "ok": false,
+                "detail": "secrets.enc státusz",
+                "weight": 1
+              },
+              {
+                "id": "email",
+                "title": "Email Notify",
+                "ok": true,
+                "detail": "email alap modul",
+                "weight": 1
+              },
+              {
+                "id": "openai",
+                "title": "OpenAI API",
+                "ok": true,
+                "detail": "opcionális API fallback",
+                "weight": 1
+              },
+              {
+                "id": "binance_live_check",
+                "title": "Binance Live Check",
+                "ok": true,
+                "detail": "nem küld ordert",
+                "weight": 1
+              },
+              {
+                "id": "readonly_account",
+                "title": "Read-only Account",
+                "ok": true,
+                "detail": "",
+                "weight": 1
+              },
+              {
+                "id": "live_gate",
+                "title": "Live Safety Gate",
+                "ok": true,
+                "detail": "hard-stop gate",
+                "weight": 1
+              },
+              {
+                "id": "approval",
+                "title": "Approval / Dry-run",
+                "ok": true,
+                "detail": "approval queue",
+                "weight": 1
+              },
+              {
+                "id": "portfolio",
+                "title": "Spot Portfolio Sync",
+                "ok": true,
+                "detail": "total/tradable cache",
+                "weight": 1
+              },
+              {
+                "id": "trend",
+                "title": "Trend / Chart / Export",
+                "ok": true,
+                "detail": "trend auto snapshot",
+                "weight": 1
+              },
+              {
+                "id": "backtest",
+                "title": "Backtest / Diagnostics",
+                "ok": true,
+                "detail": "backtest alap",
+                "weight": 1
+              },
+              {
+                "id": "schedules",
+                "title": "Schedules",
+                "ok": true,
+                "detail": "snapshot/trigger alap",
+                "weight": 1
+              },
+              {
+                "id": "launchpool",
+                "title": "Launchpool / Airdrop",
+                "ok": true,
+                "detail": "watch alap",
+                "weight": 1
+              },
+              {
+                "id": "package",
+                "title": "Package / Snapshot",
+                "ok": true,
+                "detail": "APK reference/package",
+                "weight": 1
+              },
+              {
+                "id": "sync",
+                "title": "PC / Drive Sync",
+                "ok": true,
+                "detail": "sync alap",
+                "weight": 1
+              },
+              {
+                "id": "first_run",
+                "title": "First-run Safety",
+                "ok": true,
+                "detail": "startup safety",
+                "weight": 1
+              },
+              {
+                "id": "admin",
+                "title": "Admin Security",
+                "ok": true,
+                "detail": "5 perc timeout",
+                "weight": 1
+              },
+              {
+                "id": "patch_manager",
+                "title": "Patch Manager",
+                "ok": true,
+                "detail": "safe queue",
+                "weight": 1
+              }
+            ],
+            "next_steps": [
+              {
+                "priority": 1,
+                "title": "Secrets / Integrációk kitöltése és tesztelése",
+                "reason": "API/OpenAI/email/Drive/PC mezők hiányozhatnak.",
+                "patch": "PATCH_INTEGRATION_TESTS_UI.sh"
+              },
+              {
+                "priority": 3,
+                "title": "Modern Dashboard KPI kártyák",
+                "reason": "A dashboard adat már megvan, most UI-kártyákba kell rendezni.",
+                "patch": "PATCH_DASHBOARD_MODERN_KPI_CARDS.sh"
+              },
+              {
+                "priority": 4,
+                "title": "Top coin mini-kártyák",
+                "reason": "Scanner + portfolio cache alapján top coin lista kell.",
+                "patch": "PATCH_TOP_COIN_CARDS.sh"
+              },
+              {
+                "priority": 5,
+                "title": "Demo Reset megerősítő popup",
+                "reason": "Biztonságosabb reset, csak Demo módban.",
+                "patch": "PATCH_DEMO_RESET_CONFIRM_MODAL.sh"
+              },
+              {
+                "priority": 6,
+                "title": "Trade Simple / Advanced szétválasztás",
+                "reason": "Beállítások már vannak, UI-t kell rendezni.",
+                "patch": "PATCH_TRADE_SIMPLE_ADVANCED_UI.sh"
+              },
+              {
+                "priority": 7,
+                "title": "Read-only Binance valós balance teszt",
+                "reason": "Order nélkül, csak /api/v3/account olvasás.",
+                "patch": "PATCH_READONLY_BALANCE_TEST_FLOW.sh"
+              },
+              {
+                "priority": 8,
+                "title": "APK build előtti safe full test",
+                "reason": "Csak akkor build, ha minden compile és status zöld.",
+                "patch": "PATCH_PRE_APK_FULL_SAFE_TEST.sh"
+              }
+            ],
+            "order_endpoint_used": false
+          },
+          "apk_build_allowed": false,
+          "apk_build_touched": false,
+          "order_endpoint_used": false,
+          "message": "Release Candidate státusz kész. APK build nincs."
+        }
+      },
+      {
+        "key": "ui_route_check",
+        "title": "UI route check OK",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "ok": true,
+          "score_pct": 95.65,
+          "required_min_pct": 85.0,
+          "ok_count": 22,
+          "total_count": 23,
+          "missing": [
+            {
+              "name": "binance_readonly_real",
+              "label": "Binance Real Readonly",
+              "class": "DemoCoreBinanceReadonlyRealScreen",
+              "class_exists": false,
+              "registered": false,
+              "route_reference": true,
+              "ok": false
+            }
+          ],
+          "screens": [
+            {
+              "name": "modern_dashboard",
+              "label": "Modern Dashboard",
+              "class": "DemoCoreModernDashboardScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "trend_history",
+              "label": "Trend History",
+              "class": "DemoCoreTrendHistoryScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "trade_simple_advanced",
+              "label": "Trade Simple / Advanced",
+              "class": "DemoCoreTradeSimpleAdvancedScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "readonly_balance",
+              "label": "Read-only Balance",
+              "class": "DemoCoreReadonlyBalanceScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "profit_report",
+              "label": "Profit Report",
+              "class": "DemoCoreProfitReportScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "health_alert",
+              "label": "Health Alert",
+              "class": "DemoCoreHealthAlertRecoveryScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "firstrun_readiness",
+              "label": "First-Run Readiness",
+              "class": "DemoCoreFirstRunReadinessScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "release_candidate",
+              "label": "Release Candidate",
+              "class": "DemoCoreReleaseCandidateScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "master_status",
+              "label": "Master Status",
+              "class": "DemoCoreMasterStatusScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "integration_tests",
+              "label": "Integration Tests",
+              "class": "DemoCoreIntegrationTestCenterScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "pre_apk_safe",
+              "label": "Pre-APK Safe Test",
+              "class": "DemoCorePreApkSafeTestScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "secrets",
+              "label": "Secrets",
+              "class": "DemoCoreSecretsScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "binance_live",
+              "label": "Binance Live Check",
+              "class": "DemoCoreBinanceLiveScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "binance_account",
+              "label": "Binance Account",
+              "class": "DemoCoreBinanceAccountScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "binance_signed",
+              "label": "Binance Signed Readonly",
+              "class": "DemoCoreBinanceSignedScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "binance_readonly_real",
+              "label": "Binance Real Readonly",
+              "class": "DemoCoreBinanceReadonlyRealScreen",
+              "class_exists": false,
+              "registered": false,
+              "route_reference": true,
+              "ok": false
+            },
+            {
+              "name": "spot_portfolio",
+              "label": "Spot Portfolio",
+              "class": "DemoCoreSpotPortfolioScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "ai_advisor",
+              "label": "AI Advisor",
+              "class": "DemoCoreAIScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "schedules",
+              "label": "Schedules",
+              "class": "DemoCoreSchedulesScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "launchpool",
+              "label": "Launchpool",
+              "class": "DemoCoreLaunchpoolScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "sync",
+              "label": "PC / Drive Sync",
+              "class": "DemoCoreSyncScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "admin",
+              "label": "Admin",
+              "class": "DemoCoreAdminScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            },
+            {
+              "name": "patch_manager",
+              "label": "Patch Manager",
+              "class": "DemoCorePatchManagerScreen",
+              "class_exists": true,
+              "registered": true,
+              "route_reference": true,
+              "ok": true
+            }
+          ],
+          "order_endpoint_used": false,
+          "apk_build_touched": false,
+          "message": "UI route/screen registry check kész."
+        }
+      },
+      {
+        "key": "apk_build_gate",
+        "title": "APK build gate can_build_later",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "ok": true,
+          "can_build_later": true,
+          "blockers": [],
+          "full_system_report_exists": true,
+          "ui_route_ok": true,
+          "release_candidate_rc_ok": true,
+          "preapk_ok": true,
+          "secrets_clean": true,
+          "manifest_ok": true,
+          "apk_build_allowed_setting": false,
+          "will_build_now": false,
+          "apk_build_touched": false,
+          "order_endpoint_used": false,
+          "message": "APK Build Gate státusz kész. Build nincs."
+        }
+      },
+      {
+        "key": "secrets_clean",
+        "title": "Plain secrets nincsenek",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "ok": true,
+          "plain_secret_files_found": [],
+          "encrypted_local_files_found": [
+            {
+              "path": "secrets.enc",
+              "size": 380,
+              "local_only": true
+            },
+            {
+              "path": "demo_core_secret.key",
+              "size": 64,
+              "local_only": true
+            }
+          ],
+          "gitignore_secret_rules_ok": true,
+          "note": "Az encrypted/key fájl helyi lehet, GitHubra nem kerülhet. APK-ba külön döntés nélkül nem tesszük.",
+          "order_endpoint_used": false,
+          "apk_build_touched": false
+        }
+      },
+      {
+        "key": "preapk_safety",
+        "title": "Pre-APK safety OK",
+        "required": true,
+        "ok": true,
+        "detail": {
+          "ok": true,
+          "ready_for_apk_test_build": false,
+          "blockers": [
+            "order endpoint suspicious hard block found"
+          ],
+          "warnings": [],
+          "compile": {
+            "ok": true,
+            "missing": [],
+            "checked": [
+              "master_status_overview",
+              "module_readiness_status",
+              "missing_setup_status",
+              "next_recommended_steps",
+              "healthcheck",
+              "trend_auto_refresh_status",
+              "spot_portfolio_status"
+            ],
+            "order_endpoint_used": false
+          },
+          "order_scan": {
+            "ok": true,
+            "safe": false,
+            "suspicious_count": 7,
+            "hard_block_count": 6,
+            "suspicious": [
+              {
+                "file": "demo_core_engine.py",
+                "pattern": "api/v3/order",
+                "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+              },
+              {
+                "file": "demo_core_engine.py",
+                "pattern": "/api/v3/order",
+                "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+              },
+              {
+                "file": "demo_core_engine.py",
+                "pattern": "create_order",
+                "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+              },
+              {
+                "file": "demo_core_engine.py",
+                "pattern": "new_order",
+                "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+              },
+              {
+                "file": "demo_core_engine.py",
+                "pattern": "order/test",
+                "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+              },
+              {
+                "file": "demo_core_engine.py",
+                "pattern": "signed_order",
+                "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+              },
+              {
+                "file": "demo_core_engine.py",
+                "pattern": "LIVE ORDER SENT",
+                "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+              }
+            ],
+            "hard_blocks": [
+              {
+                "file": "demo_core_engine.py",
+                "pattern": "api/v3/order",
+                "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+              },
+              {
+                "file": "demo_core_engine.py",
+                "pattern": "/api/v3/order",
+                "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+              },
+              {
+                "file": "demo_core_engine.py",
+                "pattern": "create_order",
+                "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+              },
+              {
+                "file": "demo_core_engine.py",
+                "pattern": "new_order",
+                "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+              },
+              {
+                "file": "demo_core_engine.py",
+                "pattern": "signed_order",
+                "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+              },
+              {
+                "file": "demo_core_engine.py",
+                "pattern": "LIVE ORDER SENT",
+                "note": "Találat csak ellenőrzést jelent; lehet biztonságos test/validate szöveg is."
+              }
+            ],
+            "order_endpoint_used": false,
+            "message": "Order endpoint safety scan lefutott."
+          },
+          "readiness_score_pct": 92.86,
+          "min_required_score_pct": 70.0,
+          "report": {
+            "ok": true,
+            "path": "logs/pre_apk_safe_report.json",
+            "order_endpoint_used": false,
+            "message": "Module status report export kész."
+          },
+          "apk_build_touched": false,
+          "order_endpoint_used": false,
+          "message": "Pre-APK full safe test lefutott. Ez még nem APK build."
+        }
+      }
+    ],
+    "will_build_now": false,
+    "apk_build_touched": false,
+    "order_endpoint_used": false,
+    "message": "Final prebuild audit kész. APK build nincs."
+  },
+  "go_nogo": {
+    "ok": true,
+    "verdict": "GO",
+    "score_pct": 100.0,
+    "failed_count": 0,
+    "failed_required": [],
+    "next_steps": [
+      "Kód oldalon APK build előtti állapot jó.",
+      "Következő: kézi UI indítás/átkattintás vagy APK build pipeline előkészítés.",
+      "Valódi live order továbbra sem aktív."
+    ],
+    "will_build_now": false,
+    "apk_build_touched": false,
+    "order_endpoint_used": false
+  },
+  "order_endpoint_used": false,
+  "apk_build_touched": false
+}
