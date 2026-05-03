@@ -1,0 +1,57 @@
+{
+  "ok": false,
+  "ts": 1777773524,
+  "project": "/data/data/com.termux/files/home/autobot-apk-test",
+  "no_build": true,
+  "apk_build_touched": false,
+  "order_endpoint_used": false,
+  "tools": {
+    "python": "/data/data/com.termux/files/usr/bin/python",
+    "pip": "/data/data/com.termux/files/usr/bin/pip",
+    "buildozer": "/data/data/com.termux/files/usr/bin/buildozer",
+    "java": "/data/data/com.termux/files/usr/bin/java",
+    "git": "/data/data/com.termux/files/usr/bin/git",
+    "zip": "/data/data/com.termux/files/usr/bin/zip",
+    "unzip": "/data/data/com.termux/files/usr/bin/unzip"
+  },
+  "spec": {
+    "title": "Binance Autobot",
+    "package.name": "binanceautobot",
+    "package.domain": "org.autobot",
+    "requirements": "python3,kivy",
+    "source.include_exts": "py,png,jpg,jpeg,kv,atlas,json,txt,md,csv",
+    "source.exclude_dirs": ".git,.github,__pycache__,.pytest_cache,.mypy_cache,.buildozer,bin,logs,packages,backups",
+    "source.exclude_exts": "pyc,pyo,enc,key,keystore,apk,aab,zip,tar,gz,bak",
+    "source.exclude_patterns": "*.bak,*.bak_*,*.BROKEN_*,*secret*,*secrets*,*.enc,*.key,.env,logs/*,packages/*",
+    "android.permissions": "INTERNET",
+    "android.api": "31",
+    "android.minapi": "21",
+    "android.archs": "arm64-v8a, armeabi-v7a"
+  },
+  "required_files": [
+    {
+      "path": "main.py",
+      "exists": true,
+      "size": 244638
+    },
+    {
+      "path": "demo_core_engine.py",
+      "exists": true,
+      "size": 258547
+    },
+    {
+      "path": "buildozer.spec",
+      "exists": true,
+      "size": 806
+    }
+  ],
+  "plain_secrets_found": [
+    "secrets.enc",
+    "demo_core_secret.key"
+  ],
+  "build_command_preview": "buildozer android debug",
+  "safe_recommended_command_preview": "buildozer -v android debug",
+  "warnings": [
+    "Plain secret fájl található, APK build előtt tilos."
+  ]
+}
