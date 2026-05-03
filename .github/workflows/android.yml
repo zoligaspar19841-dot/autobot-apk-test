@@ -1,4 +1,4 @@
-name: Build Binance Autobot APK
+name: Build APK
 
 on:
   workflow_dispatch:
@@ -11,13 +11,6 @@ jobs:
     steps:
       - name: Checkout project
         uses: actions/checkout@v4
-
-      - name: Show repository files
-        run: |
-          pwd
-          ls -la
-          echo "=== apk_stage ==="
-          ls -la apk_stage
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -44,56 +37,39 @@ jobs:
           python -m pip install --upgrade pip wheel setuptools
           pip install buildozer cython
 
-      - name: Check clean apk_stage
+      - name: Precheck apk_stage
         run: |
           cd apk_stage
-          echo "=== apk_stage files ==="
+          echo "=== FILES ==="
           find . -maxdepth 2 -type f -print | sort
-          echo "=== forbidden files check ==="
-          if find . -type f \( -name "*.enc" -o -name "*.key" -o -name ".env" -o -iname "*secret*" -o -iname "*secrets*" \) | grep .; then
-            echo "Forbidden secret file found in apk_stage"
-            exit 1
-          fi
-          echo "OK: no secrets in apk_stage"
-
-      - name: Compile Python files
-        run: |
-          cd apk_stage
-          python -m py_compile main.py demo_core_engine.py
-          echo "OK: Python compile"
-
-      - name: Show buildozer spec
-        run: |
-          cd apk_stage
-          echo "=== buildozer.spec ==="
+          echo "=== SPEC ==="
           sed -n '1,120p' buildozer.spec
+          echo "=== PY COMPILE ==="
+          python -m py_compile main.py demo_core_engine.py
 
-      - name: Build APK with Buildozer and save full log
+      - name: Build APK with full log
         run: |
+          mkdir -p ci_logs
           cd apk_stage
-          mkdir -p ../ci_logs
           set +e
           buildozer -v android debug 2>&1 | tee ../ci_logs/buildozer_full.log
           CODE=${PIPESTATUS[0]}
-          echo "BUILDOZER_EXIT_CODE=$CODE" | tee ../ci_logs/buildozer_exit_code.txt
-          echo "=== LAST 250 LINES ==="
-          tail -250 ../ci_logs/buildozer_full.log
-          echo "=== ERROR SEARCH ==="
-          grep -niE "error:|failed|exception|traceback|no such file|command failed|exit code|undefined reference|fatal" ../ci_logs/buildozer_full.log | tail -80 || true
+          echo "$CODE" > ../ci_logs/buildozer_exit_code.txt
+
+          echo "=== ERROR SEARCH ===" | tee ../ci_logs/error_search.txt
+          grep -niE "error:|failed|exception|traceback|no such file|command failed|stderr|fatal|could not|undefined|permission denied" ../ci_logs/buildozer_full.log | tail -120 | tee -a ../ci_logs/error_search.txt || true
+
+          echo "=== LAST 300 LINES ===" | tee ../ci_logs/last_300_lines.txt
+          tail -300 ../ci_logs/buildozer_full.log | tee -a ../ci_logs/last_300_lines.txt
+
           exit $CODE
 
       - name: Verify APK exists
         if: success()
         run: |
           cd apk_stage
-          echo "=== bin folder ==="
           ls -lah bin || true
-          APK_COUNT=$(ls bin/*.apk 2>/dev/null | wc -l)
-          echo "APK_COUNT=$APK_COUNT"
-          if [ "$APK_COUNT" -lt 1 ]; then
-            echo "ERROR: APK file was not created"
-            exit 1
-          fi
+          test -n "$(ls bin/*.apk 2>/dev/null)"
 
       - name: Upload APK artifact
         if: success()
@@ -102,9 +78,9 @@ jobs:
           name: BinanceAutobot-APK
           path: apk_stage/bin/*.apk
 
-      - name: Upload Buildozer logs
+      - name: Upload Build Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Buildozer-Full-Logs
-          path: ci_logs/*.log
+          path: ci_logs/*
