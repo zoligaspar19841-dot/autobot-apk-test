@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Binance Autobot APK
 
 on:
   workflow_dispatch:
@@ -69,14 +69,24 @@ jobs:
         run: |
           cd apk_stage
           echo "=== buildozer.spec ==="
-          sed -n '1,80p' buildozer.spec
+          sed -n '1,120p' buildozer.spec
 
-      - name: Build APK with Buildozer
+      - name: Build APK with Buildozer and save full log
         run: |
           cd apk_stage
-          buildozer -v android debug
+          mkdir -p ../ci_logs
+          set +e
+          buildozer -v android debug 2>&1 | tee ../ci_logs/buildozer_full.log
+          CODE=${PIPESTATUS[0]}
+          echo "BUILDOZER_EXIT_CODE=$CODE" | tee ../ci_logs/buildozer_exit_code.txt
+          echo "=== LAST 250 LINES ==="
+          tail -250 ../ci_logs/buildozer_full.log
+          echo "=== ERROR SEARCH ==="
+          grep -niE "error:|failed|exception|traceback|no such file|command failed|exit code|undefined reference|fatal" ../ci_logs/buildozer_full.log | tail -80 || true
+          exit $CODE
 
       - name: Verify APK exists
+        if: success()
         run: |
           cd apk_stage
           echo "=== bin folder ==="
@@ -89,7 +99,15 @@ jobs:
           fi
 
       - name: Upload APK artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: BinanceAutobot-APK
           path: apk_stage/bin/*.apk
+
+      - name: Upload Buildozer logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Buildozer-Full-Logs
+          path: ci_logs/*.log
