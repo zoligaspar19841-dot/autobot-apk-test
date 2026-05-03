@@ -1,6 +1,6 @@
 {
-  "ts": 1777769267,
-  "app_version": "0.5.7-demo-core",
+  "ts": 1777770470,
+  "app_version": "0.5.9-demo-core",
   "compile_status": {
     "ok": true,
     "missing": [],
@@ -94,7 +94,7 @@
   },
   "master_status": {
     "ok": true,
-    "app_version": "0.5.7-demo-core",
+    "app_version": "0.5.9-demo-core",
     "mode": "DEMO",
     "running": false,
     "safe_mode": false,
@@ -129,7 +129,7 @@
     "package": {
       "ok": true,
       "working_apk_reference": "APK 0.2.5 - utolsó ismert működő referencia",
-      "app_version": "0.5.7-demo-core",
+      "app_version": "0.5.9-demo-core",
       "build_policy": "APK buildhez csak külön stabil build-lépésben nyúlunk.",
       "current_dev_mode": "code_patch_only"
     },

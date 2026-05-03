@@ -1,4 +1,4 @@
-APP_VERSION = "0.5.8-demo-core"
+APP_VERSION = "0.5.9-demo-core"
 WORKING_APK_REFERENCE = "APK 0.2.5 - utolsó ismert működő referencia"
 # -*- coding: utf-8 -*-
 import json
@@ -80,6 +80,16 @@ SECRETS_DEFAULTS = {
 
 
 
+
+
+APK_BUILD_GATE_DEFAULTS = {
+    "apk_build_gate_enabled": True,
+    "apk_require_full_system_check": True,
+    "apk_require_ui_route_check": True,
+    "apk_require_no_plain_secrets": True,
+    "apk_manifest_file": "logs/apk_artifact_manifest.json",
+    "apk_build_gate_report_file": "logs/apk_build_gate_report.json",
+}
 
 UI_ROUTE_CHECK_DEFAULTS = {
     "ui_route_check_enabled": True,
@@ -459,6 +469,12 @@ def merge_defaults(state):
 
     if "PROFIT_HOLD_DEFAULTS" in globals():
         for k, v in PROFIT_HOLD_DEFAULTS.items():
+            if k not in state["settings"] or state["settings"].get(k) is None:
+                state["settings"][k] = v
+                changed = True
+
+    if "APK_BUILD_GATE_DEFAULTS" in globals():
+        for k, v in APK_BUILD_GATE_DEFAULTS.items():
             if k not in state["settings"] or state["settings"].get(k) is None:
                 state["settings"][k] = v
                 changed = True
@@ -7395,6 +7411,248 @@ def export_ui_route_report(path=None):
         "order_endpoint_used": False,
         "apk_build_touched": False,
         "message": "UI route report export kész.",
+    }
+
+
+
+def apk_expected_artifact_files():
+    """
+    APK-ba kerülő fő fájlok elvárt listája.
+    Secrets fájlokat direkt nem tartalmaz.
+    """
+    return [
+        {"path": "main.py", "required": True, "kind": "app"},
+        {"path": "demo_core_engine.py", "required": True, "kind": "engine"},
+        {"path": "requirements.txt", "required": False, "kind": "deps"},
+        {"path": "README.md", "required": False, "kind": "docs"},
+        {"path": "DEV_STATUS_FULL_CURRENT.md", "required": False, "kind": "status"},
+        {"path": "DEV_STATUS_UI_ROUTE_SCREEN_REGISTRY_CHECK.md", "required": False, "kind": "status"},
+        {"path": "DEV_STATUS_RELEASE_CANDIDATE_ROLLBACK_PREVIEW.md", "required": False, "kind": "status"},
+    ]
+
+
+def secrets_clean_check():
+    """
+    Plain secret / érzékeny fájl ellenőrzés.
+    Nem olvas be kulcsértéket, csak fájlnév és méret alapján ellenőriz.
+    """
+    sensitive = [
+        "demo_core_secrets.json",
+        "secrets.json",
+        ".env",
+        "creds.json",
+        "email.json",
+        "binance_api_key.txt",
+        "openai_api_key.txt",
+    ]
+
+    encrypted_allowed = [
+        "secrets.enc",
+        "demo_core_secret.key",
+    ]
+
+    found_plain = []
+    found_encrypted = []
+
+    for f in sensitive:
+        if os.path.exists(f):
+            found_plain.append({
+                "path": f,
+                "size": os.path.getsize(f),
+            })
+
+    for f in encrypted_allowed:
+        if os.path.exists(f):
+            found_encrypted.append({
+                "path": f,
+                "size": os.path.getsize(f),
+                "local_only": True,
+            })
+
+    gitignore_ok = False
+    if os.path.exists(".gitignore"):
+        try:
+            txt = open(".gitignore", "r", encoding="utf-8").read()
+            gitignore_ok = ("*.enc" in txt and "*.key" in txt and ".env" in txt)
+        except Exception:
+            gitignore_ok = False
+
+    return {
+        "ok": len(found_plain) == 0,
+        "plain_secret_files_found": found_plain,
+        "encrypted_local_files_found": found_encrypted,
+        "gitignore_secret_rules_ok": gitignore_ok,
+        "note": "Az encrypted/key fájl helyi lehet, GitHubra nem kerülhet. APK-ba külön döntés nélkül nem tesszük.",
+        "order_endpoint_used": False,
+        "apk_build_touched": False,
+    }
+
+
+def apk_artifact_manifest():
+    """
+    APK artifact manifest előnézet.
+    Nem buildel APK-t.
+    """
+    rows = []
+    missing_required = []
+
+    for item in apk_expected_artifact_files():
+        path = item["path"]
+        exists = os.path.exists(path)
+        row = {
+            "path": path,
+            "kind": item.get("kind"),
+            "required": bool(item.get("required")),
+            "exists": exists,
+            "size": os.path.getsize(path) if exists else 0,
+        }
+        rows.append(row)
+        if item.get("required") and not exists:
+            missing_required.append(row)
+
+    manifest = {
+        "ok": len(missing_required) == 0,
+        "files": rows,
+        "missing_required": missing_required,
+        "excluded_secrets": ["*.enc", "*.key", ".env", "demo_core_secrets.json"],
+        "order_endpoint_used": False,
+        "apk_build_touched": False,
+        "message": "APK artifact manifest kész. Build nincs.",
+    }
+
+    return manifest
+
+
+def apk_build_gate_status():
+    """
+    APK build gate döntési státusz.
+    Nem buildel.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    full_check_exists = os.path.exists("logs/full_system_status_report.json")
+    ui_report = _safe_call("ui_route_screen_registry_check", {})
+    rc = _safe_call("release_candidate_status", {})
+    preapk = _safe_call("pre_apk_full_safe_test", {})
+    secrets = secrets_clean_check()
+    manifest = apk_artifact_manifest()
+
+    blockers = []
+
+    if settings.get("apk_require_full_system_check", True) and not full_check_exists:
+        blockers.append("full_system_status_report_missing")
+
+    if settings.get("apk_require_ui_route_check", True) and not bool(ui_report.get("ok", False)):
+        blockers.append("ui_route_check_not_ok")
+
+    if settings.get("apk_require_no_plain_secrets", True) and not bool(secrets.get("ok", False)):
+        blockers.append("plain_secret_file_found")
+
+    if not bool(manifest.get("ok", False)):
+        blockers.append("required_artifact_missing")
+
+    if bool(preapk.get("order_endpoint_used", False)):
+        blockers.append("preapk_order_endpoint_used_true")
+
+    if bool(rc.get("apk_build_touched", False)):
+        blockers.append("release_candidate_says_build_touched")
+
+    can_build_later = len(blockers) == 0
+
+    return {
+        "ok": True,
+        "can_build_later": can_build_later,
+        "blockers": blockers,
+        "full_system_report_exists": full_check_exists,
+        "ui_route_ok": bool(ui_report.get("ok", False)),
+        "release_candidate_rc_ok": bool(rc.get("rc_ok", False)),
+        "preapk_ok": bool(preapk.get("ok", False)),
+        "secrets_clean": bool(secrets.get("ok", False)),
+        "manifest_ok": bool(manifest.get("ok", False)),
+        "apk_build_allowed_setting": bool(settings.get("apk_build_allowed", False)),
+        "will_build_now": False,
+        "apk_build_touched": False,
+        "order_endpoint_used": False,
+        "message": "APK Build Gate státusz kész. Build nincs.",
+    }
+
+
+def export_apk_artifact_manifest(path=None):
+    """
+    APK artifact manifest export.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if path is None:
+        path = settings.get("apk_manifest_file", "logs/apk_artifact_manifest.json") or "logs/apk_artifact_manifest.json"
+
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    data = {
+        "ts": int(time.time()),
+        "app_version": globals().get("APP_VERSION", "unknown"),
+        "manifest": apk_artifact_manifest(),
+        "secrets_clean": secrets_clean_check(),
+        "order_endpoint_used": False,
+        "apk_build_touched": False,
+    }
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    audit_event("APK_ARTIFACT_MANIFEST_EXPORT", "APK artifact manifest export", {
+        "path": path,
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "path": path,
+        "order_endpoint_used": False,
+        "apk_build_touched": False,
+        "message": "APK artifact manifest export kész.",
+    }
+
+
+def export_apk_build_gate_report(path=None):
+    """
+    APK build gate report export.
+    """
+    state = load_state()
+    settings = state.get("settings", {})
+
+    if path is None:
+        path = settings.get("apk_build_gate_report_file", "logs/apk_build_gate_report.json") or "logs/apk_build_gate_report.json"
+
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+    data = {
+        "ts": int(time.time()),
+        "app_version": globals().get("APP_VERSION", "unknown"),
+        "gate": apk_build_gate_status(),
+        "manifest": apk_artifact_manifest(),
+        "secrets_clean": secrets_clean_check(),
+        "build_preview": _safe_call("safe_build_command_preview", {}),
+        "order_endpoint_used": False,
+        "apk_build_touched": False,
+    }
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    audit_event("APK_BUILD_GATE_REPORT_EXPORT", "APK build gate report export", {
+        "path": path,
+        "order_endpoint_used": False,
+    })
+
+    return {
+        "ok": True,
+        "path": path,
+        "order_endpoint_used": False,
+        "apk_build_touched": False,
+        "message": "APK build gate report export kész.",
     }
 
 

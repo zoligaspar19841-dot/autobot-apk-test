@@ -1,0 +1,90 @@
+{
+  "ts": 1777770440,
+  "app_version": "0.5.9-demo-core",
+  "manifest": {
+    "ok": true,
+    "files": [
+      {
+        "path": "main.py",
+        "kind": "app",
+        "required": true,
+        "exists": true,
+        "size": 240255
+      },
+      {
+        "path": "demo_core_engine.py",
+        "kind": "engine",
+        "required": true,
+        "exists": true,
+        "size": 252937
+      },
+      {
+        "path": "requirements.txt",
+        "kind": "deps",
+        "required": false,
+        "exists": false,
+        "size": 0
+      },
+      {
+        "path": "README.md",
+        "kind": "docs",
+        "required": false,
+        "exists": false,
+        "size": 0
+      },
+      {
+        "path": "DEV_STATUS_FULL_CURRENT.md",
+        "kind": "status",
+        "required": false,
+        "exists": true,
+        "size": 2069
+      },
+      {
+        "path": "DEV_STATUS_UI_ROUTE_SCREEN_REGISTRY_CHECK.md",
+        "kind": "status",
+        "required": false,
+        "exists": true,
+        "size": 314
+      },
+      {
+        "path": "DEV_STATUS_RELEASE_CANDIDATE_ROLLBACK_PREVIEW.md",
+        "kind": "status",
+        "required": false,
+        "exists": true,
+        "size": 339
+      }
+    ],
+    "missing_required": [],
+    "excluded_secrets": [
+      "*.enc",
+      "*.key",
+      ".env",
+      "demo_core_secrets.json"
+    ],
+    "order_endpoint_used": false,
+    "apk_build_touched": false,
+    "message": "APK artifact manifest kész. Build nincs."
+  },
+  "secrets_clean": {
+    "ok": true,
+    "plain_secret_files_found": [],
+    "encrypted_local_files_found": [
+      {
+        "path": "secrets.enc",
+        "size": 380,
+        "local_only": true
+      },
+      {
+        "path": "demo_core_secret.key",
+        "size": 64,
+        "local_only": true
+      }
+    ],
+    "gitignore_secret_rules_ok": true,
+    "note": "Az encrypted/key fájl helyi lehet, GitHubra nem kerülhet. APK-ba külön döntés nélkül nem tesszük.",
+    "order_endpoint_used": false,
+    "apk_build_touched": false
+  },
+  "order_endpoint_used": false,
+  "apk_build_touched": false
+}

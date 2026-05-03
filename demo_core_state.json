@@ -231,12 +231,18 @@
     "apk_build_allowed": false,
     "ui_route_check_enabled": true,
     "ui_route_report_file": "logs/ui_route_report.json",
-    "ui_route_required_min_pct": 85.0
+    "ui_route_required_min_pct": 85.0,
+    "apk_build_gate_enabled": true,
+    "apk_require_full_system_check": true,
+    "apk_require_ui_route_check": true,
+    "apk_require_no_plain_secrets": true,
+    "apk_manifest_file": "logs/apk_artifact_manifest.json",
+    "apk_build_gate_report_file": "logs/apk_build_gate_report.json"
   },
   "last_action": "Heartbeat update: full_system_check",
   "safe_mode": false,
   "last_tick_ts": 1777759959,
-  "last_heartbeat_ts": 1777769274,
+  "last_heartbeat_ts": 1777770474,
   "cooldowns": {},
   "spot_balances_cache": [
     {

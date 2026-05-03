@@ -685,6 +685,127 @@ class TrendCanvasWidget(Widget):
 
 
 
+
+class DemoCoreApkBuildGateScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        root = BoxLayout(orientation='vertical', padding=12, spacing=8)
+
+        root.add_widget(Label(
+            text='[b]APK BUILD GATE / ARTIFACT MANIFEST[/b]\n[size=14]Build előtti kapu, fájlmanifest, secrets clean check. APK build nincs.[/size]',
+            markup=True,
+            size_hint_y=None,
+            height=86
+        ))
+
+        self.info = Label(text='APK build gate...', markup=True, halign='left', valign='top')
+        self.info.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.info)
+        root.add_widget(scroll)
+
+        btns = GridLayout(cols=2, size_hint_y=None, height=260, spacing=8)
+        buttons = [
+            ('BUILD GATE', self.gate),
+            ('MANIFEST', self.manifest),
+            ('SECRETS CLEAN', self.secrets_clean),
+            ('EXPORT MANIFEST', self.export_manifest),
+            ('EXPORT GATE REPORT', self.export_gate),
+            ('RC STATUS', lambda: self.manager.go_to('release_candidate')),
+            ('UI CHECK', lambda: self.manager.go_to('ui_route_check')),
+            ('VISSZA', self.go_back),
+        ]
+
+        for text, fn in buttons:
+            b = Button(text=text)
+            b.bind(on_press=lambda x, f=fn: f())
+            btns.add_widget(b)
+
+        root.add_widget(btns)
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.gate()
+
+    def go_back(self):
+        try:
+            self.manager.go_back()
+        except Exception:
+            self.manager.current = 'home'
+
+    def gate(self):
+        try:
+            res = demo_core.apk_build_gate_status()
+            lines = ['[b]APK Build Gate[/b]', '']
+            for k in ['can_build_later','full_system_report_exists','ui_route_ok','release_candidate_rc_ok','preapk_ok','secrets_clean','manifest_ok','apk_build_allowed_setting','will_build_now','apk_build_touched','order_endpoint_used']:
+                lines.append(f"{k}: [b]{res.get(k)}[/b]")
+            lines.append('')
+            lines.append('[b]Blockers[/b]')
+            for b in res.get('blockers') or []:
+                lines.append('🔴 ' + str(b))
+            if not res.get('blockers'):
+                lines.append('✅ Nincs blocker')
+            lines.append('')
+            lines.append(str(res.get('message')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Build gate hiba: ' + str(e)
+
+    def manifest(self):
+        try:
+            res = demo_core.apk_artifact_manifest()
+            lines = ['[b]APK Artifact Manifest[/b]', '']
+            lines.append(f"OK: [b]{res.get('ok')}[/b]")
+            for row in res.get('files') or []:
+                mark = '✅' if row.get('exists') else ('🔴' if row.get('required') else '🟡')
+                lines.append(f"{mark} {row.get('path')} | required={row.get('required')} | size={row.get('size')}")
+            lines.append('')
+            lines.append('[b]Excluded secrets[/b]')
+            for x in res.get('excluded_secrets') or []:
+                lines.append('- ' + str(x))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Manifest hiba: ' + str(e)
+
+    def secrets_clean(self):
+        try:
+            res = demo_core.secrets_clean_check()
+            lines = ['[b]Secrets Clean Check[/b]', '']
+            lines.append(f"OK: [b]{res.get('ok')}[/b]")
+            lines.append(f"gitignore_secret_rules_ok: {res.get('gitignore_secret_rules_ok')}")
+            lines.append('')
+            lines.append('[b]Plain secret files found[/b]')
+            for x in res.get('plain_secret_files_found') or []:
+                lines.append('🔴 ' + str(x))
+            if not res.get('plain_secret_files_found'):
+                lines.append('✅ Nincs plain secret fájl')
+            lines.append('')
+            lines.append('[b]Encrypted local files found[/b]')
+            for x in res.get('encrypted_local_files_found') or []:
+                lines.append('🟡 ' + str(x))
+            lines.append('')
+            lines.append(str(res.get('note')))
+            self.info.text = '\\n'.join(lines)
+        except Exception as e:
+            self.info.text = 'Secrets check hiba: ' + str(e)
+
+    def export_manifest(self):
+        try:
+            res = demo_core.export_apk_artifact_manifest()
+            self.info.text = '[b]APK manifest export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Manifest export hiba: ' + str(e)
+
+    def export_gate(self):
+        try:
+            res = demo_core.export_apk_build_gate_report()
+            self.info.text = '[b]APK build gate report export[/b]\\n' + str(res)
+        except Exception as e:
+            self.info.text = 'Gate export hiba: ' + str(e)
+
+
+
 class DemoCoreUiRouteCheckScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -4584,6 +4705,12 @@ class DemoCoreSettingsScreen(Screen):
             ('ui_route_check_enabled', 'UI route check enabled true/false'),
             ('ui_route_report_file', 'UI route report file'),
             ('ui_route_required_min_pct', 'UI route required min pct'),
+            ('apk_build_gate_enabled', 'APK build gate enabled true/false'),
+            ('apk_require_full_system_check', 'APK require full system check true/false'),
+            ('apk_require_ui_route_check', 'APK require UI route check true/false'),
+            ('apk_require_no_plain_secrets', 'APK require no plain secrets true/false'),
+            ('apk_manifest_file', 'APK manifest file'),
+            ('apk_build_gate_report_file', 'APK build gate report file'),
             ('startup_safety_summary_enabled', 'Startup safety summary enabled true/false'),
             ('first_run_require_admin_password_change', 'First-run require admin password change true/false'),
             ('first_run_require_secrets_review', 'First-run require secrets review true/false'),
@@ -4843,6 +4970,12 @@ class DemoCoreSettingsScreen(Screen):
             cfg['ui_route_check_enabled'] = self.inputs['ui_route_check_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['ui_route_report_file'] = self.inputs['ui_route_report_file'].text.strip() or 'logs/ui_route_report.json'
             cfg['ui_route_required_min_pct'] = float(self.inputs['ui_route_required_min_pct'].text.replace(',', '.'))
+            cfg['apk_build_gate_enabled'] = self.inputs['apk_build_gate_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['apk_require_full_system_check'] = self.inputs['apk_require_full_system_check'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['apk_require_ui_route_check'] = self.inputs['apk_require_ui_route_check'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['apk_require_no_plain_secrets'] = self.inputs['apk_require_no_plain_secrets'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
+            cfg['apk_manifest_file'] = self.inputs['apk_manifest_file'].text.strip() or 'logs/apk_artifact_manifest.json'
+            cfg['apk_build_gate_report_file'] = self.inputs['apk_build_gate_report_file'].text.strip() or 'logs/apk_build_gate_report.json'
             cfg['startup_safety_summary_enabled'] = self.inputs['startup_safety_summary_enabled'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_admin_password_change'] = self.inputs['first_run_require_admin_password_change'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
             cfg['first_run_require_secrets_review'] = self.inputs['first_run_require_secrets_review'].text.strip().lower() not in ['0', 'false', 'nem', 'no', 'off']
@@ -5126,6 +5259,12 @@ class DemoCoreScreen(Screen):
             self.manager.go_to("pre_apk_safe")
         except Exception:
             self.manager.current = "pre_apk_safe"
+
+    def open_apk_build_gate(self):
+        try:
+            self.manager.go_to("apk_build_gate")
+        except Exception:
+            self.manager.current = "apk_build_gate"
 
     def open_ui_route_check(self):
         try:
@@ -5484,6 +5623,7 @@ class AppMain(App):
         sm.add_widget(DemoCoreFirstRunReadinessScreen(name="firstrun_readiness"))
         sm.add_widget(DemoCoreReleaseCandidateScreen(name="release_candidate"))
         sm.add_widget(DemoCoreUiRouteCheckScreen(name="ui_route_check"))
+        sm.add_widget(DemoCoreApkBuildGateScreen(name="apk_build_gate"))
         return sm
 
 if __name__ == "__main__":
