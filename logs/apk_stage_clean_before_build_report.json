@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "ts": 1777773852,
+  "stage_dir": "/data/data/com.termux/files/home/autobot-apk-test/apk_stage",
+  "no_build": true,
+  "apk_build_touched": false,
+  "order_endpoint_used": false,
+  "files": [
+    "buildozer.spec",
+    "demo_core_engine.py",
+    "icon.png",
+    "main.py"
+  ],
+  "bad_files": [],
+  "message": "apk_stage clean before build kész. Build nem indult."
+}
