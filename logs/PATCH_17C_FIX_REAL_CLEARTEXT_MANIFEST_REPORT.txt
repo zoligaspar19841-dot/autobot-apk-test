@@ -1,0 +1,14 @@
+PATCH 17C OK
+Date: Sun May  3 23:05:10 CEST 2026
+
+Javítás:
+- rossz / nem hatásos android.manifest.application_arguments kikapcsolva
+- helyette android.extra_manifest_application_arguments beállítva
+- android:usesCleartextTraffic="true"
+- INTERNET permission ellenőrizve
+- APK build NEM indult
+- Commit NEM történt
+- Binance order NEM történt
+
+Cél:
+- WebView engedje a helyi http://127.0.0.1:8080 betöltést.

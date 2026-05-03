@@ -24,4 +24,5 @@ icon.filename = icon.png
 [buildozer]
 log_level = 2
 warn_on_root = 1
-android.manifest.application_arguments = android:usesCleartextTraffic="true"
+# disabled by PATCH 17C: android.manifest.application_arguments was not effective
+android.extra_manifest_application_arguments = android:usesCleartextTraffic="true"
